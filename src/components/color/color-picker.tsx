@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Search, Pipette } from "lucide-react";
 import type { SelectedColor } from "@/types";
-import { colorCollections, allColors, isLightColor } from "@/lib/data/colors";
+import { colorCollections, isLightColor } from "@/lib/data/colors";
+import { fetchPortalColors } from "@/lib/portal-colors";
 import { withBase } from "@/lib/paint-bases";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,20 +25,36 @@ export function ColorPicker({
   onConfirm,
   confirmLabel = "Kies deze kleur",
 }: ColorPickerProps) {
+  const [collections, setCollections] = useState(colorCollections);
   const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<SelectedColor | undefined>(value);
   const [customHex, setCustomHex] = useState(value?.hex ?? "#C90000");
 
+  // Live kleuren uit de portal (Gamma/AkzoNobel/RAL); terugval op gecureerde set.
+  useEffect(() => {
+    let active = true;
+    fetchPortalColors().then((cols) => {
+      if (!active || !cols.length) return;
+      setCollections(cols);
+      setActiveCollection((cur) => (cols.some((c) => c.id === cur) ? cur : cols[0].id));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const allColors = useMemo(() => collections.flatMap((c) => c.colors), [collections]);
+
   const visibleColors = useMemo(() => {
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      return allColors.filter(
-        (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
-      );
-    }
-    return colorCollections.find((c) => c.id === activeCollection)?.colors ?? [];
-  }, [query, activeCollection]);
+    const pool = query.trim()
+      ? allColors.filter((c) => {
+          const q = query.toLowerCase();
+          return c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
+        })
+      : collections.find((c) => c.id === activeCollection)?.colors ?? [];
+    return pool.slice(0, 200);
+  }, [query, activeCollection, collections, allColors]);
 
   function pick(color: SelectedColor) {
     const enriched = withBase(color);
@@ -72,7 +89,7 @@ export function ColorPicker({
       {/* Collection tabs */}
       {!query.trim() && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {colorCollections.map((c) => (
+          {collections.map((c) => (
             <button
               key={c.id}
               onClick={() => setActiveCollection(c.id)}
