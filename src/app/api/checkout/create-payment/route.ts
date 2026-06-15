@@ -73,11 +73,22 @@ export async function POST(req: Request) {
     });
 
     // 2. Create the Mollie payment (or a simulated one in demo mode).
+    const origin =
+      req.headers.get("origin") ||
+      (() => {
+        try {
+          return new URL(req.url).origin;
+        } catch {
+          return undefined;
+        }
+      })();
+
     const payment = await createPayment({
       orderId: order.id,
       reference: order.reference,
       amount: data.total,
       method: data.method,
+      baseUrl: origin,
     });
 
     if (payment.molliePaymentId) {

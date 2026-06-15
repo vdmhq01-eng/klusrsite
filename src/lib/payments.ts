@@ -7,7 +7,7 @@ import createMollieClient, { type MollieClient } from "@mollie/api-client";
  */
 
 const API_KEY = process.env.MOLLIE_API_KEY;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
 let client: MollieClient | null = null;
 
@@ -35,6 +35,8 @@ export interface CreatePaymentInput {
   amount: number;
   method?: string;
   description?: string;
+  /** Basis-URL voor redirect/webhook (uit de request-origin); valt terug op SITE_URL. */
+  baseUrl?: string;
 }
 
 export interface CreatePaymentResult {
@@ -48,11 +50,12 @@ export async function createPayment(
 ): Promise<CreatePaymentResult> {
   const mollie = getClient();
   const value = input.amount.toFixed(2);
+  const base = (input.baseUrl || SITE_URL).replace(/\/$/, "");
 
   // Demo mode — no real redirect; go straight to the thank-you page.
   if (!mollie) {
     return {
-      checkoutUrl: `${SITE_URL}/bedankt?order=${input.orderId}&demo=1`,
+      checkoutUrl: `${base}/bedankt?order=${input.orderId}&demo=1`,
       demo: true,
     };
   }
@@ -60,8 +63,8 @@ export async function createPayment(
   const payment = await mollie.payments.create({
     amount: { currency: "EUR", value },
     description: input.description ?? `KLUSR bestelling ${input.reference}`,
-    redirectUrl: `${SITE_URL}/bedankt?order=${input.orderId}`,
-    webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${SITE_URL}/api/checkout/webhook`,
+    redirectUrl: `${base}/bedankt?order=${input.orderId}`,
+    webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
     metadata: { orderId: input.orderId, reference: input.reference },
     ...(input.method && methodMap[input.method]
       ? { method: methodMap[input.method] as never }
@@ -69,7 +72,7 @@ export async function createPayment(
   });
 
   return {
-    checkoutUrl: payment.getCheckoutUrl() ?? `${SITE_URL}/bedankt?order=${input.orderId}`,
+    checkoutUrl: payment.getCheckoutUrl() ?? `${base}/bedankt?order=${input.orderId}`,
     molliePaymentId: payment.id,
     demo: false,
   };

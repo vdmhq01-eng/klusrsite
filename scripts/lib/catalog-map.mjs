@@ -84,16 +84,29 @@ function mapCategory(productType = "") {
 }
 
 function mapVerfSub(title, productType) {
-  const segs = productType.split(">").map((x) => x.trim());
-  const deep = segs.slice(2).join(" ");
-  const s = `${title} ${deep}`.toLowerCase();
-  if (s.includes("beits")) return "beits";
-  if (s.includes("primer") || s.includes("grond")) return "primer";
-  if (s.includes("lak") || s.includes("trapverf") || s.includes("aqua") || s.includes("pu "))
-    return "lak";
-  if (s.includes("buiten") || s.includes("gevel")) return "buitenverf";
-  if (s.includes("muur") || s.includes("latex") || s.includes("binnen")) return "binnenverf";
+  const t = (title || "").toLowerCase();
+  if (/\bbeits\b/.test(t)) return "beits";
+  if (/\b(lijnolie|vloerolie|houtolie|teakolie|onderhoudsolie|hardwaxolie|olie)\b/.test(t))
+    return "houtolie";
+  if (/\b(primer|grondverf|grondlaag|voorstrijk|grond)\b/.test(t)) return "primer";
+  if (/\b(lak|trapverf|aqua|hoogglans|zijdeglans|zijdemat)\b/.test(t)) return "lak";
+  if (/\b(buiten|gevel|exterior)\b/.test(t)) return "buitenverf";
+  if (/\b(muur|latex|binnen|interior|saus)\b/.test(t)) return "binnenverf";
+  // Val terug op de diepere product_type-segmenten.
+  const deep = productType.split(">").slice(2).join(" ").toLowerCase();
+  if (deep.includes("beits")) return "beits";
+  if (deep.includes("primer") || deep.includes("grond")) return "primer";
+  if (deep.includes("lak")) return "lak";
+  if (deep.includes("buiten")) return "buitenverf";
   return "binnenverf";
+}
+
+// Onderhouds-/smeermiddelen die de feed soms onder verf zet — horen bij gereedschap.
+const MAINT_RE =
+  /\b(contactspray|kruipolie|slotspray|siliconenspray|smeerspray|droogsmeer|kettingspray|multi-?spray|onderhoudsspray|smeermiddel|smeerolie|smeervet|remmenreiniger|montagespray)\b/i;
+
+function isMaintenanceItem(item) {
+  return /wd-?40/i.test(item.brand || "") || MAINT_RE.test(item.title || "");
 }
 
 function subCategoryFor(category, title, productType) {
@@ -320,7 +333,12 @@ export function buildCatalog(items, stockMap, opts = {}) {
       group[0];
     if (!lead || !lead.image || !(lead.price > 0)) continue;
 
-    const category = mapCategory(lead.productType);
+    let category = mapCategory(lead.productType);
+    let subOverride;
+    if (isMaintenanceItem(lead)) {
+      category = "gereedschap";
+      subOverride = "onderhoud-smeermiddelen";
+    }
     if (!category) continue;
 
     const title = cleanTitle(lead.title);
@@ -366,7 +384,7 @@ export function buildCatalog(items, stockMap, opts = {}) {
 
     const desc = stripHtml(lead.description).slice(0, 700);
     const hasDesc = desc.length > 120;
-    const subCategory = subCategoryFor(category, title, lead.productType);
+    const subCategory = subOverride ?? subCategoryFor(category, title, lead.productType);
     const displayTitle =
       category === "verf"
         ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
