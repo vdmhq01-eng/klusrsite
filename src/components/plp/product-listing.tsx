@@ -72,14 +72,12 @@ interface Filters {
   brands: string[];
   priceBuckets: string[];
   badges: ProductBadge[];
-  inStockOnly: boolean;
 }
 
 const EMPTY_FILTERS: Filters = {
   brands: [],
   priceBuckets: [],
   badges: [],
-  inStockOnly: false,
 };
 
 /* --------------------------------------------------------------- component */
@@ -100,23 +98,29 @@ export function ProductListing({
   const [sort, setSort] = useState<SortKey>("populair");
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  // Uitverkochte producten tonen we niet (geen voorraad in welke winkel dan ook).
+  const visibleProducts = useMemo(
+    () => products.filter((p) => totalStock(p) > 0),
+    [products],
+  );
+
   // Brands present in this product set, alphabetically.
   const availableBrands = useMemo(
     () =>
-      Array.from(new Set(products.map((p) => p.brand))).sort((a, b) =>
+      Array.from(new Set(visibleProducts.map((p) => p.brand))).sort((a, b) =>
         a.localeCompare(b),
       ),
-    [products],
+    [visibleProducts],
   );
 
   // Only show badge facets that actually occur in the set.
   const availableBadges = useMemo(
-    () => BADGE_FILTERS.filter((b) => products.some((p) => p.badges?.includes(b))),
-    [products],
+    () => BADGE_FILTERS.filter((b) => visibleProducts.some((p) => p.badges?.includes(b))),
+    [visibleProducts],
   );
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
+    return visibleProducts.filter((p) => {
       if (filters.brands.length && !filters.brands.includes(p.brand)) return false;
 
       if (filters.priceBuckets.length) {
@@ -133,11 +137,9 @@ export function ProductListing({
         if (!hasBadge) return false;
       }
 
-      if (filters.inStockOnly && totalStock(p) <= 0) return false;
-
       return true;
     });
-  }, [products, filters]);
+  }, [visibleProducts, filters]);
 
   const sorted = useMemo(() => {
     // "populair"/"nieuwste" keep the curated source order (stable).
@@ -158,10 +160,7 @@ export function ProductListing({
   }, [filtered, sort]);
 
   const activeFilterCount =
-    filters.brands.length +
-    filters.priceBuckets.length +
-    filters.badges.length +
-    (filters.inStockOnly ? 1 : 0);
+    filters.brands.length + filters.priceBuckets.length + filters.badges.length;
 
   function toggleIn<T>(list: T[], value: T): T[] {
     return list.includes(value)
@@ -175,18 +174,16 @@ export function ProductListing({
     setFilters((f) => ({ ...f, priceBuckets: toggleIn(f.priceBuckets, id) }));
   const toggleBadge = (badge: ProductBadge) =>
     setFilters((f) => ({ ...f, badges: toggleIn(f.badges, badge) }));
-  const toggleInStock = () =>
-    setFilters((f) => ({ ...f, inStockOnly: !f.inStockOnly }));
   const clearFilters = () => setFilters(EMPTY_FILTERS);
 
   // Fire view_item_list once on mount (matches the ViewItemListTracker shape).
   const fired = useRef(false);
   useEffect(() => {
-    if (fired.current || products.length === 0) return;
+    if (fired.current || visibleProducts.length === 0) return;
     fired.current = true;
     trackEvent("view_item_list", {
       item_list_name: listName ?? "Productoverzicht",
-      items: products.slice(0, 12).map((p) =>
+      items: visibleProducts.slice(0, 12).map((p) =>
         toAnalyticsItem({
           id: p.id,
           title: p.title,
@@ -196,7 +193,7 @@ export function ProductListing({
         }),
       ),
     });
-  }, [products, listName]);
+  }, [visibleProducts, listName]);
 
   const filterPanel = (
     <FilterControls
@@ -206,7 +203,6 @@ export function ProductListing({
       onToggleBrand={toggleBrand}
       onToggleBucket={toggleBucket}
       onToggleBadge={toggleBadge}
-      onToggleInStock={toggleInStock}
     />
   );
 
@@ -215,7 +211,7 @@ export function ProductListing({
       <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-8">
         {/* Desktop sidebar */}
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-xl border border-border bg-card p-5 shadow-card">
+          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-card">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-bold">Filters</h2>
               {activeFilterCount > 0 && (
@@ -321,9 +317,6 @@ export function ProductListing({
                   {BADGE_LABELS[badge]}
                 </FilterChip>
               ))}
-              {filters.inStockOnly && (
-                <FilterChip onRemove={toggleInStock}>Op voorraad</FilterChip>
-              )}
             </div>
           )}
 
@@ -356,7 +349,6 @@ function FilterControls({
   onToggleBrand,
   onToggleBucket,
   onToggleBadge,
-  onToggleInStock,
 }: {
   availableBrands: string[];
   availableBadges: ProductBadge[];
@@ -364,21 +356,9 @@ function FilterControls({
   onToggleBrand: (brand: string) => void;
   onToggleBucket: (id: string) => void;
   onToggleBadge: (badge: ProductBadge) => void;
-  onToggleInStock: () => void;
 }) {
   return (
     <div className="flex flex-col gap-5">
-      <FilterGroup title="Beschikbaarheid">
-        <CheckRow
-          id="filter-instock"
-          checked={filters.inStockOnly}
-          onChange={onToggleInStock}
-          label="Alleen op voorraad"
-        />
-      </FilterGroup>
-
-      <Separator />
-
       <FilterGroup title="Prijs">
         {PRICE_BUCKETS.map((bucket) => (
           <CheckRow
