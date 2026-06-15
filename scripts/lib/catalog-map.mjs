@@ -157,9 +157,19 @@ function isColorWord(w = "") {
   );
 }
 
+// Histor-afkortingen voltooien zodat varianten samenvallen en titels leesbaar zijn.
+function expandPaintAbbrev(s = "") {
+  return s
+    .replace(/\bP\.?\s?F\.?\b/gi, "Perfect Finish")
+    .replace(/\bZG\b/gi, "Zijdeglans")
+    .replace(/\bHG\b/gi, "Hoogglans")
+    .replace(/\bZM\b/gi, "Zijdemat")
+    .replace(/\bHM\b/gi, "Halfmat");
+}
+
 /** Schone, klantvriendelijke verf-titel: zonder kleur, kleurcode, basis of maat. */
 function paintCoreTitle(title = "") {
-  const tokens = cleanProductTitle(title).split(/\s+/).filter(Boolean);
+  const tokens = cleanProductTitle(expandPaintAbbrev(title)).split(/\s+/).filter(Boolean);
   let cut = -1;
   tokens.forEach((w, i) => {
     if (PAINT_FINISHES.has(w.toLowerCase().replace(/[^a-zà-ÿ]/gi, ""))) cut = i;

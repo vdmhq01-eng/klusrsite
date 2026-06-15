@@ -148,10 +148,26 @@ async function main() {
     `  → ${snapshot.count} producten, ${withImg} met afbeelding, ${withStock} op voorraad`,
   );
 
+  // Rommelige titels (basis-/maatcodes, dubbele tokens) — als er te veel zijn,
+  // heeft de mapper de feed niet goed kunnen opschonen; dan de (schone) snapshot
+  // behouden i.p.v. live zetten.
+  const dirty = snapshot.products.filter(
+    (p) =>
+      /\b(basis|base|zn|ln|sb)\b/i.test(p.title) ||
+      /\d{2,4}\s+\d{2,4}/.test(p.title) ||
+      /\b([a-z]{3,})\s+\1\b/i.test(p.title),
+  ).length;
+  console.log(`  → ${dirty} rommelige titels`);
+
   // Gezondheidscheck: alleen overschrijven als de catalogus er goed uitziet.
-  if (snapshot.count < 500 || withImg < snapshot.count * 0.8 || withStock < 200) {
+  if (
+    snapshot.count < 500 ||
+    withImg < snapshot.count * 0.8 ||
+    withStock < 200 ||
+    dirty > snapshot.count * 0.05
+  ) {
     throw new Error(
-      `Catalogus ongezond (count=${snapshot.count}, img=${withImg}, voorraad=${withStock}) — snapshot behouden`,
+      `Catalogus ongezond (count=${snapshot.count}, img=${withImg}, voorraad=${withStock}, rommelig=${dirty}) — snapshot behouden`,
     );
   }
 
