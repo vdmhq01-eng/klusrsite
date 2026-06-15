@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
+import type { GlansVariant } from "@/lib/data/products";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "./star-rating";
@@ -35,7 +37,13 @@ const usps = [
   { icon: CreditCard, label: "Achteraf betalen mogelijk" },
 ];
 
-export function ProductBuybox({ product }: { product: Product }) {
+export function ProductBuybox({
+  product,
+  glansVariants = [],
+}: {
+  product: Product;
+  glansVariants?: GlansVariant[];
+}) {
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
   const [color, setColor] = useState<SelectedColor | undefined>();
   const [quantity, setQuantity] = useState(1);
@@ -237,6 +245,33 @@ export function ProductBuybox({ product }: { product: Product }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Glansgraad — andere glansvarianten van dezelfde verflijn */}
+      {glansVariants.length > 1 && (
+        <div>
+          <p className="mb-2 text-sm font-semibold">Glansgraad</p>
+          <div className="flex flex-wrap gap-2">
+            {glansVariants.map((g) =>
+              g.active ? (
+                <span
+                  key={g.id}
+                  className="min-w-[64px] rounded-md border border-primary bg-primary/5 px-3 py-2 text-center text-sm font-semibold text-primary ring-1 ring-primary"
+                >
+                  {g.label}
+                </span>
+              ) : (
+                <Link
+                  key={g.id}
+                  href={`/product/${g.slug}`}
+                  className="min-w-[64px] rounded-md border border-input bg-card px-3 py-2 text-center text-sm font-semibold transition-all hover:border-primary/40"
+                >
+                  {g.label}
+                </Link>
+              ),
+            )}
+          </div>
         </div>
       )}
 

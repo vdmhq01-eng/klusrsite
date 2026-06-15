@@ -5,6 +5,7 @@ import {
   allProductSlugs,
   getRelatedProducts,
   getFrequentlyBoughtTogether,
+  getGlansVariants,
 } from "@/lib/data/products";
 import { getCategory } from "@/lib/data/categories";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
@@ -58,6 +59,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const product = getProduct(params.slug);
   if (!product) notFound();
 
+  const glansVariants = getGlansVariants(product);
   const category = getCategory(product.category);
   const companions = getFrequentlyBoughtTogether(product);
   const alternatives = getRelatedProducts(product, 8).filter(
@@ -119,7 +121,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       {/* Main: gallery + buybox */}
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
         <ProductGallery images={product.images} title={product.title} badges={product.badges} />
-        <ProductBuybox product={product} />
+        <ProductBuybox product={product} glansVariants={glansVariants} />
       </div>
 
       {/* Tabs */}

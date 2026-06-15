@@ -1195,16 +1195,26 @@ function totalStock(p: Product): number {
 const ACCESSORY_CATEGORIES = ["gereedschap", "afbouw-fijnbouw"];
 
 /** Cheap in-stock add-ons used for "vaak vergeten" / "vaak samen gekocht". */
+const ACCESSORY_KEYWORDS =
+  /kwast|roller|verfrol|radiatorrol|afplaktape|afplak|afdek|verfbak|aftak|schuur|plamuurmes|verfmenger|spaan|\btape\b/i;
+
 export function getAccessorySuggestions(limit = 3, exclude: string[] = []): Product[] {
-  return products
-    .filter(
-      (p) =>
-        ACCESSORY_CATEGORIES.includes(p.category) &&
-        p.price < 30 &&
-        totalStock(p) > 0 &&
-        !exclude.includes(p.id),
-    )
-    .slice(0, limit);
+  const pool = products.filter(
+    (p) =>
+      ACCESSORY_CATEGORIES.includes(p.category) &&
+      p.price < 30 &&
+      totalStock(p) > 0 &&
+      !exclude.includes(p.id),
+  );
+  // Echte schilders-/klusbenodigdheden (kwast, roller, tape…) vooraan.
+  return pool
+    .map((p) => ({
+      p,
+      score: (ACCESSORY_KEYWORDS.test(p.title) ? 100 : 0) + Math.min(p.reviewCount, 200) / 200,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.p);
 }
 
 function getCompanionSuggestions(product: Product, limit: number): Product[] {
@@ -1230,6 +1240,74 @@ export function getBestsellers(limit = 8): Product[] {
   return products
     .filter((p) => p.badges?.includes("BESTSELLER") || p.rating >= 4.6)
     .slice(0, limit);
+}
+
+/* ----------------------------------------------- glansgraad-varianten (verf) */
+
+const GLANS_LEVELS: { id: string; label: string; re: RegExp }[] = [
+  { id: "mat", label: "Mat", re: /\bmat\b/i },
+  { id: "zijdemat", label: "Zijdemat", re: /zijdemat/i },
+  { id: "halfmat", label: "Halfmat", re: /halfmat/i },
+  { id: "satin", label: "Satin", re: /\bsatin\b/i },
+  { id: "zijdeglans", label: "Zijdeglans", re: /zijdeglans/i },
+  { id: "hoogglans", label: "Hoogglans", re: /hoogglans/i },
+  { id: "glans", label: "Glans", re: /\bglans\b/i },
+];
+const GLANS_SPECIFICITY = [
+  "zijdemat",
+  "zijdeglans",
+  "halfmat",
+  "hoogglans",
+  "satin",
+  "mat",
+  "glans",
+];
+
+function glansOf(title: string): { id: string; label: string; re: RegExp } | null {
+  for (const id of GLANS_SPECIFICITY) {
+    const def = GLANS_LEVELS.find((g) => g.id === id)!;
+    if (def.re.test(title)) return def;
+  }
+  return null;
+}
+
+function paintLineKey(p: Product): string {
+  const g = glansOf(p.title);
+  const base = (g ? p.title.replace(g.re, " ") : p.title)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${(p.brand || "").toLowerCase()}|${base}`;
+}
+
+export interface GlansVariant {
+  id: string;
+  label: string;
+  slug: string;
+  active: boolean;
+}
+
+/** Dezelfde verflijn in andere glansgraden (om als opties op de PDP te tonen). */
+export function getGlansVariants(product: Product): GlansVariant[] {
+  if (!product.colorMatchable || !glansOf(product.title)) return [];
+  const key = paintLineKey(product);
+  const byGlans = new Map<string, GlansVariant>();
+  for (const p of products) {
+    if (!p.colorMatchable) continue;
+    const g = glansOf(p.title);
+    if (!g || paintLineKey(p) !== key) continue;
+    if (!byGlans.has(g.id)) {
+      byGlans.set(g.id, {
+        id: g.id,
+        label: g.label,
+        slug: p.slug,
+        active: p.id === product.id,
+      });
+    }
+  }
+  if (byGlans.size < 2) return [];
+  return GLANS_LEVELS.filter((l) => byGlans.has(l.id)).map((l) => byGlans.get(l.id)!);
 }
 
 export function getActieProducts(limit = 8): Product[] {
