@@ -45,10 +45,17 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
   Channable‑credentials val je terug op de directe Tilroy‑feed
   (`npm run feed:tilroy`). De gegenereerde snapshot staat in
   `src/lib/data/feed-products.generated.json`.
+- **Sync op build**: `npm run build` ververst de catalogus automatisch uit
+  Channable (`scripts/feed-prebuild.mjs`, draait vóór `next build`). Is Channable
+  niet geconfigureerd of faalt de sync, dan bouwt de deploy door op de bestaande
+  snapshot — een feed‑sync breekt nooit de build. Activeren in productie: zet
+  `CHANNABLE_TOKEN`, `CHANNABLE_COMPANY_ID` **en** `CHANNABLE_PROJECT_ID` (of
+  `CHANNABLE_ITEMS_URL`) in de Vercel‑env.
 - **Orders** worden na succesvolle betaling in Channable "ingeschoten"
   (`src/lib/channable.ts` → `pushChannableOrder`), waarna Channable ze doorzet
   naar Tilroy voor fulfilment. De regels dragen het Tilroy‑artikel‑id (en bij
-  gemengde verf de kleurcode + basis) mee.
+  gemengde verf de kleurcode + basis) mee. Order‑push staat default aan; zet
+  `CHANNABLE_ORDERS_ENABLED=false` om hem tijdelijk te pauzeren (kill‑switch).
 - Endpoints/schema zijn volledig override‑baar via env
   (`CHANNABLE_ITEMS_URL` / `CHANNABLE_ORDERS_URL`) voor account‑specifieke paden.
 
