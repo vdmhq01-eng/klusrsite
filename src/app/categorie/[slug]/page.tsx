@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Tag } from "lucide-react";
 import { categories, getCategory } from "@/lib/data";
-import { getProductsByCategory } from "@/lib/data";
+import { getProductsByCategory, getSubCategories } from "@/lib/data";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
@@ -41,6 +41,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   if (!category) notFound();
 
   const products = getProductsByCategory(category.slug);
+  const subs = getSubCategories(category.slug);
   const isActies = category.slug === "acties";
 
   const breadcrumbItems = [
@@ -109,10 +110,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       )}
 
       {/* Subcategory chips */}
-      {category.subCategories && category.subCategories.length > 0 && (
+      {subs.length > 0 && (
         <section className="container-klusr">
           <div className="flex flex-wrap gap-2">
-            {category.subCategories.map((sub) => (
+            {subs.slice(0, 12).map((sub) => (
               <Link
                 key={sub.slug}
                 href={`/categorie/${category.slug}/${sub.slug}`}
@@ -147,10 +148,10 @@ export default function CategoryPage({ params }: CategoryPageProps) {
               gratis KLUSRPAS profiteer je altijd van extra voordeel op je hele
               klus.
             </p>
-            {category.subCategories && category.subCategories.length > 0 && (
+            {subs.length > 0 && (
               <p>
                 Bekijk gericht per categorie:{" "}
-                {category.subCategories.map((sub, i) => (
+                {subs.slice(0, 8).map((sub, i, arr) => (
                   <span key={sub.slug}>
                     <Link
                       href={`/categorie/${category.slug}/${sub.slug}`}
@@ -158,7 +159,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                     >
                       {sub.title}
                     </Link>
-                    {i < category.subCategories!.length - 1 ? ", " : "."}
+                    {i < arr.length - 1 ? ", " : "."}
                   </span>
                 ))}
               </p>

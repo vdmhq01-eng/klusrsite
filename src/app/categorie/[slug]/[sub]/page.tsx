@@ -6,6 +6,8 @@ import {
   getCategory,
   getProductsByCategory,
   getProductsBySubCategory,
+  getSubCategories,
+  getSubCategory,
 } from "@/lib/data";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
@@ -17,13 +19,13 @@ interface SubPageProps {
 
 export function generateStaticParams() {
   return categories.flatMap((c) =>
-    (c.subCategories ?? []).map((sub) => ({ slug: c.slug, sub: sub.slug })),
+    getSubCategories(c.slug).map((sub) => ({ slug: c.slug, sub: sub.slug })),
   );
 }
 
 function resolve(params: SubPageProps["params"]) {
   const category = getCategory(params.slug);
-  const subCategory = category?.subCategories?.find((s) => s.slug === params.sub);
+  const subCategory = getSubCategory(params.slug, params.sub);
   return { category, subCategory };
 }
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Tag } from "lucide-react";
 import { navCategories } from "@/lib/data/categories";
+import { getSubCategories } from "@/lib/data/products";
 import { cn } from "@/lib/utils";
 
 export function MainNav() {
@@ -15,7 +16,8 @@ export function MainNav() {
         <ul className="flex items-center gap-1">
           {navCategories.map((cat) => {
             const isActie = cat.slug === "acties";
-            const hasSub = (cat.subCategories?.length ?? 0) > 0;
+            const subs = getSubCategories(cat.slug);
+            const hasSub = subs.length > 0;
             return (
               <li
                 key={cat.slug}
@@ -38,7 +40,7 @@ export function MainNav() {
                 {hasSub && openSlug === cat.slug && (
                   <div className="absolute left-0 top-full z-50 w-64 overflow-hidden rounded-b-lg border border-border bg-card shadow-card-hover">
                     <ul className="py-1">
-                      {cat.subCategories!.map((sub) => (
+                      {subs.slice(0, 8).map((sub) => (
                         <li key={sub.slug}>
                           <Link
                             href={`/categorie/${cat.slug}/${sub.slug}`}

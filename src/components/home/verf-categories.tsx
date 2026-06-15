@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCategory } from "@/lib/data/categories";
+import { getSubCategories } from "@/lib/data/products";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { CategoryIcon } from "@/components/shared/category-icon";
 
@@ -14,8 +14,8 @@ const subIcons: Record<string, string> = {
 };
 
 export function VerfCategories() {
-  const verf = getCategory("verf");
-  if (!verf?.subCategories) return null;
+  const subs = getSubCategories("verf");
+  if (subs.length === 0) return null;
 
   return (
     <section className="container-klusr">
@@ -25,7 +25,7 @@ export function VerfCategories() {
         href="/categorie/verf"
       />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-        {verf.subCategories.map((sub) => (
+        {subs.slice(0, 7).map((sub) => (
           <Link
             key={sub.slug}
             href={`/categorie/verf/${sub.slug}`}

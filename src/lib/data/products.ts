@@ -1079,6 +1079,71 @@ export function getProductsBySubCategory(sub: string): Product[] {
   return products.filter((p) => p.subCategory === sub);
 }
 
+/* ------------------------------------------------- subcategorieën (afgeleid) */
+
+// Nette titels voor de ruwe feed-slugs; anders een prettify-fallback.
+const SUB_TITLE_FIXUPS: Record<string, string> = {
+  "schildersger-en-schuurpapier": "Schildersgereedschap & schuurpapier",
+  "acc-elektrisch-gereedschap": "Accessoires elektrisch gereedschap",
+  "elektrisch-gereedschap": "Elektrisch gereedschap",
+  "ijzerwaren-hang-en-sluitwerk": "Hang- & sluitwerk",
+  "verlengkabels-en-tafelcontactdozen": "Verlengkabels & contactdozen",
+  "lijmen-kitten-en-vulmiddelen": "Lijmen, kitten & vulmiddelen",
+  "interbosch-aanhangw-en-auto": "Aanhangwagen & auto",
+  "interbosch-gereedschap": "Gereedschap",
+  "lichtbronnen-en-zaklampen": "Lichtbronnen & zaklampen",
+  "hand-tuingereedschap": "Tuingereedschap",
+  "overig-electra": "Overig elektra",
+  "overige-ijzerwaren": "Overige ijzerwaren",
+  "overige-bouwmaterialen": "Overige bouwmaterialen",
+  "alabastine-toebehoren": "Toebehoren",
+  "bouwemmers-en-speciekuipen": "Emmers & speciekuipen",
+  "zelfklevende-artikelen": "Zelfklevende artikelen",
+  "fitex-diversen": "Diversen",
+  "fitex-non-paint": "Diversen",
+};
+
+function prettySubTitle(slug: string): string {
+  if (SUB_TITLE_FIXUPS[slug]) return SUB_TITLE_FIXUPS[slug];
+  const s = slug.replace(/-en-/g, " & ").replace(/-/g, " ").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : slug;
+}
+
+export interface SubCategory {
+  slug: string;
+  title: string;
+  count: number;
+}
+
+const subsByCategory: Record<string, SubCategory[]> = (() => {
+  const map = new Map<string, Map<string, number>>();
+  for (const p of products) {
+    if (!p.subCategory) continue;
+    if (!map.has(p.category)) map.set(p.category, new Map());
+    const m = map.get(p.category)!;
+    m.set(p.subCategory, (m.get(p.subCategory) ?? 0) + 1);
+  }
+  const out: Record<string, SubCategory[]> = {};
+  for (const [cat, m] of map) {
+    out[cat] = [...m.entries()]
+      .map(([slug, count]) => ({ slug, title: prettySubTitle(slug), count }))
+      .sort((a, b) => b.count - a.count);
+  }
+  return out;
+})();
+
+/** Subcategorieën afgeleid uit de échte catalogus (slug + nette titel + aantal). */
+export function getSubCategories(categorySlug: string): SubCategory[] {
+  return subsByCategory[categorySlug] ?? [];
+}
+
+export function getSubCategory(
+  categorySlug: string,
+  subSlug: string,
+): SubCategory | undefined {
+  return getSubCategories(categorySlug).find((s) => s.slug === subSlug);
+}
+
 export function getRelatedProducts(product: Product, limit = 4): Product[] {
   return products
     .filter(
