@@ -9,6 +9,7 @@ import {
   GoogleTagManager,
   GoogleTagManagerNoScript,
 } from "@/components/analytics/gtm";
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -63,11 +64,13 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans">
         <GoogleTagManagerNoScript />
-        <Header />
-        <main className="flex-1 pb-16 lg:pb-0">{children}</main>
-        <Footer />
-        <MobileBottomNav />
-        <GlobalOverlays />
+        <AuthProvider>
+          <Header />
+          <main className="flex-1 pb-16 lg:pb-0">{children}</main>
+          <Footer />
+          <MobileBottomNav />
+          <GlobalOverlays />
+        </AuthProvider>
       </body>
     </html>
   );

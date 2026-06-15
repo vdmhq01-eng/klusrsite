@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getSession } from "@/auth";
 import { FavoritesGrid } from "@/components/account/favorites-grid";
 
 export const metadata: Metadata = {
@@ -10,7 +12,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function FavorietenPage() {
+export default async function FavorietenPage() {
+  const session = await getSession();
+  if (!session) redirect("/inloggen");
   return (
     <div className="container-klusr py-8 sm:py-10">
       <div className="mb-6">

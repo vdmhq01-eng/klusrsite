@@ -6,6 +6,7 @@ import { SearchBar } from "./search-bar";
 import { CartButton } from "./cart-button";
 import { MainNav } from "./main-nav";
 import { MobileMenu } from "./mobile-menu";
+import { AccountNav } from "./account-nav";
 
 function HeaderAction({
   href,
@@ -44,7 +45,7 @@ export function Header() {
             <div className="ml-auto flex items-center gap-4 lg:gap-6">
               <HeaderAction href="/winkels" label="Winkels" icon={MapPin} />
               <HeaderAction href="/klantenservice" label="Klantenservice" icon={Headphones} />
-              <HeaderAction href="/account" label="Account" icon={User} />
+              <AccountNav />
               <CartButton />
             </div>
           </div>
