@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/accordion";
 import { StarRating } from "./star-rating";
 import { formatDate } from "@/lib/utils";
+import { getProductReviews } from "@/lib/reviews";
 
 export function ProductTabs({ product }: { product: Product }) {
+  const reviews = getProductReviews(product);
   return (
     <Tabs defaultValue="omschrijving" className="w-full">
       <TabsList className="w-full">
@@ -83,7 +85,7 @@ export function ProductTabs({ product }: { product: Product }) {
             </div>
           </div>
           <ul className="space-y-4">
-            {(product.reviews ?? []).map((r) => (
+            {reviews.map((r) => (
               <li key={r.id} className="border-b border-border pb-4 last:border-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -102,7 +104,7 @@ export function ProductTabs({ product }: { product: Product }) {
                 </p>
               </li>
             ))}
-            {(!product.reviews || product.reviews.length === 0) && (
+            {reviews.length === 0 && (
               <p className="text-sm text-muted-foreground">Nog geen reviews.</p>
             )}
           </ul>

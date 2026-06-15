@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
 import { ProductBadges } from "./product-badges";
 import type { ProductBadge } from "@/types";
 import { cn } from "@/lib/utils";
@@ -24,10 +24,9 @@ export function ProductGallery({ images, title, badges }: ProductGalleryProps) {
             <ProductBadges badges={badges} />
           </div>
         )}
-        <Image
+        <ProductImage
           src={safeImages[active]}
           alt={title}
-          fill
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover"
@@ -46,7 +45,7 @@ export function ProductGallery({ images, title, badges }: ProductGalleryProps) {
                 active === i ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/40",
               )}
             >
-              <Image src={img} alt="" fill sizes="80px" className="object-cover" />
+              <ProductImage src={img} alt={title} showLabel={false} sizes="80px" className="object-cover" />
             </button>
           ))}
         </div>

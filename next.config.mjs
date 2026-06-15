@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
+    // De feed-afbeeldingen komen van prosteps.cloudimg.io (al op 580x580) en de
+    // Vercel-image-optimizer haalt die niet betrouwbaar op → kapotte foto's.
+    // Onbewerkt laden lost dit op; de CDN doet de resizing zelf al.
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "picsum.photos" },

@@ -107,7 +107,7 @@ export function ColorPicker({
       )}
 
       {/* Swatch grid */}
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+      <div className="grid max-h-[44vh] grid-cols-4 gap-2 overflow-y-auto pr-1 sm:grid-cols-6">
         {visibleColors.map((color) => {
           const active = selected?.code === color.code;
           return (
