@@ -204,35 +204,125 @@ function unitFor(label = "") {
   return "st";
 }
 
-function buildHighlights(item, category) {
+// ---- Feature-feed helpers (rijke Tilroy-productattributen) ------------------
+const cap = (s = "") => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+// Interne / lege / "niet van toepassing"-waarden die we nooit tonen.
+const FEAT_SKIP_RE =
+  /^(nvt|n\.?\s?v\.?\s?t\.?|niet van toepassing|geen( keurmerk)?|onbekend|n\.?b\.?|niettonenweb|unisex\|?|0)$/i;
+
+function cleanFeat(v) {
+  if (v == null) return undefined;
+  const s = String(v).replace(/\s+/g, " ").trim();
+  if (!s || FEAT_SKIP_RE.test(s)) return undefined;
+  return s;
+}
+
+/** Eerste bruikbare feature-waarde (geen NVT/leeg) over de opgegeven keys. */
+function featVal(feat, ...keys) {
+  for (const k of keys) {
+    const v = cleanFeat(feat && feat[k]);
+    if (v) return v;
+  }
+  return undefined;
+}
+
+// Niet-informatieve "kleuren" die de feed als default invult (geen echte kleur).
+const KLEUR_SKIP_RE = /^(transparant|blank|kleurloos|neutraal|diversen|assorti|meerkleurig|gemengd)$/i;
+
+/** Echte kleur uit de feature-feed (filtert default/niet-informatieve waarden). */
+function featKleur(feat, fallback) {
+  const v = featVal(feat, "kleur", "kleurcode", "kleurfamilie");
+  if (v && !KLEUR_SKIP_RE.test(v)) return v;
+  if (fallback && !KLEUR_SKIP_RE.test(fallback)) return fallback;
+  return undefined;
+}
+
+/**
+ * Is deze verflijn een mengverf (op kleur te laten mengen)? De `kleurkiezer`-vlag
+ * uit de feature-feed is leidend; we kijken naar álle SKU's in de groep (kleur-/
+ * basisvarianten), want de mengvlag staat vaak alleen op de gekleurde basissen.
+ * - Eén variant met j/ja  → mengverf
+ * - Wel vlaggen, maar alleen n → niet mengen (bv. wit-only, trapverf, primer)
+ * - Geen join met de feature-feed → val terug op de heuristiek
+ */
+function groupIsMengverf(group, featuresById, fallback) {
+  if (!featuresById || featuresById.size === 0) return fallback;
+  let joined = false;
+  let sawFlag = false;
+  for (const sku of group) {
+    const feat = featuresById.get(String(sku.id));
+    if (!feat) continue;
+    joined = true;
+    const raw = feat.kleurkiezer;
+    if (raw == null) continue;
+    sawFlag = true;
+    if (/^(j|ja)/i.test(String(raw).trim())) return true;
+  }
+  if (sawFlag || joined) return false; // betrouwbare data: niet mengen
+  return fallback; // geen join (andere id's) → heuristiek
+}
+
+function buildHighlights(item, category, meng, feat = {}) {
   const out = [];
   if (item.brand && item.brand !== "Onbekend") out.push(`Merk: ${item.brand}`);
   if (category === "verf") {
-    // Mengverf: kleur en inhoud kiest de klant zelf — niet als vaste eigenschap tonen.
-    out.push("Op elke kleur te laten mengen");
-    out.push("Exacte kleurmatch, klaar voor gebruik");
+    if (meng) {
+      out.push("Op elke kleur te laten mengen");
+      out.push("Exacte kleurmatch, klaar voor gebruik");
+    } else {
+      const kleur = featKleur(feat, item.color);
+      if (kleur) out.push(`Kleur: ${kleur}`);
+    }
+    const glans = featVal(feat, "glansgraad") || paintGlansOf(item.title);
+    if (glans) out.push(`Glansgraad: ${glans}`);
+    const droog = featVal(feat, "pfc_droogtijd");
+    if (droog) out.push(`Droog na ${droog}`);
   } else {
-    if (item.color) out.push(`Kleur: ${item.color}`);
-    if (item.size) out.push(`Inhoud: ${item.size}`);
+    const kleur = featKleur(feat, item.color);
+    if (kleur) out.push(`Kleur: ${kleur}`);
+    const mat = featVal(feat, "materiaal");
+    if (mat) out.push(`Materiaal: ${mat}`);
+    else if (item.size) out.push(`Inhoud: ${item.size}`);
   }
   out.push("Professionele kwaliteit");
   return [...new Set(out)].slice(0, 4);
 }
 
-function paintBasisOf(title = "") {
-  const t = title.toLowerCase();
-  if (/\b(acryl|aqua|aquamat|watergedragen|wb)\b/.test(t)) return "Watergedragen (acryl)";
-  if (/\b(alkyd|terpentine|high\s?solid|hs|sb)\b/.test(t)) return "Terpentinebasis (alkyd)";
+function paintBasisOf(text = "") {
+  const t = text.toLowerCase();
+  if (/\b(acryl|aqua|aquamat|watergedragen|water\s?gedragen|op\s?water|wb)\b/.test(t))
+    return "Op waterbasis (acryl)";
+  if (/\b(alkyd|terpentine|high\s?solid|\bhs\b|oplosmiddel|whitespirit|white\s?spirit|sb)\b/.test(t))
+    return "Op terpentinebasis (alkyd)";
   return null;
 }
-function paintGeschiktVoor(title = "") {
-  const t = title.toLowerCase();
-  const buiten = /\b(buiten|gevel|exterior)\b/.test(t);
-  const binnen = /\b(binnen|interior|muur|plafond|latex|sausverf)\b/.test(t);
-  if (buiten && binnen) return "Binnen & buiten";
-  if (buiten) return "Buiten";
-  if (binnen) return "Binnen";
-  return null;
+/** Binnen/buiten + vochtige ruimtes (badkamer/keuken). */
+function paintToepassing(text = "") {
+  const t = text.toLowerCase();
+  const buiten = /\b(buiten|gevel|exterieur|exterior|weerbestendig|buitenhout|buitenwerk|tuin)\b/.test(t);
+  const binnen = /\b(binnen|interieur|interior|muur|wand|plafond|latex|sausverf|binnenhout|binnenwerk)\b/.test(t);
+  const vocht = /\b(badkamer|keuken|vochtige?\s?ruimten?|vochtbestendig|vocht|douche|natte?\s?ruimten?|schimmelwerend|anti-?schimmel)\b/.test(t);
+  let base;
+  if (buiten && binnen) base = "Binnen en buiten";
+  else if (buiten) base = "Buiten";
+  else if (binnen) base = "Binnen";
+  if (vocht) base = base ? `${base}, ook vochtige ruimtes (badkamer/keuken)` : "Ook vochtige ruimtes (badkamer/keuken)";
+  return base || null;
+}
+/** Geschikte ondergrond(en) — uit feature-data of de titel afgeleid. */
+function paintOndergrond(text = "", feat = {}) {
+  const real = featVal(feat, "materiaalvandoeloppervlak");
+  if (real) return real;
+  const t = text.toLowerCase();
+  const subs = [];
+  if (/\b(hout|mdf|multiplex|hardhout|plaatmateriaal|board)\b/.test(t)) subs.push("hout");
+  if (/\b(metaal|staal|ijzer|zink|gegalvaniseerd|aluminium|gietijzer)\b/.test(t)) subs.push("metaal");
+  if (/\b(muur|muren|wand|beton|pleister|stuc|stucwerk|gips|gipsplaat|steen|metsel)\b/.test(t)) subs.push("muren");
+  if (/\b(kunststof|pvc|hpl|polyester)\b/.test(t)) subs.push("kunststof");
+  if (/\b(tegel|tegels)\b/.test(t)) subs.push("tegels");
+  if (!subs.length) return null;
+  return subs.map(cap).join(", ");
 }
 function paintGlansOf(title = "") {
   const t = title.toLowerCase();
@@ -253,71 +343,127 @@ const VERF_SOORT = {
   houtolie: "Houtolie",
 };
 
-/** Productgegevens, aangevuld met domeinkennis per categorie. */
-function buildSpecs(item, category) {
-  const items = [];
-  const t = item.title || "";
-  if (item.brand && item.brand !== "Onbekend") items.push({ label: "Merk", value: item.brand });
+// Specificatie-secties in vaste volgorde — lege secties vallen weg.
+const SPEC_GROUP_LABEL = {
+  algemeen: "Algemeen",
+  eigenschappen: "Eigenschappen",
+  verwerking: "Verwerking & droogtijd",
+  verpakking: "Verpakking",
+};
+const SPEC_GROUP_ORDER = ["algemeen", "eigenschappen", "verwerking", "verpakking"];
 
+/**
+ * Gestructureerde productgegevens, gevoed door de echte feature-feed en
+ * aangevuld met domeinkennis. Verdeeld over secties (Algemeen / Eigenschappen /
+ * Verwerking & droogtijd / Verpakking) zodat de PDP overzicht houdt.
+ */
+function buildSpecs(item, category, feat = {}, meng = false, extra = {}) {
+  const t = item.title || "";
+  const text = `${t} ${stripHtml(item.description || "")}`;
+  const sections = new Map();
+  const add = (group, label, value) => {
+    const v = cleanFeat(value);
+    if (!v) return;
+    if (!sections.has(group)) sections.set(group, []);
+    const arr = sections.get(group);
+    if (arr.some((x) => x.label === label)) return;
+    arr.push({ label, value: v });
+  };
+
+  // ---- Algemeen ----
   if (category === "verf") {
-    const soort = VERF_SOORT[mapVerfSub(t, item.productType)];
-    if (soort) items.push({ label: "Soort", value: soort });
-    const basis = paintBasisOf(t);
-    if (basis) items.push({ label: "Basis", value: basis });
-    const glans = paintGlansOf(t);
-    if (glans) items.push({ label: "Glansgraad", value: glans });
-    const gv = paintGeschiktVoor(t);
-    if (gv) items.push({ label: "Geschikt voor", value: gv });
-    items.push({ label: "Verwerking", value: "Kwast of roller" });
-    items.push({ label: "Dekkend vermogen", value: "ca. 8–12 m² per liter (indicatief)" });
-    items.push({
-      label: "Droog / overschilderbaar",
-      value:
-        basis && basis.includes("acryl")
-          ? "Stofdroog ~1 uur, overschilderbaar na ~4–6 uur"
-          : "Overschilderbaar na ~16–24 uur (indicatief)",
-    });
-    items.push({
-      label: "Reinigen gereedschap",
-      value:
-        basis && basis.includes("acryl")
-          ? "Met water"
-          : basis
-            ? "Met white spirit / terpentine"
-            : "Met water of white spirit",
-    });
-    items.push({ label: "Op kleur te mengen", value: "Ja, elke kleur" });
-  } else if (category === "ijzerwaren") {
-    const mat = /\b(rvs|inox)\b/i.test(t)
-      ? "RVS"
-      : /verzinkt|gegalvaniseerd|galva/i.test(t)
-        ? "Verzinkt"
-        : /messing/i.test(t)
-          ? "Messing"
-          : /vernikkeld/i.test(t)
-            ? "Vernikkeld"
-            : /\bstaal\b/i.test(t)
-              ? "Staal"
-              : null;
-    if (mat) items.push({ label: "Materiaal", value: mat });
-    if (item.size) items.push({ label: "Maat", value: item.size });
-  } else if (category === "verlichting") {
+    add("algemeen", "Soort", VERF_SOORT[mapVerfSub(t, item.productType)]);
+  }
+  if (item.brand && item.brand !== "Onbekend") add("algemeen", "Merk", item.brand);
+  if (category === "verf" && meng) add("algemeen", "Kleur", "Op elke gewenste kleur te laten mengen");
+  else add("algemeen", "Kleur", featKleur(feat, item.color));
+  add("algemeen", "Glansgraad", featVal(feat, "glansgraad") || paintGlansOf(t));
+
+  // ---- Eigenschappen ----
+  if (category === "verf") {
+    add("eigenschappen", "Basis", paintBasisOf(text));
+    add("eigenschappen", "Geschikt voor", paintToepassing(text));
+    add("eigenschappen", "Geschikt voor ondergrond", paintOndergrond(text, feat));
+  }
+  add("eigenschappen", "Materiaal", featVal(feat, "materiaal"));
+  add("eigenschappen", "Materiaal handgreep", featVal(feat, "materiaalhandgreep"));
+  add("eigenschappen", "Materiaal steel", featVal(feat, "materiaalsteel"));
+  add("eigenschappen", "Kwasthaar", featVal(feat, "typekwasthaar"));
+  add("eigenschappen", "Type kwast", featVal(feat, "typekwast-penseel"));
+  add("eigenschappen", "Korrel", featVal(feat, "korrel") || (t.match(/\bkorrel\s*[:.-]?\s*(\d{2,4})\b/i) || [])[1]);
+  add("eigenschappen", "Krasvast", featVal(feat, "krasvast"));
+  add("eigenschappen", "Hittebestendig", featVal(feat, "hittebestendig"));
+  add("eigenschappen", "Geurloos", featVal(feat, "geurloos"));
+  add("eigenschappen", "Kopvorm", featVal(feat, "kopvorm"));
+  add("eigenschappen", "Draadmaat", featVal(feat, "pfc_draadmaat"));
+  add("eigenschappen", "Maatsysteem", featVal(feat, "maatsysteem"));
+  // Verlichting
+  add("eigenschappen", "Lichtbron", featVal(feat, "lichtbron"));
+  add("eigenschappen", "Lichtkleur", featVal(feat, "kleurlicht"));
+  add("eigenschappen", "Kleurtemperatuur", featVal(feat, "kleurtemperatuur"));
+  add("eigenschappen", "IP-waarde", featVal(feat, "ipwaarde"));
+  add("eigenschappen", "Max. aansluitvermogen", featVal(feat, "maximaalaansluitvermogen"));
+  add("eigenschappen", "Lichtbron inbegrepen", featVal(feat, "inclusieflichtbron"));
+  // Verlichting-heuristiek wanneer de feed niets levert
+  if (category === "verlichting") {
     const fit = (t.match(/\b(e27|e14|gu10|g9|b22)\b/i) || [])[0];
-    if (fit) items.push({ label: "Fitting", value: fit.toUpperCase() });
-    if (/\bled\b/i.test(t)) items.push({ label: "Lichtbron", value: "LED" });
+    if (fit) add("eigenschappen", "Fitting", fit.toUpperCase());
+    if (!featVal(feat, "lichtbron") && /\bled\b/i.test(t)) add("eigenschappen", "Lichtbron", "LED");
     const w = (t.match(/\b(\d+(?:[.,]\d+)?)\s*w(att)?\b/i) || [])[1];
-    if (w) items.push({ label: "Vermogen", value: `${w} W` });
-    if (/warm\s*wit|2700k?/i.test(t)) items.push({ label: "Lichtkleur", value: "Warmwit" });
-    else if (/koel\s*wit|4000k?|neutraal/i.test(t)) items.push({ label: "Lichtkleur", value: "Koelwit" });
-    else if (/daglicht|6[45]00k?/i.test(t)) items.push({ label: "Lichtkleur", value: "Daglicht" });
-  } else {
-    if (item.color) items.push({ label: "Kleur", value: item.color });
-    if (item.size) items.push({ label: "Inhoud / maat", value: item.size });
+    if (w) add("eigenschappen", "Vermogen", `${w} W`);
+  }
+  add("eigenschappen", "Keurmerk", featVal(feat, "keurmerk"));
+
+  // ---- Verwerking & droogtijd ----
+  const droog = featVal(feat, "pfc_droogtijd");
+  add("verwerking", "Droogtijd", droog);
+  add("verwerking", "Kleefvrij na", featVal(feat, "kleefvrij"));
+  add("verwerking", "Huidvormingstijd", featVal(feat, "huidvormingstijd"));
+  if (category === "verf") {
+    const basis = paintBasisOf(text);
+    add("verwerking", "Verwerking", "Kwast, roller of spuit");
+    add(
+      "verwerking",
+      "Verdunnen / reinigen",
+      basis && basis.includes("water")
+        ? "Met water"
+        : basis
+          ? "Met white spirit / terpentine"
+          : "Met water of white spirit",
+    );
+    add("verwerking", "Dekkend vermogen", "ca. 8–12 m² per liter (indicatief)");
+    if (!droog) {
+      add(
+        "verwerking",
+        "Overschilderbaar",
+        basis && basis.includes("water") ? "Na ca. 4–6 uur (indicatief)" : "Na ca. 16–24 uur (indicatief)",
+      );
+    }
   }
 
-  if (item.gtin) items.push({ label: "EAN", value: item.gtin });
-  items.push({ label: "Conditie", value: "Nieuw" });
-  return [{ group: "Productgegevens", items }];
+  // ---- Verpakking ----
+  // Meerdere inhoudsmaten → "Verkrijgbaar in"; één maat alleen tonen bij verf
+  // (een echte inhoud); bij niet-verf staat de maat al in de variantkiezer.
+  if (extra.sizes && extra.sizes.length > 1) {
+    add("verpakking", "Verkrijgbaar in", extra.sizes.join(" · "));
+  } else if (category === "verf") {
+    const inh = cleanSizeLabel(item.size || "");
+    if (inh && inh !== "Standaard") add("verpakking", "Inhoud", inh);
+  }
+  const gewicht = featVal(feat, "gewicht");
+  if (gewicht && /[a-z]/i.test(gewicht)) add("verpakking", "Gewicht", gewicht);
+  const aantal = featVal(feat, "pfc_aantalstuksinverpakking");
+  if (aantal && aantal !== "1" && aantal !== "1 stuk") add("verpakking", "Aantal per verpakking", aantal);
+  add("verpakking", "Lengte op rol", featVal(feat, "lengteoprol"));
+  if (item.gtin) add("verpakking", "EAN", item.gtin);
+  add("verpakking", "Conditie", "Nieuw");
+
+  const out = [];
+  for (const key of SPEC_GROUP_ORDER) {
+    const items = sections.get(key);
+    if (items && items.length) out.push({ group: SPEC_GROUP_LABEL[key], items });
+  }
+  return out.length ? out : [{ group: "Productgegevens", items: [{ label: "Conditie", value: "Nieuw" }] }];
 }
 
 function synthReviews(seed, count, avg) {
@@ -394,6 +540,26 @@ function sizeSortKey(item) {
   return v ? parseFloat(v[1].replace(",", ".")) : 0;
 }
 
+/** Rangschik maatlabels oplopend op echte grootte (ml/L, gewicht, dan afmeting). */
+function sizeRank(label = "") {
+  const l = label.toLowerCase();
+  let m = l.match(/(\d+([.,]\d+)?)\s*(ml|cl|l|liter)\b/);
+  if (m) {
+    let v = parseFloat(m[1].replace(",", "."));
+    if (m[3] === "l" || m[3] === "liter") v *= 1000;
+    else if (m[3] === "cl") v *= 10;
+    return v;
+  }
+  m = l.match(/(\d+([.,]\d+)?)\s*(kg|gram|gr|g)\b/);
+  if (m) {
+    let v = parseFloat(m[1].replace(",", "."));
+    if (m[3] === "kg") v *= 1000;
+    return 1e6 + v;
+  }
+  m = l.match(/(\d+([.,]\d+)?)/);
+  return m ? 2e6 + parseFloat(m[1].replace(",", ".")) : 9e9;
+}
+
 /** Maak een maatlabel leesbaar: "4,0 X 16 MM 200 ST" → "4,0 x 16 mm · 200 st". */
 function cleanSizeLabel(label = "") {
   let s = label.replace(/\s+/g, " ").trim();
@@ -411,7 +577,7 @@ function cleanSizeLabel(label = "") {
  * @returns snapshot-object { generatedAt, source, count, countsByCategory, products }
  */
 export function buildCatalog(items, stockMap, opts = {}) {
-  const { source = "feed", maxPerCategory = 100000, maxTotal = 100000 } = opts;
+  const { source = "feed", maxPerCategory = 100000, maxTotal = 100000, featuresById = null } = opts;
 
   // Groepeer items die hetzelfde product in een ander formaat zijn (bv.
   // schroeven in tientallen maten) tot één product met maatvarianten.
@@ -487,12 +653,20 @@ export function buildCatalog(items, stockMap, opts = {}) {
         ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
         : dedupeWords(cleanProductTitle(lead.title)) || title;
 
+    // Rijke productattributen uit de feature-feed (per lead-SKU) + mengvlag (over
+    // de hele groep, want die staat vaak alleen op de gekleurde basissen).
+    const feat = (featuresById && featuresById.get(String(lead.id))) || {};
+    const meng = category === "verf" && groupIsMengverf(group, featuresById, category === "verf");
+    const sizeLabels = [...new Set(variants.map((v) => v.label).filter((l) => l && l !== "Standaard"))].sort(
+      (a, b) => sizeRank(a) - sizeRank(b),
+    );
+
     products.push({
       id: `tilroy-${lead.id}`,
       title: displayTitle,
       slug: `${slugify(displayTitle)}-${lead.id}`,
       brand: lead.brand || "Onbekend",
-      highlights: buildHighlights(lead, category),
+      highlights: buildHighlights(lead, category, meng, feat),
       description:
         desc ||
         `${title} van ${lead.brand}. Professionele kwaliteit, verkrijgbaar bij KLUSR. Vraag in de winkel naar advies van onze ex-schilders.`,
@@ -505,11 +679,11 @@ export function buildCatalog(items, stockMap, opts = {}) {
       rating,
       reviewCount,
       reviews: synthReviews(groupId, 4, rating),
-      specifications: buildSpecs(lead, category),
+      specifications: buildSpecs(lead, category, feat, meng, { sizes: sizeLabels }),
       variants,
       stockByStore: stockByStore(leadStock?.perStore),
       frequentlyBoughtTogether: [],
-      colorMatchable: category === "verf",
+      colorMatchable: meng,
       aiGeneratedContentStatus: hasDesc ? "complete" : "missing",
       contentFlags: {
         description: hasDesc ? "complete" : "missing",

@@ -17,6 +17,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { buildCatalog, decodeEntities } from "./lib/catalog-map.mjs";
+import { loadFeatures } from "./lib/feature-feed.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
@@ -138,7 +139,8 @@ async function main() {
     .filter((i) => i.id && i.title && i.price > 0 && i.image);
   const stock = buildStock(items);
 
-  const snapshot = buildCatalog(items, stock, { source: "channable-feed" });
+  const featuresById = await loadFeatures();
+  const snapshot = buildCatalog(items, stock, { source: "channable-feed", featuresById });
 
   const withImg = snapshot.products.filter((p) => p.images?.length).length;
   const withStock = snapshot.products.filter(

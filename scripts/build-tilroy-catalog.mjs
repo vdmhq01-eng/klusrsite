@@ -12,6 +12,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { buildCatalog, decodeEntities } from "./lib/catalog-map.mjs";
+import { loadFeatures } from "./lib/feature-feed.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
@@ -85,7 +86,8 @@ async function main() {
   const stock = parseStock(csv);
   console.log(`  ${items.length} feed-items, ${stock.size} stock-rijen`);
 
-  const snapshot = buildCatalog(items, stock, { source: FEED_URL });
+  const featuresById = await loadFeatures();
+  const snapshot = buildCatalog(items, stock, { source: FEED_URL, featuresById });
   writeFileSync(OUT, JSON.stringify(snapshot, null, 2));
   console.log(`✓ ${snapshot.count} producten → ${OUT}`);
   console.log("  per categorie:", snapshot.countsByCategory);
