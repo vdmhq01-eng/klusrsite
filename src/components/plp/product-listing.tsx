@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, Star, X } from "lucide-react";
 import type { Product, ProductBadge } from "@/types";
 import { ProductGrid } from "@/components/product/product-grid";
 import { Button } from "@/components/ui/button";
@@ -63,22 +63,68 @@ const BADGE_LABELS: Record<ProductBadge, string> = {
   BUNDEL: "Voordeelbundel",
 };
 
+const RATING_BUCKETS = [
+  { min: 4, label: "4 sterren & hoger" },
+  { min: 4.5, label: "4,5 sterren & hoger" },
+];
+
+// Merk-waarden die geen echt merk zijn → niet als facet tonen.
+const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
+
 /** Total stock across all stores for a product. */
 function totalStock(product: Product): number {
   return product.stockByStore.reduce((sum, s) => sum + s.quantity, 0);
 }
 
+function prettySub(slug: string): string {
+  const s = slug.replace(/-/g, " ").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : slug;
+}
+
+/** Genormaliseerd inhoud-label (alleen volume: ml/cl/l) of null. */
+function volumeLabel(label: string): string | null {
+  const m = label.toLowerCase().match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|l|liter)\b/);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(",", "."));
+  const ml = m[2] === "ml" ? n : m[2] === "cl" ? n * 10 : n * 1000;
+  if (ml < 1000) return `${Math.round(ml)} ml`;
+  const l = ml / 1000;
+  return `${(Number.isInteger(l) ? String(l) : l.toFixed(1)).replace(".", ",")} L`;
+}
+
+function volumeMl(sizeLabel: string): number {
+  const m = sizeLabel.toLowerCase().match(/(\d+(?:[.,]\d+)?)\s*(ml|l)/);
+  if (!m) return 0;
+  const n = parseFloat(m[1].replace(",", "."));
+  return m[2] === "ml" ? n : n * 1000;
+}
+
+function productVolumes(p: Product): string[] {
+  const out = new Set<string>();
+  for (const v of p.variants) {
+    const vl = volumeLabel(v.label);
+    if (vl) out.add(vl);
+  }
+  return [...out];
+}
+
 interface Filters {
   brands: string[];
+  subCategories: string[];
   priceBuckets: string[];
+  sizes: string[];
   badges: ProductBadge[];
+  minRating: number;
   mengverf: boolean;
 }
 
 const EMPTY_FILTERS: Filters = {
   brands: [],
+  subCategories: [],
   priceBuckets: [],
+  sizes: [],
   badges: [],
+  minRating: 0,
   mengverf: false,
 };
 
@@ -106,14 +152,30 @@ export function ProductListing({
     [products],
   );
 
-  // Brands present in this product set, alphabetically.
+  // Merken (junk-waarden eruit), alfabetisch.
   const availableBrands = useMemo(
     () =>
-      Array.from(new Set(visibleProducts.map((p) => p.brand))).sort((a, b) =>
-        a.localeCompare(b),
-      ),
+      Array.from(new Set(visibleProducts.map((p) => p.brand)))
+        .filter((b) => b && !JUNK_BRANDS.has(b.toLowerCase()))
+        .sort((a, b) => a.localeCompare(b)),
     [visibleProducts],
   );
+
+  // Productsoorten (subcategorieën) in deze set.
+  const availableSubCategories = useMemo(
+    () =>
+      Array.from(
+        new Set(visibleProducts.map((p) => p.subCategory).filter((s): s is string => !!s)),
+      ).sort((a, b) => a.localeCompare(b)),
+    [visibleProducts],
+  );
+
+  // Inhoud-maten (volume) in deze set, klein → groot.
+  const availableSizes = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of visibleProducts) for (const s of productVolumes(p)) set.add(s);
+    return [...set].sort((a, b) => volumeMl(a) - volumeMl(b));
+  }, [visibleProducts]);
 
   // Only show badge facets that actually occur in the set.
   const availableBadges = useMemo(
@@ -130,6 +192,17 @@ export function ProductListing({
     return visibleProducts.filter((p) => {
       if (filters.mengverf && !p.colorMatchable) return false;
       if (filters.brands.length && !filters.brands.includes(p.brand)) return false;
+      if (
+        filters.subCategories.length &&
+        !(p.subCategory && filters.subCategories.includes(p.subCategory))
+      )
+        return false;
+      if (filters.minRating > 0 && p.rating < filters.minRating) return false;
+
+      if (filters.sizes.length) {
+        const vols = productVolumes(p);
+        if (!filters.sizes.some((s) => vols.includes(s))) return false;
+      }
 
       if (filters.priceBuckets.length) {
         const inBucket = filters.priceBuckets.some((id) => {
@@ -169,8 +242,11 @@ export function ProductListing({
 
   const activeFilterCount =
     filters.brands.length +
+    filters.subCategories.length +
     filters.priceBuckets.length +
+    filters.sizes.length +
     filters.badges.length +
+    (filters.minRating > 0 ? 1 : 0) +
     (filters.mengverf ? 1 : 0);
 
   function toggleIn<T>(list: T[], value: T): T[] {
@@ -181,10 +257,16 @@ export function ProductListing({
 
   const toggleBrand = (brand: string) =>
     setFilters((f) => ({ ...f, brands: toggleIn(f.brands, brand) }));
+  const toggleSub = (slug: string) =>
+    setFilters((f) => ({ ...f, subCategories: toggleIn(f.subCategories, slug) }));
+  const toggleSize = (size: string) =>
+    setFilters((f) => ({ ...f, sizes: toggleIn(f.sizes, size) }));
   const toggleBucket = (id: string) =>
     setFilters((f) => ({ ...f, priceBuckets: toggleIn(f.priceBuckets, id) }));
   const toggleBadge = (badge: ProductBadge) =>
     setFilters((f) => ({ ...f, badges: toggleIn(f.badges, badge) }));
+  const toggleRating = (min: number) =>
+    setFilters((f) => ({ ...f, minRating: f.minRating === min ? 0 : min }));
   const toggleMengverf = () => setFilters((f) => ({ ...f, mengverf: !f.mengverf }));
   const clearFilters = () => setFilters(EMPTY_FILTERS);
 
@@ -210,12 +292,17 @@ export function ProductListing({
   const filterPanel = (
     <FilterControls
       availableBrands={availableBrands}
+      availableSubCategories={availableSubCategories}
+      availableSizes={availableSizes}
       availableBadges={availableBadges}
       hasMengverf={hasMengverf}
       filters={filters}
       onToggleBrand={toggleBrand}
+      onToggleSub={toggleSub}
+      onToggleSize={toggleSize}
       onToggleBucket={toggleBucket}
       onToggleBadge={toggleBadge}
+      onToggleRating={toggleRating}
       onToggleMengverf={toggleMengverf}
     />
   );
@@ -316,9 +403,22 @@ export function ProductListing({
           {/* Active filter chips */}
           {activeFilterCount > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
+              {filters.mengverf && (
+                <FilterChip onRemove={toggleMengverf}>Op kleur te mengen</FilterChip>
+              )}
+              {filters.subCategories.map((slug) => (
+                <FilterChip key={`s-${slug}`} onRemove={() => toggleSub(slug)}>
+                  {prettySub(slug)}
+                </FilterChip>
+              ))}
               {filters.brands.map((brand) => (
                 <FilterChip key={`b-${brand}`} onRemove={() => toggleBrand(brand)}>
                   {brand}
+                </FilterChip>
+              ))}
+              {filters.sizes.map((size) => (
+                <FilterChip key={`sz-${size}`} onRemove={() => toggleSize(size)}>
+                  {size}
                 </FilterChip>
               ))}
               {filters.priceBuckets.map((id) => (
@@ -326,14 +426,16 @@ export function ProductListing({
                   {PRICE_BUCKETS.find((b) => b.id === id)?.label ?? id}
                 </FilterChip>
               ))}
+              {filters.minRating > 0 && (
+                <FilterChip onRemove={() => toggleRating(filters.minRating)}>
+                  {String(filters.minRating).replace(".", ",")}+ sterren
+                </FilterChip>
+              )}
               {filters.badges.map((badge) => (
                 <FilterChip key={`bd-${badge}`} onRemove={() => toggleBadge(badge)}>
                   {BADGE_LABELS[badge]}
                 </FilterChip>
               ))}
-              {filters.mengverf && (
-                <FilterChip onRemove={toggleMengverf}>Op kleur te mengen</FilterChip>
-              )}
             </div>
           )}
 
@@ -361,21 +463,31 @@ export function ProductListing({
 
 function FilterControls({
   availableBrands,
+  availableSubCategories,
+  availableSizes,
   availableBadges,
   hasMengverf,
   filters,
   onToggleBrand,
+  onToggleSub,
+  onToggleSize,
   onToggleBucket,
   onToggleBadge,
+  onToggleRating,
   onToggleMengverf,
 }: {
   availableBrands: string[];
+  availableSubCategories: string[];
+  availableSizes: string[];
   availableBadges: ProductBadge[];
   hasMengverf: boolean;
   filters: Filters;
   onToggleBrand: (brand: string) => void;
+  onToggleSub: (slug: string) => void;
+  onToggleSize: (size: string) => void;
   onToggleBucket: (id: string) => void;
   onToggleBadge: (badge: ProductBadge) => void;
+  onToggleRating: (min: number) => void;
   onToggleMengverf: () => void;
 }) {
   return (
@@ -393,6 +505,24 @@ function FilterControls({
           <Separator />
         </>
       )}
+
+      {availableSubCategories.length > 1 && (
+        <>
+          <FilterGroup title="Productsoort">
+            {availableSubCategories.map((slug) => (
+              <CheckRow
+                key={slug}
+                id={`filter-sub-${slug}`}
+                checked={filters.subCategories.includes(slug)}
+                onChange={() => onToggleSub(slug)}
+                label={prettySub(slug)}
+              />
+            ))}
+          </FilterGroup>
+          <Separator />
+        </>
+      )}
+
       <FilterGroup title="Prijs">
         {PRICE_BUCKETS.map((bucket) => (
           <CheckRow
@@ -401,6 +531,41 @@ function FilterControls({
             checked={filters.priceBuckets.includes(bucket.id)}
             onChange={() => onToggleBucket(bucket.id)}
             label={bucket.label}
+          />
+        ))}
+      </FilterGroup>
+
+      {availableSizes.length > 1 && (
+        <>
+          <Separator />
+          <FilterGroup title="Inhoud">
+            {availableSizes.map((size) => (
+              <CheckRow
+                key={size}
+                id={`filter-size-${size}`}
+                checked={filters.sizes.includes(size)}
+                onChange={() => onToggleSize(size)}
+                label={size}
+              />
+            ))}
+          </FilterGroup>
+        </>
+      )}
+
+      <Separator />
+      <FilterGroup title="Beoordeling">
+        {RATING_BUCKETS.map((bucket) => (
+          <CheckRow
+            key={bucket.min}
+            id={`filter-rating-${bucket.min}`}
+            checked={filters.minRating === bucket.min}
+            onChange={() => onToggleRating(bucket.min)}
+            label={
+              <span className="inline-flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 fill-klusr-action text-klusr-action" />
+                {bucket.label}
+              </span>
+            }
           />
         ))}
       </FilterGroup>
@@ -466,7 +631,7 @@ function CheckRow({
   id: string;
   checked: boolean;
   onChange: () => void;
-  label: string;
+  label: React.ReactNode;
 }) {
   return (
     <div className="flex items-center gap-2.5">

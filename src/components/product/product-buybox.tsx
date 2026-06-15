@@ -24,6 +24,7 @@ import { useFavorites } from "@/lib/store/favorites";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { baseStockByStore, paintBases } from "@/lib/paint-bases";
+import { isLightColor } from "@/lib/data/colors";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice, discountPercent, cn } from "@/lib/utils";
 
@@ -239,40 +240,60 @@ export function ProductBuybox({ product }: { product: Product }) {
         </div>
       )}
 
-      {/* Colour picker */}
+      {/* Mengverf — kleur kiezen + preview op de muur */}
       {product.colorMatchable && (
-        <div>
-          <p className="mb-2 text-sm font-semibold">Kleur</p>
-          <div className="flex items-center gap-3">
-            <ColorPickerDialog
-              value={color}
-              onConfirm={setColor}
-              trigger={
-                <Button variant={color ? "outline" : "default"} className="gap-2">
-                  <Palette className="h-4 w-4" />
-                  {color ? "Kleur wijzigen" : "Kleur kiezen"}
-                </Button>
-              }
-            />
-            {color && (
-              <div className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
-                <span
-                  className="h-7 w-7 rounded border border-black/10"
-                  style={{ backgroundColor: color.hex }}
-                />
-                <div className="text-xs">
-                  <p className="font-semibold">{color.name}</p>
-                  <p className="text-muted-foreground">
-                    {color.code}
-                    {color.base ? ` · ${color.base.label}` : ""}
-                  </p>
-                </div>
-              </div>
-            )}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Kleur</p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
+              <Palette className="h-3 w-3" />
+              Mengverf
+            </span>
           </div>
-          {!color && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Wij mengen de verf exact op de door jou gekozen kleur.
+
+          <ColorPickerDialog
+            value={color}
+            onConfirm={setColor}
+            trigger={
+              <Button variant={color ? "outline" : "default"} className="w-full gap-2 sm:w-auto">
+                <Palette className="h-4 w-4" />
+                {color ? "Kleur wijzigen" : "Kies je kleur"}
+              </Button>
+            }
+          />
+
+          {color ? (
+            <div className="overflow-hidden rounded-xl border border-border">
+              {/* Kleur op de muur */}
+              <div
+                className="relative flex aspect-[5/2] items-end p-4"
+                style={{ backgroundColor: color.hex }}
+              >
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent" />
+                <span
+                  className={cn(
+                    "relative rounded-md px-2 py-1 text-xs font-bold backdrop-blur",
+                    isLightColor(color.hex) ? "bg-black/5 text-black/80" : "bg-white/20 text-white",
+                  )}
+                >
+                  {color.name}
+                  {color.code ? ` · ${color.code}` : ""}
+                </span>
+              </div>
+              <div className="flex items-start gap-2 bg-secondary/40 p-3 text-xs text-muted-foreground">
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>
+                  Wordt{" "}
+                  <strong className="text-foreground">professioneel op kleur gemengd</strong>
+                  {color.base ? ` in ${color.base.label.toLowerCase()}` : ""}. Exacte match,
+                  klaar voor gebruik.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Elke kleur mogelijk — wij mengen de verf exact op jouw gekozen tint. Kies een
+              kleur om &apos;m op de muur te zien.
             </p>
           )}
         </div>
