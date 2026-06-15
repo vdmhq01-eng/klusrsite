@@ -48,12 +48,12 @@ export function KleurkiezerClient({ colorProducts }: KleurkiezerClientProps) {
       <section className="container-klusr">
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           {/* Picker */}
-          <Card className="p-5 sm:p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
-              <Palette className="h-5 w-5 text-primary" />
-              Kies een kleur
-            </h2>
-            <ColorPicker value={color} onSelect={setColor} />
+          <Card className="flex h-[68vh] min-h-[460px] flex-col overflow-hidden sm:h-[640px]">
+            <ColorPicker
+              value={color}
+              onSelect={setColor}
+              className="min-h-0 flex-1"
+            />
           </Card>
 
           {/* Room preview */}
