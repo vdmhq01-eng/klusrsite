@@ -28,6 +28,17 @@ export function isChannableConfigured(): boolean {
   return Boolean(TOKEN && COMPANY_ID);
 }
 
+/**
+ * Kill-switch voor het inschieten van orders. Default AAN. Zet
+ * CHANNABLE_ORDERS_ENABLED=false (of 0) om order-push tijdelijk te stoppen
+ * zonder de credentials te verwijderen — handig om de webshop te testen zonder
+ * dat test-orders in Tilroy belanden.
+ */
+export function areOrdersEnabled(): boolean {
+  const v = process.env.CHANNABLE_ORDERS_ENABLED;
+  return v !== "false" && v !== "0";
+}
+
 function authHeaders(): Record<string, string> {
   return {
     Authorization: `Bearer ${TOKEN}`,
@@ -199,6 +210,14 @@ export async function pushChannableOrder(order: Order): Promise<ChannableOrderRe
 
   if (!isChannableConfigured()) {
     console.info("[channable] demo mode — order would be pushed:", order.reference);
+    return { ok: true, demo: true };
+  }
+
+  if (!areOrdersEnabled()) {
+    console.info(
+      "[channable] order push disabled (CHANNABLE_ORDERS_ENABLED=false):",
+      order.reference,
+    );
     return { ok: true, demo: true };
   }
 
