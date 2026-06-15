@@ -7,6 +7,7 @@ import { navCategories } from "@/lib/data/categories";
 
 const serviceLinks = [
   { href: "/klantenservice", label: "Klantenservice" },
+  { href: "/faq", label: "Veelgestelde vragen" },
   { href: "/bestelstatus", label: "Bestelstatus volgen" },
   { href: "/klantenservice#verzending", label: "Verzending & retour" },
   { href: "/klantenservice#betalen", label: "Veilig betalen" },
@@ -106,6 +107,9 @@ export function Footer() {
             </Link>
             <Link href="/privacy" className="hover:text-white">
               Privacy
+            </Link>
+            <Link href="/cookiebeleid" className="hover:text-white">
+              Cookiebeleid
             </Link>
             <span className="hidden items-center gap-2 sm:flex">
               Veilig betalen via{" "}
