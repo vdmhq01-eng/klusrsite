@@ -12,7 +12,7 @@ export const klushulpTasks: KlushulpTask[] = [
     icon: "Roller",
     description:
       "Van voorbereiding tot de laatste laag — alles voor een strakke muur.",
-    relatedCategories: ["verf", "afbouw-fijnbouw"],
+    relatedCategories: ["verf"],
   },
   {
     id: "kozijn-schilderen",
@@ -20,7 +20,7 @@ export const klushulpTasks: KlushulpTask[] = [
     slug: "kozijn-schilderen",
     icon: "PaintbrushVertical",
     description: "Lak, grondverf en het juiste gereedschap voor strak houtwerk.",
-    relatedCategories: ["verf", "gereedschap"],
+    relatedCategories: ["verf"],
   },
   {
     id: "beitsen",
@@ -36,7 +36,7 @@ export const klushulpTasks: KlushulpTask[] = [
     slug: "vloer-leggen",
     icon: "LayoutPanelTop",
     description: "Laminaat, PVC, ondervloer en het juiste legmateriaal.",
-    relatedCategories: ["vloeren-raam", "gereedschap"],
+    relatedCategories: ["vloeren-raam"],
   },
   {
     id: "stopcontact-vervangen",
@@ -44,7 +44,7 @@ export const klushulpTasks: KlushulpTask[] = [
     slug: "stopcontact-vervangen",
     icon: "Plug",
     description: "Veilig je schakelmateriaal vervangen met heldere uitleg.",
-    relatedCategories: ["elektra", "gereedschap"],
+    relatedCategories: ["elektra"],
   },
   {
     id: "tuin-opknappen",
@@ -52,7 +52,7 @@ export const klushulpTasks: KlushulpTask[] = [
     slug: "tuin-opknappen",
     icon: "Sprout",
     description: "Schutting beitsen, bestrating reinigen en meer.",
-    relatedCategories: ["tuin", "verf"],
+    relatedCategories: ["tuin"],
   },
 ];
 
