@@ -20,8 +20,11 @@ import { SectionHeading } from "@/components/shared/section-heading";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
+// Prerender a representative subset at build time; the remaining product pages
+// render on demand (dynamicParams defaults to true). Keeps builds fast with the
+// full ~600-product Tilroy catalogus.
 export function generateStaticParams() {
-  return allProductSlugs.map((slug) => ({ slug }));
+  return allProductSlugs.slice(0, 60).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

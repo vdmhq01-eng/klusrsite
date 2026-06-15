@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/store/cart";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import { getProductById } from "@/lib/data/products";
+import type { Product } from "@/types";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice } from "@/lib/utils";
 
@@ -35,13 +36,21 @@ export function CartDrawer() {
   const subtotal = mounted ? cartSubtotal(items, kluspasActive) : 0;
   const savings = mounted ? kluspasSavings(items) : 0;
 
-  // "Vaak vergeten" — suggest add-ons not already in the cart.
-  const forgotten = mounted
-    ? ["frogtape-afplaktape", "schuurpapier-set", "anza-kwast-50"]
-        .map(getProductById)
-        .filter((p) => p && !items.some((i) => i.productId === p.id))
-        .slice(0, 2)
-    : [];
+  // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
+  // drawer opens, so the catalogus stays out of the global bundle.
+  const [forgotten, setForgotten] = useState<Product[]>([]);
+  useEffect(() => {
+    if (!open) return;
+    const exclude = items.map((i) => i.productId).join(",");
+    let active = true;
+    fetch(`/api/products?list=accessory&limit=2&exclude=${exclude}`)
+      .then((r) => r.json())
+      .then((d) => active && setForgotten(d.products ?? []))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [open, items]);
 
   return (
     <Sheet open={open} onOpenChange={setCartOpen}>

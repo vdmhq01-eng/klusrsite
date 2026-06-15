@@ -31,12 +31,26 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 ### Integraties
 | Integratie | Gebruik | Demo‑modus zonder key |
 | --- | --- | --- |
+| **Channable** | Productdata + voorraad **in**, orders **uit** → Tilroy | Catalogus uit gecommitte snapshot, orders gelogd |
 | **Claude AI** (`@anthropic-ai/sdk`) | Productadvies, content‑generatie, klushulp‑chat | Heuristische fallback‑antwoorden |
 | **Mollie** (`@mollie/api-client`) | Betalingen (iDEAL, Bancontact, Creditcard, Klarna) | Gesimuleerde betaling → bedanktpagina |
 | **Mailchimp** (`@mailchimp/mailchimp_marketing`) | Nieuwsbrief, abandoned cart | No‑op (logt naar console) |
 | **Google Tag Manager** | E‑commerce tracking | dataLayer werkt lokaal voor debugging |
 
 > De webshop draait **volledig zonder secrets** in demo‑modus, zodat je direct kunt ontwikkelen.
+
+#### Channable ↔ Tilroy
+- **Productdata & voorraad** komen via Channable binnen (`scripts/build-channable-catalog.mjs`,
+  `npm run feed:channable`) — Channable haalt de data uit Tilroy. Zonder
+  Channable‑credentials val je terug op de directe Tilroy‑feed
+  (`npm run feed:tilroy`). De gegenereerde snapshot staat in
+  `src/lib/data/feed-products.generated.json`.
+- **Orders** worden na succesvolle betaling in Channable "ingeschoten"
+  (`src/lib/channable.ts` → `pushChannableOrder`), waarna Channable ze doorzet
+  naar Tilroy voor fulfilment. De regels dragen het Tilroy‑artikel‑id (en bij
+  gemengde verf de kleurcode + basis) mee.
+- Endpoints/schema zijn volledig override‑baar via env
+  (`CHANNABLE_ITEMS_URL` / `CHANNABLE_ORDERS_URL`) voor account‑specifieke paden.
 
 ### Conversie & marketing
 Gratis‑verzending progressbar · Kluspasprijzen · schaarste ("Nog 4 op voorraad in
@@ -123,7 +137,25 @@ betaalinformatie) worden nooit automatisch aangepast — content gaat via het
 
 ---
 
-## 📦 Mock data
-De catalogus (~30 producten, 9 categorieën, 5 winkels, kleurcollecties, artikelen)
-staat in `src/lib/data`. Productafbeeldingen gebruiken `picsum.photos`
-placeholder‑URL's.
+## 📦 Productdata
+De catalogus (~600 producten over 8 categorieën) wordt gegenereerd uit de
+**Channable/Tilroy**‑feeds naar `src/lib/data/feed-products.generated.json`:
+
+```bash
+npm run feed:channable   # primair — productdata + voorraad via Channable
+npm run feed:tilroy      # fallback — directe Tilroy Google-feed + stock-CSV
+```
+
+Varianten worden gegroepeerd per `item_group_id`, de Tilroy‑taxonomie wordt op de
+KLUSR‑categorieën gemapt en voorraad komt per winkel uit de feed. Winkels,
+kleurcollecties en adviesartikelen staan als verzorgde dataset in `src/lib/data`.
+Client‑componenten halen losse productkaarten op via `/api/products` zodat de
+volledige catalogus niet in de browser‑bundle belandt.
+
+## 🎨 Kleurkiezer & basislogica
+Gemengde verf volgt het mengsysteem (`src/lib/paint-bases.ts`): de gekozen kleur
+bepaalt de **tinting‑basis** — lichte kleuren → *Basis Wit*, donkere kleuren →
+*Basis Deep*. De basis beïnvloedt de **prijs** (deep = duurder, meer pigment) én
+de **voorraad** (elke basis is een eigen blik). Kleur, basis, prijs en voorraad
+worden getoond op de productpagina en bewaard op het cart line item (en
+meegestuurd naar Channable/Tilroy).

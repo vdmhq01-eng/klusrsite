@@ -99,11 +99,22 @@ export interface Category {
   paint?: boolean;
 }
 
+/** The tinting base a colour is mixed in (light colours vs deep colours use a
+ * different base, which affects price and available stock). */
+export interface PaintBaseSelection {
+  id: "wit" | "medium" | "deep";
+  label: string;
+  /** Per-unit surcharge on top of the variant price (EUR). */
+  surcharge: number;
+}
+
 export interface SelectedColor {
   name: string;
   code: string; // e.g. RAL 9010
   hex: string;
   collection?: string;
+  /** Resolved tinting base for this colour. */
+  base?: PaintBaseSelection;
 }
 
 export interface CartItem {
@@ -187,6 +198,9 @@ export interface Order {
   kluspasSavings: number;
   createdAt: string;
   estimatedDelivery?: string;
+  /** Fulfilment via Channable → Tilroy. */
+  channableStatus?: "pending" | "sent" | "failed" | "demo";
+  channableOrderId?: string;
 }
 
 export interface KlushulpTask {

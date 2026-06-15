@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -28,11 +29,7 @@ import {
   linePrice,
 } from "@/lib/store/cart";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import {
-  getBestsellers,
-  getProductById,
-  getBundles,
-} from "@/lib/data/products";
+import type { Product } from "@/types";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice } from "@/lib/utils";
 
@@ -48,6 +45,27 @@ export function CartView() {
   } = useCart();
   const mounted = useMounted();
 
+  // Upsell + "vaak vergeten" come from the API so the catalogus isn't bundled.
+  const [upsell, setUpsell] = useState<Product[]>([]);
+  const [forgotten, setForgotten] = useState<Product[]>([]);
+  useEffect(() => {
+    const exclude = items.map((i) => i.productId).join(",");
+    let active = true;
+    Promise.all([
+      fetch(`/api/products?list=bestsellers&limit=8&exclude=${exclude}`).then((r) => r.json()),
+      fetch(`/api/products?list=accessory&limit=3&exclude=${exclude}`).then((r) => r.json()),
+    ])
+      .then(([up, fg]) => {
+        if (!active) return;
+        setUpsell(up.products ?? []);
+        setForgotten(fg.products ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [items]);
+
   if (!mounted) {
     return <div className="container-klusr py-16 text-center text-muted-foreground">Laden…</div>;
   }
@@ -57,18 +75,6 @@ export function CartView() {
   const savings = kluspasSavings(items);
   const shipping = shippingFor(subtotal);
   const total = subtotal + shipping;
-
-  // "Maak je klus compleet" — bestsellers/bundles not already in cart.
-  const inCart = new Set(items.map((i) => i.productId));
-  const upsell = [...getBundles(), ...getBestsellers(8)]
-    .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
-    .filter((p) => !inCart.has(p.id))
-    .slice(0, 8);
-
-  const forgotten = ["frogtape-afplaktape", "anza-kwast-50", "schuurpapier-set"]
-    .map(getProductById)
-    .filter((p) => p && !inCart.has(p.id))
-    .slice(0, 3);
 
   if (items.length === 0) {
     return (
@@ -177,7 +183,7 @@ export function CartView() {
               </p>
               <ul className="grid gap-2 sm:grid-cols-3">
                 {forgotten.map((p) => (
-                  <ForgottenItem key={p!.id} productId={p!.id} />
+                  <ForgottenItem key={p.id} product={p} />
                 ))}
               </ul>
             </div>
@@ -280,10 +286,8 @@ export function CartView() {
   );
 }
 
-function ForgottenItem({ productId }: { productId: string }) {
+function ForgottenItem({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
-  const product = getProductById(productId);
-  if (!product) return null;
   return (
     <li className="flex items-center gap-2 rounded-lg border border-border p-2">
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-white">

@@ -23,6 +23,7 @@ import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
+import { baseStockByStore, paintBases } from "@/lib/paint-bases";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice, discountPercent, cn } from "@/lib/utils";
 
@@ -46,8 +47,17 @@ export function ProductBuybox({ product }: { product: Product }) {
   const mounted = useMounted();
   const isFavorite = mounted && favoriteIds.includes(product.id);
 
-  const reference = variant.compareAtPrice ?? variant.price;
-  const showStrike = reference > variant.kluspasPrice;
+  // Tinting base (from the chosen colour) adds a surcharge and has its own stock.
+  const surcharge = color?.base?.surcharge ?? 0;
+  const effectiveKluspas = variant.kluspasPrice + surcharge;
+  const effectivePrice = variant.price + surcharge;
+  const effectiveStock =
+    color?.base && product.colorMatchable
+      ? baseStockByStore(variant.stockByStore, color.base.id)
+      : variant.stockByStore;
+
+  const reference = (variant.compareAtPrice ?? variant.price) + surcharge;
+  const showStrike = reference > effectiveKluspas;
 
   // "Voordeliger per liter" upsell — compare cheapest €/L variant.
   const perLiter = useMemo(() => {
@@ -140,7 +150,7 @@ export function ProductBuybox({ product }: { product: Product }) {
         )}
         <div className="flex items-end gap-3">
           <span className="text-4xl font-black leading-none text-primary">
-            {formatPrice(variant.kluspasPrice)}
+            {formatPrice(effectiveKluspas)}
           </span>
           <span className="mb-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase text-primary">
             Kluspasprijs
@@ -148,8 +158,14 @@ export function ProductBuybox({ product }: { product: Product }) {
         </div>
         {showStrike && (
           <p className="mt-1 text-sm font-semibold text-klusr-stock">
-            Je bespaart {formatPrice(reference - variant.kluspasPrice)} (
-            {discountPercent(reference, variant.kluspasPrice)}%)
+            Je bespaart {formatPrice(reference - effectiveKluspas)} (
+            {discountPercent(reference, effectiveKluspas)}%)
+          </p>
+        )}
+        {surcharge > 0 && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Incl. {color?.base?.label.toLowerCase()} (+{formatPrice(surcharge)} voor
+            donkere kleur)
           </p>
         )}
         {perLiter && (
@@ -164,13 +180,19 @@ export function ProductBuybox({ product }: { product: Product }) {
         )}
       </div>
 
-      {/* Stock + delivery */}
+      {/* Stock + delivery (base-specific when a colour is chosen) */}
       <StockStatus
-        stockByStore={variant.stockByStore}
+        stockByStore={effectiveStock}
         showScarcity
         showDelivery
         className="text-sm"
       />
+      {color?.base && (
+        <p className="-mt-2 text-xs text-muted-foreground">
+          Voorraad getoond voor <strong>{color.base.label}</strong> — elke basis
+          heeft een eigen voorraad.
+        </p>
+      )}
 
       <Separator />
 
@@ -222,7 +244,10 @@ export function ProductBuybox({ product }: { product: Product }) {
                 />
                 <div className="text-xs">
                   <p className="font-semibold">{color.name}</p>
-                  <p className="text-muted-foreground">{color.code}</p>
+                  <p className="text-muted-foreground">
+                    {color.code}
+                    {color.base ? ` · ${color.base.label}` : ""}
+                  </p>
                 </div>
               </div>
             )}
@@ -275,9 +300,11 @@ export function ProductBuybox({ product }: { product: Product }) {
 
       {/* Mobile sticky add-to-cart */}
       <MobileStickyBar
-        price={variant.kluspasPrice}
+        price={effectiveKluspas}
         onAdd={handleAdd}
-        label={variant.label}
+        label={
+          color?.base ? `${variant.label} · ${paintBases[color.base.id].short}` : variant.label
+        }
       />
     </div>
   );

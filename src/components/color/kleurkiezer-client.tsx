@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Palette, Sparkles, ArrowRight, Info } from "lucide-react";
 import type { Product, SelectedColor } from "@/types";
-import { defaultColor, isLightColor } from "@/lib/data";
+import { defaultColor, isLightColor } from "@/lib/data/colors";
 import { ColorPicker } from "@/components/color/color-picker";
 import { ProductGrid } from "@/components/product/product-grid";
 import { SectionHeading } from "@/components/shared/section-heading";

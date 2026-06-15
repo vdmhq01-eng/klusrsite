@@ -1,12 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Heart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product } from "@/types";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import { getProductById } from "@/lib/data";
 import { ProductGrid } from "@/components/product/product-grid";
 import { Button } from "@/components/ui/button";
 
@@ -14,14 +14,25 @@ export function FavoritesGrid() {
   const mounted = useMounted();
   const ids = useFavorites((s) => s.ids);
   const clear = useFavorites((s) => s.clear);
+  const [products, setProducts] = useState<Product[]>([]);
 
-  // Before mount we can't trust the persisted store (hydration safety),
-  // so render the empty state until the client has hydrated.
-  const products: Product[] = mounted
-    ? ids
-        .map((id) => getProductById(id))
-        .filter((p): p is Product => Boolean(p))
-    : [];
+  // Fetch product cards for the favourite ids from the API so the full
+  // catalogus is not bundled into the client.
+  useEffect(() => {
+    if (!mounted) return;
+    if (ids.length === 0) {
+      setProducts([]);
+      return;
+    }
+    let active = true;
+    fetch(`/api/products?ids=${ids.join(",")}`)
+      .then((r) => r.json())
+      .then((d) => active && setProducts(d.products ?? []))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [ids, mounted]);
 
   function handleClear() {
     clear();

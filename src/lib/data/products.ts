@@ -1,5 +1,14 @@
 import type { Product, ProductVariant, Review, StoreStock } from "@/types";
 import { stores } from "./stores";
+import feedData from "./feed-products.generated.json";
+
+/**
+ * Live productcatalogus uit de Tilroy/De Voordeelmarkt feeds (zie
+ * scripts/build-tilroy-catalog.mjs). Wanneer de snapshot leeg is, valt de
+ * webshop terug op de handmatige `curatedProducts` hieronder.
+ */
+const feedProducts = ((feedData as { products?: unknown[] }).products ??
+  []) as unknown as Product[];
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -55,7 +64,7 @@ function paintVariants(
 
 /* ----------------------------------------------------------------- products */
 
-export const products: Product[] = [
+const curatedProducts: Product[] = [
   /* ===== HERO / BINNENVERF ===== */
   {
     id: "sikkens-alpha-pure-mat",
@@ -1001,6 +1010,12 @@ export const products: Product[] = [
   },
 ];
 
+/**
+ * The active catalogus: real Tilroy feed products when available, otherwise the
+ * curated fallback set. Helpers below operate on this combined source.
+ */
+export const products: Product[] = feedProducts.length ? feedProducts : curatedProducts;
+
 /* ------------------------------------------------------------------ lookups */
 
 export function getProduct(slug: string): Product | undefined {
@@ -1032,10 +1047,42 @@ export function getRelatedProducts(product: Product, limit = 4): Product[] {
     .slice(0, limit);
 }
 
+function totalStock(p: Product): number {
+  return p.stockByStore.reduce((sum, s) => sum + s.quantity, 0);
+}
+
+const ACCESSORY_CATEGORIES = ["gereedschap", "afbouw-fijnbouw"];
+
+/** Cheap in-stock add-ons used for "vaak vergeten" / "vaak samen gekocht". */
+export function getAccessorySuggestions(limit = 3, exclude: string[] = []): Product[] {
+  return products
+    .filter(
+      (p) =>
+        ACCESSORY_CATEGORIES.includes(p.category) &&
+        p.price < 30 &&
+        totalStock(p) > 0 &&
+        !exclude.includes(p.id),
+    )
+    .slice(0, limit);
+}
+
+function getCompanionSuggestions(product: Product, limit: number): Product[] {
+  if (product.category === "verf") {
+    const acc = getAccessorySuggestions(limit, [product.id]);
+    if (acc.length) return acc;
+  }
+  return getRelatedProducts(product, limit + 2)
+    .filter((p) => p.id !== product.id)
+    .slice(0, limit);
+}
+
 export function getFrequentlyBoughtTogether(product: Product): Product[] {
-  return product.frequentlyBoughtTogether
+  const explicit = product.frequentlyBoughtTogether
     .map((id) => getProductById(id))
     .filter((p): p is Product => Boolean(p));
+  if (explicit.length > 0) return explicit;
+  // Feed-producten hebben geen expliciete combinaties → toon passende aanvulling.
+  return getCompanionSuggestions(product, 3);
 }
 
 export function getBestsellers(limit = 8): Product[] {

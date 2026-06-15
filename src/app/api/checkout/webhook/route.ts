@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPaymentStatus, mapMollieStatus } from "@/lib/payments";
 import { getOrder, getOrderByMollieId, updateOrderStatus } from "@/lib/store/orders";
+import { fulfillPaidOrder } from "@/lib/order-fulfillment";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,12 @@ export async function POST(req: Request) {
       (status.orderId ? getOrder(status.orderId) : undefined) ??
       getOrderByMollieId(paymentId);
     if (order) {
-      updateOrderStatus(order.id, mapMollieStatus(status.status));
+      const mapped = mapMollieStatus(status.status);
+      updateOrderStatus(order.id, mapped);
+      // Once paid, push the order to Channable → Tilroy for fulfilment.
+      if (mapped === "paid" || mapped === "authorized") {
+        await fulfillPaidOrder({ ...order, paymentStatus: mapped });
+      }
     }
 
     // Always return 200 so Mollie stops retrying.

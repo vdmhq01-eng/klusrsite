@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { Check, Search, Pipette } from "lucide-react";
 import type { SelectedColor } from "@/types";
 import { colorCollections, allColors, isLightColor } from "@/lib/data/colors";
+import { withBase } from "@/lib/paint-bases";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/tracking";
-import { cn } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
 
 interface ColorPickerProps {
   value?: SelectedColor;
@@ -39,9 +40,14 @@ export function ColorPicker({
   }, [query, activeCollection]);
 
   function pick(color: SelectedColor) {
-    setSelected(color);
-    onSelect(color);
-    trackEvent("color_selected", { color_code: color.code, color_name: color.name });
+    const enriched = withBase(color);
+    setSelected(enriched);
+    onSelect(enriched);
+    trackEvent("color_selected", {
+      color_code: enriched.code,
+      color_name: enriched.name,
+      paint_base: enriched.base?.id,
+    });
   }
 
   function applyCustom() {
@@ -157,6 +163,14 @@ export function ColorPicker({
                 {selected.code}
                 {selected.collection ? ` · ${selected.collection}` : ""}
               </p>
+              {selected.base && (
+                <p className="mt-0.5 text-xs font-medium text-primary">
+                  {selected.base.label}
+                  {selected.base.surcharge > 0
+                    ? ` · +${formatPrice(selected.base.surcharge)}`
+                    : " · inbegrepen"}
+                </p>
+              )}
             </div>
           </div>
           {onConfirm && (

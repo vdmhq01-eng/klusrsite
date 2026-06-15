@@ -83,6 +83,17 @@ export function updateOrderStatus(orderId: string, status: OrderStatus): Order |
   return order;
 }
 
+export function markChannable(
+  orderId: string,
+  status: NonNullable<Order["channableStatus"]>,
+  channableOrderId?: string,
+): void {
+  const order = orders.get(orderId);
+  if (!order) return;
+  order.channableStatus = status;
+  if (channableOrderId) order.channableOrderId = channableOrderId;
+}
+
 /** Seeded example orders for the bestelstatus lookup page. */
 export const seededOrders: Order[] = [
   {

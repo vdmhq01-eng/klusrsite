@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createOrder, setMolliePaymentId, updateOrderStatus } from "@/lib/store/orders";
 import { createPayment } from "@/lib/payments";
 import { triggerCartReminder } from "@/lib/mailchimp";
+import { fulfillPaidOrder } from "@/lib/order-fulfillment";
 
 export const runtime = "nodejs";
 
@@ -83,9 +84,11 @@ export async function POST(req: Request) {
       setMolliePaymentId(order.id, payment.molliePaymentId);
     }
 
-    // In demo mode there is no webhook, so mark as paid right away.
+    // In demo mode there is no webhook, so mark as paid and fulfil right away.
     if (payment.demo) {
       updateOrderStatus(order.id, "paid");
+      // Push the paid order to Channable → Tilroy (demo-safe).
+      void fulfillPaidOrder({ ...order, paymentStatus: "paid" }).catch(() => {});
     }
 
     // 3. Fire-and-forget abandoned-cart safety net (Mailchimp, demo-safe).

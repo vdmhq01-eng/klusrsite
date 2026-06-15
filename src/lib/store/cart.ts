@@ -67,6 +67,8 @@ export const useCart = create<CartState>()(
           return { ...existing, quantity: existing.quantity + quantity };
         }
 
+        // A deep/medium tinting base adds a per-unit surcharge to the line.
+        const surcharge = color?.base?.surcharge ?? 0;
         const item: CartItem = {
           key,
           productId: product.id,
@@ -77,8 +79,8 @@ export const useCart = create<CartState>()(
           variantLabel: variant.label,
           slug: product.slug,
           quantity,
-          price: variant.price,
-          kluspasPrice: variant.kluspasPrice,
+          price: variant.price + surcharge,
+          kluspasPrice: variant.kluspasPrice + surcharge,
           selectedColor: color,
         };
         set({ items: [...get().items, item] });

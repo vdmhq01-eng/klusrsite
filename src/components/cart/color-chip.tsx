@@ -21,6 +21,7 @@ export function ColorChip({
         style={{ backgroundColor: color.hex }}
       />
       {color.name} · {color.code}
+      {color.base ? ` · ${color.base.label}` : ""}
     </span>
   );
 }
