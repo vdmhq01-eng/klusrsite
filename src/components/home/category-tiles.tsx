@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { navCategories } from "@/lib/data/categories";
+import { BrandedVisual } from "@/components/shared/branded-visual";
 import { SectionHeading } from "@/components/shared/section-heading";
 
 export function CategoryTiles() {
@@ -17,13 +17,7 @@ export function CategoryTiles() {
             href={`/categorie/${cat.slug}`}
             className="group relative flex aspect-square w-32 shrink-0 flex-col justify-end overflow-hidden rounded-xl sm:w-auto"
           >
-            <Image
-              src={cat.image}
-              alt={cat.title}
-              fill
-              sizes="(max-width: 640px) 128px, 12vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+            <BrandedVisual seed={cat.slug} />
             <div className="absolute inset-0 bg-gradient-to-t from-klusr-black/85 to-transparent" />
             <span className="relative p-3 text-sm font-bold text-white">{cat.title}</span>
           </Link>

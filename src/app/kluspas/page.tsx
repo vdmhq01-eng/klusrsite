@@ -20,20 +20,20 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Kluspas — altijd de laagste prijs",
+  title: "KLUSRPAS — altijd de laagste prijs",
   description:
-    "Met de gratis KLUSR Kluspas betaal je altijd de laagste Kluspasprijs, profiteer je van exclusieve acties, krijg je gratis kleuradvies en spaar je klustegoed. Vraag 'm gratis aan.",
+    "Met de gratis KLUSR KLUSRPAS betaal je altijd de laagste KLUSRPAS-prijs, profiteer je van exclusieve acties, krijg je gratis kleuradvies en spaar je klustegoed. Vraag 'm gratis aan.",
   openGraph: {
-    title: "Kluspas | KLUSR",
+    title: "KLUSRPAS | KLUSR",
     description:
-      "Altijd de laagste prijs met de gratis Kluspas. Exclusieve acties, gratis kleuradvies en klustegoed sparen.",
+      "Altijd de laagste prijs met de gratis KLUSRPAS. Exclusieve acties, gratis kleuradvies en klustegoed sparen.",
   },
 };
 
 const benefits = [
   {
     icon: Tag,
-    title: "Altijd de laagste Kluspasprijs",
+    title: "Altijd de laagste KLUSRPAS-prijs",
     description:
       "Direct korting op het hele assortiment — online én in de winkel.",
   },
@@ -59,50 +59,50 @@ const benefits = [
 
 const steps = [
   {
-    title: "Vraag je Kluspas aan",
+    title: "Vraag je KLUSRPAS aan",
     description:
       "Vul je e-mailadres in — gratis, zonder verplichtingen en in een halve minuut geregeld.",
   },
   {
     title: "Ontvang je digitale pas",
     description:
-      "Je krijgt de digitale Kluspas direct in je mailbox. Bewaar 'm op je telefoon.",
+      "Je krijgt de digitale KLUSRPAS direct in je mailbox. Bewaar 'm op je telefoon.",
   },
   {
     title: "Profiteer direct",
     description:
-      "Scan of vul je pas in bij het afrekenen en betaal meteen de laagste Kluspasprijs.",
+      "Scan of vul je pas in bij het afrekenen en betaal meteen de laagste KLUSRPAS-prijs.",
   },
 ];
 
 const faqs = [
   {
-    question: "Wat kost de Kluspas?",
+    question: "Wat kost de KLUSRPAS?",
     answer:
-      "Helemaal niets. De Kluspas is en blijft gratis. Er zijn geen abonnementskosten of verborgen voorwaarden — je profiteert direct van alle voordelen.",
+      "Helemaal niets. De KLUSRPAS is en blijft gratis. Er zijn geen abonnementskosten of verborgen voorwaarden — je profiteert direct van alle voordelen.",
   },
   {
-    question: "Hoe vraag ik de Kluspas aan?",
+    question: "Hoe vraag ik de KLUSRPAS aan?",
     answer:
-      "Vul hierboven je e-mailadres in. Je ontvangt je digitale Kluspas binnen enkele minuten in je mailbox. Aanmelden kan ook aan de kassa in onze winkel.",
+      "Vul hierboven je e-mailadres in. Je ontvangt je digitale KLUSRPAS binnen enkele minuten in je mailbox. Aanmelden kan ook aan de kassa in onze winkel.",
   },
   {
-    question: "Kan ik de Kluspas online én in de winkel gebruiken?",
+    question: "Kan ik de KLUSRPAS online én in de winkel gebruiken?",
     answer:
-      "Ja. In de webshop vul je je gegevens in bij het afrekenen en zie je de Kluspasprijs automatisch. In de winkel laat je de digitale pas scannen of noem je je gegevens aan de kassa.",
+      "Ja. In de webshop vul je je gegevens in bij het afrekenen en zie je de KLUSRPAS-prijs automatisch. In de winkel laat je de digitale pas scannen of noem je je gegevens aan de kassa.",
   },
   {
     question: "Hoe werkt het sparen van klustegoed?",
     answer:
-      "Bij iedere aankoop met je Kluspas spaar je automatisch klustegoed. Dat tegoed kun je bij een volgende bestelling of winkelbezoek inzetten als korting.",
+      "Bij iedere aankoop met je KLUSRPAS spaar je automatisch klustegoed. Dat tegoed kun je bij een volgende bestelling of winkelbezoek inzetten als korting.",
   },
   {
     question: "Wat gebeurt er met mijn gegevens?",
     answer:
-      "We gebruiken je gegevens alleen om je Kluspasvoordelen, relevante acties en je klustegoed te beheren. Je kunt je voorkeuren altijd aanpassen of je afmelden.",
+      "We gebruiken je gegevens alleen om je KLUSRPAS-voordelen, relevante acties en je klustegoed te beheren. Je kunt je voorkeuren altijd aanpassen of je afmelden.",
   },
   {
-    question: "Kan ik de Kluspas opzeggen?",
+    question: "Kan ik de KLUSRPAS opzeggen?",
     answer:
       "Natuurlijk. Je kunt je op elk moment afmelden via de link in onze e-mails of door contact op te nemen met onze klantenservice. Aan de pas zitten geen verplichtingen.",
   },
@@ -121,18 +121,18 @@ export default function KluspasPage() {
                 GRATIS KLUSPAS
               </span>
               <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-balance sm:text-4xl lg:text-5xl">
-                Altijd de laagste prijs met de gratis Kluspas
+                Altijd de laagste prijs met de gratis KLUSRPAS
               </h1>
               <p className="mt-4 max-w-xl text-white/70">
                 Word vandaag nog pashouder en profiteer direct van
-                Kluspasprijzen op het hele assortiment, exclusieve acties,
+                KLUSRPAS-prijzen op het hele assortiment, exclusieve acties,
                 gratis kleuradvies en klustegoed dat je spaart bij elke
                 aankoop.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button asChild size="lg">
                   <Link href="#aanvragen">
-                    Vraag je Kluspas aan
+                    Vraag je KLUSRPAS aan
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -170,7 +170,7 @@ export default function KluspasPage() {
           De voordelen op een rij
         </h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          De Kluspas levert je bij elke klus voordeel op — groot of klein.
+          De KLUSRPAS levert je bij elke klus voordeel op — groot of klein.
         </p>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {benefits.map((benefit) => (
@@ -196,7 +196,7 @@ export default function KluspasPage() {
           Zo werkt het
         </h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          In drie simpele stappen profiteer je van alle Kluspasvoordelen.
+          In drie simpele stappen profiteer je van alle KLUSRPAS-voordelen.
         </p>
         <div className="mt-6 grid gap-5 sm:grid-cols-3">
           {steps.map((step, index) => (
@@ -226,17 +226,17 @@ export default function KluspasPage() {
                 GRATIS AANVRAGEN
               </span>
               <h2 className="mt-4 text-2xl font-black sm:text-3xl">
-                Ontvang je digitale Kluspas
+                Ontvang je digitale KLUSRPAS
               </h2>
               <p className="mt-2 max-w-md text-white/80">
                 Vul je e-mailadres in en je ontvangt je persoonlijke digitale
-                Kluspas direct in je mailbox. Gratis, voor altijd en zonder
+                KLUSRPAS direct in je mailbox. Gratis, voor altijd en zonder
                 verplichtingen.
               </p>
             </div>
             <div className="rounded-xl bg-klusr-black p-6">
               <p className="mb-3 text-sm font-semibold text-white">
-                Vraag je gratis Kluspas aan
+                Vraag je gratis KLUSRPAS aan
               </p>
               <NewsletterForm source="kluspas" />
             </div>

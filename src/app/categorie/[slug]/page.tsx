@@ -102,7 +102,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             </h2>
             <p className="max-w-2xl text-sm text-muted-foreground">
               Profiteer van onze lopende acties op verf, gereedschap en meer. Op
-              is op — met je Kluspas pak je bovendien altijd het meeste voordeel.
+              is op — met je KLUSRPAS pak je bovendien altijd het meeste voordeel.
             </p>
           </div>
         </section>
@@ -144,7 +144,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
               Bij KLUSR vind je {category.title.toLowerCase()} van topmerken,
               scherp geprijsd en met deskundig advies van onze ex-schilders.
               Voor 16:00 besteld is je bestelling morgen in huis, en met de
-              gratis Kluspas profiteer je altijd van extra voordeel op je hele
+              gratis KLUSRPAS profiteer je altijd van extra voordeel op je hele
               klus.
             </p>
             {category.subCategories && category.subCategories.length > 0 && (

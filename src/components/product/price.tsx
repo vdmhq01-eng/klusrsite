@@ -9,7 +9,7 @@ interface PriceProps {
 }
 
 /**
- * KLUSR price block: struck adviesprijs + prominent red Kluspasprijs.
+ * KLUSR price block: struck adviesprijs + prominent red KLUSRPAS-prijs.
  */
 export function Price({
   price,
@@ -18,9 +18,9 @@ export function Price({
   size = "md",
   className,
 }: PriceProps) {
-  const hasKluspas = kluspasPrice !== undefined && kluspasPrice < price;
+  const hasKLUSRPAS = kluspasPrice !== undefined && kluspasPrice < price;
   const reference = compareAtPrice && compareAtPrice > price ? compareAtPrice : price;
-  const finalPrice = hasKluspas ? kluspasPrice! : price;
+  const finalPrice = hasKLUSRPAS ? kluspasPrice! : price;
   const showStrike = reference > finalPrice;
 
   const mainSize = {
@@ -41,9 +41,9 @@ export function Price({
         <span className={cn("font-extrabold leading-none text-primary", mainSize)}>
           {formatPrice(finalPrice)}
         </span>
-        {hasKluspas && (
+        {hasKLUSRPAS && (
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary">
-            Kluspas
+            KLUSRPAS
           </span>
         )}
       </div>

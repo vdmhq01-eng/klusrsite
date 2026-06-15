@@ -3,7 +3,7 @@ import { Check, CreditCard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const benefits = [
-  "Altijd de scherpste Kluspasprijs",
+  "Altijd de scherpste KLUSRPAS-prijs",
   "Exclusieve acties en voorrang bij uitverkoop",
   "Gratis kleuradvies in de winkel",
   "Spaar voor klustegoed",
@@ -23,13 +23,13 @@ export function KluspasBanner() {
               Word lid en betaal altijd de laagste prijs
             </h2>
             <p className="mt-2 text-white/70">
-              Met de gratis Kluspas profiteer je direct van Kluspasprijzen op het hele
+              Met de gratis KLUSRPAS profiteer je direct van KLUSRPAS-prijzen op het hele
               assortiment en mis je geen enkele actie.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href="/kluspas">
-                  Vraag je Kluspas aan
+                  Vraag je KLUSRPAS aan
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>

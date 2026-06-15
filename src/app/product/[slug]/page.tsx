@@ -38,7 +38,7 @@ export async function generateMetadata({
   const title = `${product.brand} ${product.title}`;
   const description = `${product.title} — ${product.highlights
     .slice(0, 3)
-    .join(", ")}. Kluspasprijs vanaf €${product.kluspasPrice}. Advies van ex-schilders bij KLUSR.`;
+    .join(", ")}. KLUSRPAS-prijs vanaf €${product.kluspasPrice}. Advies van ex-schilders bij KLUSR.`;
 
   return {
     title,

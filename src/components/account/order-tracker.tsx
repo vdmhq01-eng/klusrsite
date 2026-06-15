@@ -235,7 +235,7 @@ function OrderDetail({ order }: { order: Order }) {
             />
             {order.kluspasSavings > 0 && (
               <Row
-                label="Kluspas-voordeel"
+                label="KLUSRPAS-voordeel"
                 value={`- ${formatPrice(order.kluspasSavings)}`}
                 accent
               />

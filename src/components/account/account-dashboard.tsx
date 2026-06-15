@@ -58,7 +58,7 @@ export function AccountDashboard() {
         <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
         <TabsTrigger value="bestellingen">Bestellingen</TabsTrigger>
         <TabsTrigger value="gegevens">Gegevens</TabsTrigger>
-        <TabsTrigger value="kluspas">Kluspas</TabsTrigger>
+        <TabsTrigger value="kluspas">KLUSRPAS</TabsTrigger>
       </TabsList>
 
       {/* ---------------------------------------------------------- Overzicht */}
@@ -70,7 +70,7 @@ export function AccountDashboard() {
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Fijn dat je er weer bent. Hier vind je je bestellingen, favorieten
-              en Kluspas-voordeel.
+              en KLUSRPAS-voordeel.
             </p>
           </div>
 
@@ -88,7 +88,7 @@ export function AccountDashboard() {
             />
             <StatTile
               icon={<PiggyBank className="h-5 w-5" />}
-              label="Kluspas-voordeel dit jaar"
+              label="KLUSRPAS-voordeel dit jaar"
               value={formatPrice(DEMO.jaarvoordeel)}
               accent
             />
@@ -116,7 +116,7 @@ export function AccountDashboard() {
             <ShortcutCard
               href="/kluspas"
               icon={<CreditCard className="h-5 w-5" />}
-              title="Kluspas-voordeel"
+              title="KLUSRPAS-voordeel"
               description="Ontdek al je ledenvoordelen"
             />
           </div>
@@ -175,7 +175,7 @@ export function AccountDashboard() {
         <ProfileForm />
       </TabsContent>
 
-      {/* ------------------------------------------------------------ Kluspas */}
+      {/* ------------------------------------------------------------ KLUSRPAS */}
       <TabsContent value="kluspas">
         <KluspasPanel />
       </TabsContent>
@@ -369,7 +369,7 @@ function Field({
 /* ------------------------------------------------------------------ kluspas */
 
 const KLUSPAS_BENEFITS = [
-  "Altijd de scherpe Kluspasprijs op het hele assortiment",
+  "Altijd de scherpe KLUSRPAS-prijs op het hele assortiment",
   "Spaar voor extra voordeel bij elke aankoop",
   "Gratis kleuradvies en kleur op maat laten mengen",
   "Exclusieve ledenacties en vroege toegang tot aanbiedingen",
@@ -378,7 +378,7 @@ const KLUSPAS_BENEFITS = [
 function KluspasPanel() {
   return (
     <div className="flex flex-col gap-6">
-      {/* Visual Kluspas card */}
+      {/* Visual KLUSRPAS card */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-klusr-black via-klusr-black to-klusr-red-dark p-6 text-white shadow-card-hover sm:p-8">
         <div className="klusr-stripes pointer-events-none absolute inset-0 opacity-50" />
         <div className="relative flex flex-col gap-8">
@@ -387,7 +387,7 @@ function KluspasPanel() {
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">
                 KLUSR
               </p>
-              <p className="mt-1 text-2xl font-black tracking-tight">Kluspas</p>
+              <p className="mt-1 text-2xl font-black tracking-tight">KLUSRPAS</p>
             </div>
             <CreditCard className="h-7 w-7 text-klusr-action" />
           </div>
@@ -414,7 +414,7 @@ function KluspasPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Jouw Kluspas-voordeel</CardTitle>
+          <CardTitle>Jouw KLUSRPAS-voordeel</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
@@ -453,7 +453,7 @@ function KluspasPanel() {
 
           <Button asChild variant="outline" className="w-full sm:w-fit">
             <Link href="/kluspas">
-              Meer over de Kluspas
+              Meer over de KLUSRPAS
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

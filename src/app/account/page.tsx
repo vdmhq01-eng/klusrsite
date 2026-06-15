@@ -6,7 +6,7 @@ import { AccountDashboard } from "@/components/account/account-dashboard";
 export const metadata: Metadata = {
   title: "Mijn account",
   description:
-    "Beheer je KLUSR-account: bekijk je bestellingen, favorieten, gegevens en Kluspas-voordeel op één plek.",
+    "Beheer je KLUSR-account: bekijk je bestellingen, favorieten, gegevens en KLUSRPAS-voordeel op één plek.",
   robots: { index: false, follow: false },
 };
 
@@ -26,7 +26,7 @@ export default function AccountPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
           Welkom in je persoonlijke omgeving. Bekijk je bestellingen, beheer je
-          favorieten en gegevens, en houd je Kluspas-voordeel in de gaten.
+          favorieten en gegevens, en houd je KLUSRPAS-voordeel in de gaten.
         </p>
       </div>
 

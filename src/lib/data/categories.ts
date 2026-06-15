@@ -150,7 +150,7 @@ export const categories: Category[] = [
     slug: "acties",
     image: "https://picsum.photos/seed/klusr-cat-acties/800/600",
     icon: "Tag",
-    description: "De scherpste aanbiedingen en Kluspas-voordeel.",
+    description: "De scherpste aanbiedingen en KLUSRPAS-voordeel.",
     seoTitle: "Acties & aanbiedingen | Klusvoordeel | KLUSR",
     seoDescription:
       "Profiteer van de scherpste acties bij KLUSR. Tijdelijke aanbiedingen op verf, gereedschap en meer.",

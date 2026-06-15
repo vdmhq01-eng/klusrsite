@@ -12,7 +12,7 @@ interface AddArgs {
   variant: ProductVariant;
   quantity?: number;
   color?: SelectedColor;
-  useKluspas?: boolean;
+  useKLUSRPAS?: boolean;
 }
 
 interface CartState {
@@ -28,7 +28,7 @@ interface CartState {
   setColor: (key: string, color: SelectedColor) => void;
   saveForLater: (key: string) => void;
   moveToCart: (key: string) => void;
-  toggleKluspas: () => void;
+  toggleKLUSRPAS: () => void;
   clear: () => void;
   pushRecentlyViewed: (productId: string) => void;
 }
@@ -37,7 +37,7 @@ function lineKey(productId: string, variantId: string, color?: SelectedColor): s
   return [productId, variantId, color?.code ?? "default"].join("__");
 }
 
-/** Unit price for a line, honouring the Kluspas toggle. */
+/** Unit price for a line, honouring the KLUSRPAS toggle. */
 export function linePrice(item: CartItem, kluspasActive: boolean): number {
   return kluspasActive ? item.kluspasPrice : item.price;
 }
@@ -50,12 +50,12 @@ export const useCart = create<CartState>()(
       kluspasActive: true,
       recentlyViewed: [],
 
-      addItem: ({ product, variant, quantity = 1, color, useKluspas }) => {
+      addItem: ({ product, variant, quantity = 1, color, useKLUSRPAS }) => {
         const key = lineKey(product.id, variant.id, color);
         const existing = get().items.find((i) => i.key === key);
 
-        if (useKluspas !== undefined) {
-          set({ kluspasActive: useKluspas });
+        if (useKLUSRPAS !== undefined) {
+          set({ kluspasActive: useKLUSRPAS });
         }
 
         if (existing) {
@@ -124,7 +124,7 @@ export const useCart = create<CartState>()(
         });
       },
 
-      toggleKluspas: () => set({ kluspasActive: !get().kluspasActive }),
+      toggleKLUSRPAS: () => set({ kluspasActive: !get().kluspasActive }),
 
       clear: () => set({ items: [] }),
 

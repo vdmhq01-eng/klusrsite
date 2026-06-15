@@ -216,7 +216,7 @@ export function CheckoutForm() {
               </div>
               {savings > 0 && kluspasActive && (
                 <div className="flex justify-between text-primary">
-                  <dt className="font-medium">Kluspas-voordeel</dt>
+                  <dt className="font-medium">KLUSRPAS-voordeel</dt>
                   <dd className="font-bold">-{formatPrice(savings)}</dd>
                 </div>
               )}

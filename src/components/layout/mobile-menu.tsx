@@ -15,7 +15,7 @@ import { navCategories } from "@/lib/data/categories";
 
 const quickLinks = [
   { href: "/winkels", label: "Winkels", icon: MapPin },
-  { href: "/kluspas", label: "Kluspas", icon: CreditCard },
+  { href: "/kluspas", label: "KLUSRPAS", icon: CreditCard },
   { href: "/klantenservice", label: "Klantenservice", icon: Headphones },
   { href: "/account", label: "Mijn account", icon: User },
 ];

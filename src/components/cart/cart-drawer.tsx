@@ -166,7 +166,7 @@ export function CartDrawer() {
                 <div className="mb-2 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
                   <span className="inline-flex items-center gap-1.5 font-medium text-primary">
                     <Sparkles className="h-4 w-4" />
-                    Kluspas-voordeel
+                    KLUSRPAS-voordeel
                   </span>
                   <span className="font-bold text-primary">-{formatPrice(savings)}</span>
                 </div>

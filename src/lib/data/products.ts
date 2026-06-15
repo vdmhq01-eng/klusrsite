@@ -25,7 +25,7 @@ function img(seed: string, n = 1): string[] {
 function reviews(seed: string, count: number, avg: number): Review[] {
   const samples: Omit<Review, "id" | "date">[] = [
     { author: "Mark V.", rating: 5, title: "Dekt perfect", body: "In één laag goed dekkend, fijne kwaliteit. Advies in de winkel was top.", verified: true },
-    { author: "Sanne K.", rating: 5, title: "Echt pro-kwaliteit", body: "Verwerkt heerlijk en spettert nauwelijks. Zeker de Kluspasprijs waard.", verified: true },
+    { author: "Sanne K.", rating: 5, title: "Echt pro-kwaliteit", body: "Verwerkt heerlijk en spettert nauwelijks. Zeker de KLUSRPAS-prijs waard.", verified: true },
     { author: "Joost B.", rating: 4, title: "Goede verf", body: "Mooi mat resultaat. Tweede laag was wel nodig op een donkere ondergrond.", verified: true },
     { author: "Petra D.", rating: 5, title: "Aanrader", body: "Snel geleverd en precies de kleur die ik wilde laten mengen.", verified: true },
     { author: "Henk J.", rating: 4, title: "Prima", body: "Doet wat het moet doen, fijne dekking en weinig geur.", verified: false },

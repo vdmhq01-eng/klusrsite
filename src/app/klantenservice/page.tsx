@@ -126,7 +126,7 @@ const generalFaqs = [
   {
     question: "Heb ik een account nodig?",
     answer:
-      "Nee, je kunt als gast bestellen. Met een account bewaar je wel je gegevens, bestelhistorie en je Kluspasvoordelen op één plek.",
+      "Nee, je kunt als gast bestellen. Met een account bewaar je wel je gegevens, bestelhistorie en je KLUSRPAS-voordelen op één plek.",
   },
   {
     question: "Kan ik verf op kleur laten mengen?",

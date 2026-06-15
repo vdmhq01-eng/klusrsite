@@ -206,7 +206,7 @@ export function CartView() {
               {kluspasActive && savings > 0 && (
                 <div className="flex justify-between text-primary">
                   <dt className="inline-flex items-center gap-1 font-medium">
-                    <Sparkles className="h-3.5 w-3.5" /> Kluspas-voordeel
+                    <Sparkles className="h-3.5 w-3.5" /> KLUSRPAS-voordeel
                   </dt>
                   <dd className="font-bold">-{formatPrice(savings)}</dd>
                 </div>

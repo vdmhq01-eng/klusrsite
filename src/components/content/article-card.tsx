@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import type { Article } from "@/types";
 import { Badge } from "@/components/ui/badge";
+import { BrandedVisual } from "@/components/shared/branded-visual";
 
 export function ArticleCard({ article }: { article: Article }) {
   return (
@@ -11,13 +11,7 @@ export function ArticleCard({ article }: { article: Article }) {
       className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-card transition-shadow hover:shadow-card-hover"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
-        <Image
-          src={article.image}
-          alt={article.title}
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        <BrandedVisual seed={article.slug} />
         <Badge variant="muted" className="absolute left-3 top-3 bg-card/90 backdrop-blur">
           {article.category}
         </Badge>

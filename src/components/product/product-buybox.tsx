@@ -49,7 +49,7 @@ export function ProductBuybox({ product }: { product: Product }) {
 
   // Tinting base (from the chosen colour) adds a surcharge and has its own stock.
   const surcharge = color?.base?.surcharge ?? 0;
-  const effectiveKluspas = variant.kluspasPrice + surcharge;
+  const effectiveKLUSRPAS = variant.kluspasPrice + surcharge;
   const effectivePrice = variant.price + surcharge;
   const effectiveStock =
     color?.base && product.colorMatchable
@@ -57,7 +57,7 @@ export function ProductBuybox({ product }: { product: Product }) {
       : variant.stockByStore;
 
   const reference = (variant.compareAtPrice ?? variant.price) + surcharge;
-  const showStrike = reference > effectiveKluspas;
+  const showStrike = reference > effectiveKLUSRPAS;
 
   // "Voordeliger per liter" upsell — compare cheapest €/L variant.
   const perLiter = useMemo(() => {
@@ -150,16 +150,16 @@ export function ProductBuybox({ product }: { product: Product }) {
         )}
         <div className="flex items-end gap-3">
           <span className="text-4xl font-black leading-none text-primary">
-            {formatPrice(effectiveKluspas)}
+            {formatPrice(effectiveKLUSRPAS)}
           </span>
           <span className="mb-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase text-primary">
-            Kluspasprijs
+            KLUSRPAS-prijs
           </span>
         </div>
         {showStrike && (
           <p className="mt-1 text-sm font-semibold text-klusr-stock">
-            Je bespaart {formatPrice(reference - effectiveKluspas)} (
-            {discountPercent(reference, effectiveKluspas)}%)
+            Je bespaart {formatPrice(reference - effectiveKLUSRPAS)} (
+            {discountPercent(reference, effectiveKLUSRPAS)}%)
           </p>
         )}
         {surcharge > 0 && (
@@ -300,7 +300,7 @@ export function ProductBuybox({ product }: { product: Product }) {
 
       {/* Mobile sticky add-to-cart */}
       <MobileStickyBar
-        price={effectiveKluspas}
+        price={effectiveKLUSRPAS}
         onAdd={handleAdd}
         label={
           color?.base ? `${variant.label} · ${paintBases[color.base.id].short}` : variant.label

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { BrandedVisual } from "@/components/shared/branded-visual";
 import Link from "next/link";
 import { ArrowRight, Clock, MapPin } from "lucide-react";
 import { stores } from "@/lib/data";
@@ -81,13 +81,7 @@ export default function WinkelsPage() {
               className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-card transition-shadow hover:shadow-card-hover"
             >
               <div className="relative aspect-[16/10] overflow-hidden">
-                <Image
-                  src={store.image}
-                  alt={store.name}
-                  fill
-                  sizes="(max-width: 640px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+                <BrandedVisual seed={store.slug} />
                 <Badge
                   variant={store.isFlagship ? "default" : "action"}
                   className="absolute left-3 top-3"

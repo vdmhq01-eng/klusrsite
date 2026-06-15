@@ -15,7 +15,7 @@ const serviceLinks = [
 
 const aboutLinks = [
   { href: "/over-klusr", label: "Over KLUSR" },
-  { href: "/kluspas", label: "Kluspas" },
+  { href: "/kluspas", label: "KLUSRPAS" },
   { href: "/advies", label: "Advies & inspiratie" },
   { href: "/klushulp", label: "Klushulp AI" },
   { href: "/werken-bij", label: "Werken bij KLUSR" },
@@ -33,7 +33,7 @@ export function Footer() {
             </h3>
             <p className="mt-1 text-sm text-white/70">
               Schrijf je in voor de nieuwsbrief en ontvang klustips, inspiratie en
-              de scherpste Kluspas-aanbiedingen.
+              de scherpste KLUSRPAS-aanbiedingen.
             </p>
           </div>
           <NewsletterForm className="w-full max-w-md" source="footer" />
