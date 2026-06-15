@@ -184,18 +184,27 @@ function unitFor(label = "") {
 function buildHighlights(item, category) {
   const out = [];
   if (item.brand && item.brand !== "Onbekend") out.push(`Merk: ${item.brand}`);
-  if (item.color) out.push(`Kleur: ${item.color}`);
-  if (item.size) out.push(`Inhoud: ${item.size}`);
-  if (category === "verf") out.push("Op kleur te laten mengen");
+  if (category === "verf") {
+    // Mengverf: kleur en inhoud kiest de klant zelf — niet als vaste eigenschap tonen.
+    out.push("Op elke kleur te laten mengen");
+    out.push("Exacte kleurmatch, klaar voor gebruik");
+  } else {
+    if (item.color) out.push(`Kleur: ${item.color}`);
+    if (item.size) out.push(`Inhoud: ${item.size}`);
+  }
   out.push("Professionele kwaliteit");
   return [...new Set(out)].slice(0, 4);
 }
 
-function buildSpecs(item) {
+function buildSpecs(item, category) {
   const items = [];
   if (item.brand) items.push({ label: "Merk", value: item.brand });
-  if (item.color) items.push({ label: "Kleur", value: item.color });
-  if (item.size) items.push({ label: "Inhoud / maat", value: item.size });
+  if (category === "verf") {
+    items.push({ label: "Op kleur te mengen", value: "Ja, elke kleur" });
+  } else {
+    if (item.color) items.push({ label: "Kleur", value: item.color });
+    if (item.size) items.push({ label: "Inhoud / maat", value: item.size });
+  }
   if (item.gtin) items.push({ label: "EAN", value: item.gtin });
   items.push({ label: "Conditie", value: "Nieuw" });
   return [{ group: "Productgegevens", items }];
@@ -381,7 +390,7 @@ export function buildCatalog(items, stockMap, opts = {}) {
       rating,
       reviewCount,
       reviews: synthReviews(groupId, 4, rating),
-      specifications: buildSpecs(lead),
+      specifications: buildSpecs(lead, category),
       variants,
       stockByStore: stockByStore(leadStock?.perStore),
       frequentlyBoughtTogether: [],
