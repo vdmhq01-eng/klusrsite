@@ -219,15 +219,102 @@ function buildHighlights(item, category) {
   return [...new Set(out)].slice(0, 4);
 }
 
+function paintBasisOf(title = "") {
+  const t = title.toLowerCase();
+  if (/\b(acryl|aqua|aquamat|watergedragen|wb)\b/.test(t)) return "Watergedragen (acryl)";
+  if (/\b(alkyd|terpentine|high\s?solid|hs|sb)\b/.test(t)) return "Terpentinebasis (alkyd)";
+  return null;
+}
+function paintGeschiktVoor(title = "") {
+  const t = title.toLowerCase();
+  const buiten = /\b(buiten|gevel|exterior)\b/.test(t);
+  const binnen = /\b(binnen|interior|muur|plafond|latex|sausverf)\b/.test(t);
+  if (buiten && binnen) return "Binnen & buiten";
+  if (buiten) return "Buiten";
+  if (binnen) return "Binnen";
+  return null;
+}
+function paintGlansOf(title = "") {
+  const t = title.toLowerCase();
+  if (/hoogglans/.test(t)) return "Hoogglans";
+  if (/zijdeglans/.test(t)) return "Zijdeglans";
+  if (/zijdemat/.test(t)) return "Zijdemat";
+  if (/halfmat/.test(t)) return "Halfmat";
+  if (/\bsatin\b/.test(t)) return "Satin";
+  if (/\bmat\b/.test(t)) return "Mat";
+  return null;
+}
+const VERF_SOORT = {
+  lak: "Lakverf",
+  binnenverf: "Muurverf",
+  buitenverf: "Buitenverf",
+  beits: "Beits",
+  primer: "Grondverf",
+  houtolie: "Houtolie",
+};
+
+/** Productgegevens, aangevuld met domeinkennis per categorie. */
 function buildSpecs(item, category) {
   const items = [];
-  if (item.brand) items.push({ label: "Merk", value: item.brand });
+  const t = item.title || "";
+  if (item.brand && item.brand !== "Onbekend") items.push({ label: "Merk", value: item.brand });
+
   if (category === "verf") {
+    const soort = VERF_SOORT[mapVerfSub(t, item.productType)];
+    if (soort) items.push({ label: "Soort", value: soort });
+    const basis = paintBasisOf(t);
+    if (basis) items.push({ label: "Basis", value: basis });
+    const glans = paintGlansOf(t);
+    if (glans) items.push({ label: "Glansgraad", value: glans });
+    const gv = paintGeschiktVoor(t);
+    if (gv) items.push({ label: "Geschikt voor", value: gv });
+    items.push({ label: "Verwerking", value: "Kwast of roller" });
+    items.push({ label: "Dekkend vermogen", value: "ca. 8–12 m² per liter (indicatief)" });
+    items.push({
+      label: "Droog / overschilderbaar",
+      value:
+        basis && basis.includes("acryl")
+          ? "Stofdroog ~1 uur, overschilderbaar na ~4–6 uur"
+          : "Overschilderbaar na ~16–24 uur (indicatief)",
+    });
+    items.push({
+      label: "Reinigen gereedschap",
+      value:
+        basis && basis.includes("acryl")
+          ? "Met water"
+          : basis
+            ? "Met white spirit / terpentine"
+            : "Met water of white spirit",
+    });
     items.push({ label: "Op kleur te mengen", value: "Ja, elke kleur" });
+  } else if (category === "ijzerwaren") {
+    const mat = /\b(rvs|inox)\b/i.test(t)
+      ? "RVS"
+      : /verzinkt|gegalvaniseerd|galva/i.test(t)
+        ? "Verzinkt"
+        : /messing/i.test(t)
+          ? "Messing"
+          : /vernikkeld/i.test(t)
+            ? "Vernikkeld"
+            : /\bstaal\b/i.test(t)
+              ? "Staal"
+              : null;
+    if (mat) items.push({ label: "Materiaal", value: mat });
+    if (item.size) items.push({ label: "Maat", value: item.size });
+  } else if (category === "verlichting") {
+    const fit = (t.match(/\b(e27|e14|gu10|g9|b22)\b/i) || [])[0];
+    if (fit) items.push({ label: "Fitting", value: fit.toUpperCase() });
+    if (/\bled\b/i.test(t)) items.push({ label: "Lichtbron", value: "LED" });
+    const w = (t.match(/\b(\d+(?:[.,]\d+)?)\s*w(att)?\b/i) || [])[1];
+    if (w) items.push({ label: "Vermogen", value: `${w} W` });
+    if (/warm\s*wit|2700k?/i.test(t)) items.push({ label: "Lichtkleur", value: "Warmwit" });
+    else if (/koel\s*wit|4000k?|neutraal/i.test(t)) items.push({ label: "Lichtkleur", value: "Koelwit" });
+    else if (/daglicht|6[45]00k?/i.test(t)) items.push({ label: "Lichtkleur", value: "Daglicht" });
   } else {
     if (item.color) items.push({ label: "Kleur", value: item.color });
     if (item.size) items.push({ label: "Inhoud / maat", value: item.size });
   }
+
   if (item.gtin) items.push({ label: "EAN", value: item.gtin });
   items.push({ label: "Conditie", value: "Nieuw" });
   return [{ group: "Productgegevens", items }];

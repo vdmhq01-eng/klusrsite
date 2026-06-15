@@ -173,6 +173,38 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
       { id: "structuur", label: "Structuur", re: /structuur/i },
     ],
   },
+  {
+    key: "toepassing",
+    title: "Toepassing",
+    defs: [
+      { id: "binnen", label: "Binnen", re: /\bbinnen\b|interior|muurverf|latex|sausverf/i },
+      { id: "buiten", label: "Buiten", re: /\bbuiten\b|gevel|exterior/i },
+    ],
+  },
+  {
+    key: "korrel",
+    title: "Korrel",
+    defs: [
+      { id: "k40", label: "K40", re: /\bk\s?40\b|\bp40\b|korrel\s?40/i },
+      { id: "k60", label: "K60", re: /\bk\s?60\b|\bp60\b|korrel\s?60/i },
+      { id: "k80", label: "K80", re: /\bk\s?80\b|\bp80\b|korrel\s?80/i },
+      { id: "k100", label: "K100", re: /\bk\s?100\b|\bp100\b|korrel\s?100/i },
+      { id: "k120", label: "K120", re: /\bk\s?120\b|\bp120\b|korrel\s?120/i },
+      { id: "k150", label: "K150", re: /\bk\s?150\b|\bp150\b|korrel\s?150/i },
+      { id: "k180", label: "K180", re: /\bk\s?180\b|\bp180\b|korrel\s?180/i },
+      { id: "k240", label: "K240", re: /\bk\s?240\b|\bp240\b|korrel\s?240/i },
+      { id: "k320", label: "K320", re: /\bk\s?320\b|\bp320\b|korrel\s?320/i },
+    ],
+  },
+  {
+    key: "lichtkleur",
+    title: "Lichtkleur",
+    defs: [
+      { id: "warmwit", label: "Warmwit", re: /warm\s*wit|2700k?|extra\s*warm/i },
+      { id: "koelwit", label: "Koelwit", re: /koel\s*wit|4000k?|neutraal\s*wit/i },
+      { id: "daglicht", label: "Daglicht", re: /daglicht|6[45]00k?/i },
+    ],
+  },
 ];
 
 /** Eerste (meest specifieke) attribuut-waarde voor een product, of null. */
