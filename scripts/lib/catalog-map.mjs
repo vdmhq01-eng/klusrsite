@@ -119,6 +119,54 @@ function cleanProductTitle(title = "") {
   );
 }
 
+// Finish-woorden waarna in verf-titels alleen nog kleur/code/basis volgt.
+const PAINT_FINISHES = new Set([
+  "hoogglans", "zijdeglans", "zijdemat", "halfmat", "mat", "glans", "satin",
+  "zijdesatin", "metallic", "structuur", "fluweelmat", "zijdezacht",
+]);
+// Basis-/tint-codes die niet in de titel horen (kleur bepaalt de basis).
+const BASE_CODE_RE =
+  /\b(zn|ln|sb|wn|dn|tr|ac|w0?\d|n0?\d|p0?\d|deep|medium|transparant|basis|base)\b/gi;
+
+function dedupeWords(s = "") {
+  const out = [];
+  for (const w of s.split(/\s+/)) {
+    if (!w) continue;
+    if (out.length && out[out.length - 1].toLowerCase() === w.toLowerCase()) continue;
+    out.push(w);
+  }
+  return out.join(" ");
+}
+
+function isColorWord(w = "") {
+  return /(wit|grijs|groen|blauw|rood|geel|zwart|bruin|beige|paars|roze|oranje|creme|crème|ivoor|antraciet|taupe|zand|oker|terra)$/i.test(
+    w,
+  );
+}
+
+/** Schone, klantvriendelijke verf-titel: zonder kleur, kleurcode, basis of maat. */
+function paintCoreTitle(title = "") {
+  const tokens = cleanProductTitle(title).split(/\s+/).filter(Boolean);
+  let cut = -1;
+  tokens.forEach((w, i) => {
+    if (PAINT_FINISHES.has(w.toLowerCase().replace(/[^a-zà-ÿ]/gi, ""))) cut = i;
+  });
+  const core = cut >= 0 ? tokens.slice(0, cut + 1) : tokens.slice();
+  let s = dedupeWords(core.join(" ").replace(/\b\d{2,5}\b/g, " ").replace(BASE_CODE_RE, " "))
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (cut < 0) {
+    const parts = s.split(/\s+/);
+    while (parts.length > 2 && isColorWord(parts[parts.length - 1])) parts.pop();
+    s = parts.join(" ");
+  }
+  return s.replace(/\s{2,}/g, " ").trim();
+}
+
+function isPaintItem(item) {
+  return mapCategory(item.productType) === "verf";
+}
+
 function variantLabel(item) {
   if (item.size) return item.size.replace(/\s+/g, " ").trim();
   if (item.color) return item.color;
@@ -195,10 +243,28 @@ function topType(productType = "") {
  * Merk + categorie + titel-zonder-maat. Verschillende typen (PZ1/PZ2/Torx/RVS)
  * houden een andere titel en blijven dus aparte producten.
  */
+function normTitleKey(s = "") {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b1?size\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function groupKey(item) {
-  const base = stripSizeTokens(item.title);
+  // Verf: voeg alle kleur-/basis-/maatvarianten van dezelfde lijn samen tot één
+  // product (de kleur bepaalt de basis; consument kiest alleen de kleur).
+  if (isPaintItem(item)) {
+    const core = paintCoreTitle(item.title);
+    if (core) return `${(item.brand || "?").toLowerCase()}|verf|${normTitleKey(core)}`;
+  }
+  // Niet-verf: groepeer op merk + schone (zichtbare) titel, zodat producten met
+  // dezelfde titel en alleen een andere inhoud samenvallen tot één product —
+  // ook als de feed ze onder een iets andere product_type plaatst.
+  const base = normTitleKey(dedupeWords(cleanProductTitle(item.title)));
   if (!base) return `${item.brand}|${item.groupId || item.id}`;
-  return `${(item.brand || "?").toLowerCase()}|${topType(item.productType)}|${base}`;
+  return `${(item.brand || "?").toLowerCase()}|${base}`;
 }
 
 /** Sorteersleutel op eerste maat (Ø×lengte) zodat varianten oplopend staan. */
@@ -213,6 +279,7 @@ function sizeSortKey(item) {
 function cleanSizeLabel(label = "") {
   let s = label.replace(/\s+/g, " ").trim();
   if (/^1?size$/i.test(s) || !s) return "Standaard";
+  s = s.replace(/(\d)[.,](\d)/g, "$1,$2"); // 1.25 → 1,25 (dedupe decimaal)
   s = s
     .replace(/\bMM\b/gi, "mm").replace(/\bCM\b/gi, "cm")
     .replace(/\bX\b/g, "x").replace(/\b(ST|STK)\b/gi, "st")
@@ -291,7 +358,10 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const desc = stripHtml(lead.description).slice(0, 700);
     const hasDesc = desc.length > 120;
     const subCategory = subCategoryFor(category, title, lead.productType);
-    const displayTitle = variants.length > 1 ? cleanProductTitle(lead.title) || title : title;
+    const displayTitle =
+      category === "verf"
+        ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
+        : dedupeWords(cleanProductTitle(lead.title)) || title;
 
     products.push({
       id: `tilroy-${lead.id}`,
