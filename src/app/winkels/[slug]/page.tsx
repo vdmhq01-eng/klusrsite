@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BrandedVisual } from "@/components/shared/branded-visual";
+import { TopicImage } from "@/components/shared/topic-image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -126,7 +126,7 @@ export default function StorePage({ params }: StorePageProps) {
 
         {/* Hero image */}
         <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-2xl sm:aspect-[21/9]">
-          <BrandedVisual seed={store.slug} />
+          <TopicImage seed={store.slug} keywords="hardware,store,shop" />
           <div className="absolute inset-0 bg-gradient-to-t from-klusr-black/70 to-transparent" />
           <div className="absolute bottom-0 left-0 p-6 text-white sm:p-8">
             <Badge

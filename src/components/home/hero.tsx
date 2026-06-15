@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, MapPin, Sparkles, PaintRoller, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BrandedVisual } from "@/components/shared/branded-visual";
+import { TopicImage } from "@/components/shared/topic-image";
 import { flagshipStore } from "@/lib/data/stores";
 
 export function Hero() {
@@ -10,7 +10,7 @@ export function Hero() {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Main hero */}
         <div className="relative overflow-hidden rounded-2xl lg:col-span-2">
-          <BrandedVisual seed="klusr-hero-paint" icon={PaintRoller} />
+          <TopicImage seed="klusr-hero-paint" keywords="house,painting,renovation" icon={PaintRoller} />
           <div className="absolute inset-0 bg-gradient-to-r from-klusr-black/90 via-klusr-black/70 to-klusr-black/20" />
           <div className="relative flex min-h-[340px] flex-col justify-center gap-5 p-6 sm:min-h-[420px] sm:p-10 lg:max-w-xl">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
@@ -44,7 +44,7 @@ export function Hero() {
           href={`/winkels/${flagshipStore.slug}`}
           className="group relative flex min-h-[200px] flex-col justify-end overflow-hidden rounded-2xl"
         >
-          <BrandedVisual seed={flagshipStore.slug} icon={Store} />
+          <TopicImage seed={flagshipStore.slug} keywords="hardware,store,paint" icon={Store} />
           <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/70 to-transparent" />
           <div className="relative p-6 text-white">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">

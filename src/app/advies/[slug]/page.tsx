@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BrandedVisual } from "@/components/shared/branded-visual";
+import { TopicImage } from "@/components/shared/topic-image";
+import { articleKeywords } from "@/lib/topic-images";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Clock, User } from "lucide-react";
@@ -114,7 +115,7 @@ export default function ArticlePage({ params }: ArticlePageProps) {
 
         {/* Hero image */}
         <div className="relative mx-auto mt-8 aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl">
-          <BrandedVisual seed={article.slug} />
+          <TopicImage seed={article.slug} keywords={articleKeywords(article.category)} />
         </div>
 
         {/* Body */}

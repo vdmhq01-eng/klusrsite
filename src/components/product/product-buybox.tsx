@@ -196,28 +196,46 @@ export function ProductBuybox({ product }: { product: Product }) {
 
       <Separator />
 
-      {/* Variant selector */}
+      {/* Variant selector — dropdown bij veel maten (bv. schroeven), anders knoppen */}
       {product.variants.length > 1 && (
         <div>
           <p className="mb-2 text-sm font-semibold">
-            Inhoud: <span className="text-muted-foreground">{variant.label}</span>
+            Maat / inhoud: <span className="text-muted-foreground">{variant.label}</span>
           </p>
-          <div className="flex flex-wrap gap-2">
-            {product.variants.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setVariant(v)}
-                className={cn(
-                  "min-w-[64px] rounded-md border px-3 py-2 text-sm font-semibold transition-all",
-                  v.id === variant.id
-                    ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
-                    : "border-input bg-card hover:border-primary/40",
-                )}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
+          {product.variants.length > 8 ? (
+            <select
+              value={variant.id}
+              onChange={(e) =>
+                setVariant(
+                  product.variants.find((v) => v.id === e.target.value) ?? product.variants[0],
+                )
+              }
+              className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {product.variants.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {product.variants.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setVariant(v)}
+                  className={cn(
+                    "min-w-[64px] rounded-md border px-3 py-2 text-sm font-semibold transition-all",
+                    v.id === variant.id
+                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
+                      : "border-input bg-card hover:border-primary/40",
+                  )}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

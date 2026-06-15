@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Clock } from "lucide-react";
 import type { Article } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { BrandedVisual } from "@/components/shared/branded-visual";
+import { TopicImage } from "@/components/shared/topic-image";
+import { articleKeywords } from "@/lib/topic-images";
 
 export function ArticleCard({ article }: { article: Article }) {
   return (
@@ -11,7 +12,7 @@ export function ArticleCard({ article }: { article: Article }) {
       className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-card transition-shadow hover:shadow-card-hover"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
-        <BrandedVisual seed={article.slug} />
+        <TopicImage seed={article.slug} keywords={articleKeywords(article.category)} />
         <Badge variant="muted" className="absolute left-3 top-3 bg-card/90 backdrop-blur">
           {article.category}
         </Badge>

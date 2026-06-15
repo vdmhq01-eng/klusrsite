@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BrandedVisual } from "@/components/shared/branded-visual";
+import { TopicImage } from "@/components/shared/topic-image";
+import { articleKeywords } from "@/lib/topic-images";
 import Link from "next/link";
 import { ArrowRight, Clock, Sparkles } from "lucide-react";
 import { articles } from "@/lib/data";
@@ -47,7 +48,7 @@ export default function AdviesPage() {
             className="group grid overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-shadow hover:shadow-card-hover lg:grid-cols-2"
           >
             <div className="relative aspect-[16/10] overflow-hidden lg:aspect-auto">
-              <BrandedVisual seed={featured.slug} />
+              <TopicImage seed={featured.slug} keywords={articleKeywords(featured.category)} />
               <Badge className="absolute left-4 top-4">Uitgelicht</Badge>
             </div>
             <div className="flex flex-col justify-center gap-4 p-6 sm:p-10">

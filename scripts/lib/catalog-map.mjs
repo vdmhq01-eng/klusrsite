@@ -105,6 +105,20 @@ function subCategoryFor(category, title, productType) {
 
 const cleanTitle = (t = "") => t.replace(/\s+/g, " ").trim();
 
+/**
+ * Productnaam zonder maat-/aantal-tokens (case-behoudend), voor gegroepeerde
+ * producten. Losse model-/voltage-nummers (bv. "18V-55") blijven staan.
+ */
+function cleanProductTitle(title = "") {
+  return cleanTitle(
+    title
+      .replace(/\b\d+([.,]\d+)?\s*[xX×]\s*\d+([.,]\d+)?(\/\d+)?\s*(mm|cm|m)?\b/gi, " ")
+      .replace(/Ø\s*\d+([.,]\d+)?\s*(mm|cm)?/gi, " ")
+      .replace(/\b\d+([.,]\d+)?\s*(ml|cl|l|liter|kg|gr|gram|mm|cm)\b/gi, " ")
+      .replace(/\b\d+\s*-?\s*(delig|stuks?|stk?|pcs|pack)\b/gi, " "),
+  );
+}
+
 function variantLabel(item) {
   if (item.size) return item.size.replace(/\s+/g, " ").trim();
   if (item.color) return item.color;
@@ -156,18 +170,70 @@ function synthReviews(seed, count, avg) {
   }));
 }
 
+/** Verwijder maat-/aantal-tokens uit een titel zodat formaten samenvallen. */
+function stripSizeTokens(title = "") {
+  return title
+    .toLowerCase()
+    .replace(/\b\d+([.,]\d+)?\s*[x×]\s*\d+([.,]\d+)?(\/\d+)?\s*(mm|cm|m)?\b/g, " ")
+    .replace(/ø\s*\d+([.,]\d+)?\s*(mm|cm)?/g, " ")
+    .replace(/\b\d+([.,]\d+)?\s*(ml|cl|l|liter|kg|gr|gram|g|mm|cm|m)\b/g, " ")
+    .replace(/\b\d+\s*-?\s*(delig|stuks?|stk?|pcs|pack)\b/g, " ")
+    .replace(/\b1?size\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Topsegment van product_type — houdt groeperen binnen één categorie. */
+function topType(productType = "") {
+  const segs = productType.split(">").map((s) => s.trim());
+  return (segs[1] || segs[0] || "").toLowerCase();
+}
+
+/**
+ * Groepssleutel om hetzelfde product in verschillende maten samen te voegen.
+ * Merk + categorie + titel-zonder-maat. Verschillende typen (PZ1/PZ2/Torx/RVS)
+ * houden een andere titel en blijven dus aparte producten.
+ */
+function groupKey(item) {
+  const base = stripSizeTokens(item.title);
+  if (!base) return `${item.brand}|${item.groupId || item.id}`;
+  return `${(item.brand || "?").toLowerCase()}|${topType(item.productType)}|${base}`;
+}
+
+/** Sorteersleutel op eerste maat (Ø×lengte) zodat varianten oplopend staan. */
+function sizeSortKey(item) {
+  const m = (item.size || item.title || "").match(/(\d+([.,]\d+)?)\s*[x×]\s*(\d+([.,]\d+)?)/);
+  if (m) return parseFloat(m[1].replace(",", ".")) * 1000 + parseFloat(m[3].replace(",", "."));
+  const v = (item.size || "").match(/(\d+([.,]\d+)?)/);
+  return v ? parseFloat(v[1].replace(",", ".")) : 0;
+}
+
+/** Maak een maatlabel leesbaar: "4,0 X 16 MM 200 ST" → "4,0 x 16 mm · 200 st". */
+function cleanSizeLabel(label = "") {
+  let s = label.replace(/\s+/g, " ").trim();
+  if (/^1?size$/i.test(s) || !s) return "Standaard";
+  s = s
+    .replace(/\bMM\b/gi, "mm").replace(/\bCM\b/gi, "cm")
+    .replace(/\bX\b/g, "x").replace(/\b(ST|STK)\b/gi, "st")
+    .replace(/\b(GR|GRAM)\b/gi, "gr").replace(/\bML\b/gi, "ml");
+  return s.replace(/(mm|cm|gr)\s+(\d)/g, "$1 · $2");
+}
+
 /**
  * Bouw de KLUSR-catalogus uit genormaliseerde items + stockMap.
  * @returns snapshot-object { generatedAt, source, count, countsByCategory, products }
  */
 export function buildCatalog(items, stockMap, opts = {}) {
-  const { source = "feed", maxPerCategory = 110, maxTotal = 720 } = opts;
+  const { source = "feed", maxPerCategory = 100000, maxTotal = 100000 } = opts;
 
+  // Groepeer items die hetzelfde product in een ander formaat zijn (bv.
+  // schroeven in tientallen maten) tot één product met maatvarianten.
   const groups = new Map();
   for (const item of items) {
-    const gid = item.groupId || item.id;
-    if (!groups.has(gid)) groups.set(gid, []);
-    groups.get(gid).push(item);
+    const key = groupKey(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
   }
 
   const products = [];
@@ -186,8 +252,9 @@ export function buildCatalog(items, stockMap, opts = {}) {
 
     const seenLabels = new Set();
     const variants = [];
-    for (const it of group) {
-      const label = variantLabel(it);
+    const sortedGroup = [...group].sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
+    for (const it of sortedGroup) {
+      const label = cleanSizeLabel(variantLabel(it));
       if (seenLabels.has(label)) continue;
       seenLabels.add(label);
       const st = stockMap.get(it.id);
@@ -201,7 +268,7 @@ export function buildCatalog(items, stockMap, opts = {}) {
         kluspasPrice: round2(price * discount),
         stockByStore: stockByStore(st?.perStore),
       });
-      if (variants.length >= 6) break;
+      if (variants.length >= 60) break;
     }
     if (variants.length === 0) continue;
 
@@ -224,11 +291,12 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const desc = stripHtml(lead.description).slice(0, 700);
     const hasDesc = desc.length > 120;
     const subCategory = subCategoryFor(category, title, lead.productType);
+    const displayTitle = variants.length > 1 ? cleanProductTitle(lead.title) || title : title;
 
     products.push({
-      id: `tilroy-${groupId}`,
-      title,
-      slug: `${slugify(title)}-${groupId}`,
+      id: `tilroy-${lead.id}`,
+      title: displayTitle,
+      slug: `${slugify(displayTitle)}-${lead.id}`,
       brand: lead.brand || "Onbekend",
       highlights: buildHighlights(lead, category),
       description:
