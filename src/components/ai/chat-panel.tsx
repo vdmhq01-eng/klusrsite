@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/tracking";
+import { FormattedText } from "@/components/shared/formatted-text";
 import { cn } from "@/lib/utils";
 
 export interface ChatMessage {
@@ -112,7 +113,11 @@ export function ChatPanel({
                   : "rounded-bl-sm bg-secondary text-foreground",
               )}
             >
-              {m.content}
+              {m.role === "assistant" ? (
+                <FormattedText text={m.content} />
+              ) : (
+                m.content
+              )}
             </div>
           </div>
         ))}

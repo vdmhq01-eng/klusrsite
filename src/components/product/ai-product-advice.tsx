@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FormattedText } from "@/components/shared/formatted-text";
 import { trackEvent } from "@/lib/tracking";
 
 const quickQuestions = [
@@ -104,7 +105,7 @@ export function AiProductAdvice({
                 <Loader2 className="h-4 w-4 animate-spin" /> KLUSR denkt mee…
               </span>
             ) : (
-              answer
+              <FormattedText text={answer!} />
             )}
           </div>
         )}
