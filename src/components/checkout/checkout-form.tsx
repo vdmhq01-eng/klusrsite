@@ -14,6 +14,7 @@ import {
   Store,
   RotateCcw,
   ArrowLeft,
+  UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,6 +125,27 @@ export function CheckoutForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left: details */}
         <div className="space-y-6">
+          {/* Account of als gast */}
+          <div className="rounded-xl border border-border bg-secondary/40 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2.5">
+                <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">
+                    Reken af als gast — geen account nodig
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vul hieronder je gegevens in en bestel direct. Liever een account voor je
+                    bestelhistorie en sneller afrekenen?
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="outline" size="sm" className="shrink-0">
+                <Link href="/inloggen">Inloggen of account aanmaken</Link>
+              </Button>
+            </div>
+          </div>
+
           <Section title="Contactgegevens" step={1}>
             <Field label="E-mailadres" error={errors.email?.message}>
               <Input type="email" placeholder="jij@voorbeeld.nl" {...register("email")} />
