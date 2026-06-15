@@ -111,12 +111,15 @@ export function ColorPicker({
       )}
 
       {/* Swatch grid */}
-      <div className="grid max-h-[44vh] grid-cols-4 gap-2 overflow-y-auto pr-1 sm:grid-cols-6">
-        {visibleColors.map((color) => {
-          const active = selected?.code === color.code;
+      <div
+        className="grid max-h-[55vh] gap-2 overflow-y-auto pr-1"
+        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(3.25rem, 1fr))" }}
+      >
+        {visibleColors.map((color, i) => {
+          const active = selected?.code === color.code && selected?.hex === color.hex;
           return (
             <button
-              key={color.code}
+              key={`${color.code}-${color.hex}-${i}`}
               onClick={() => pick(color)}
               title={`${color.name} (${color.code})`}
               className={cn(
