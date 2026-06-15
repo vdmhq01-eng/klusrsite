@@ -7,8 +7,30 @@ import feedData from "./feed-products.generated.json";
  * scripts/build-tilroy-catalog.mjs). Wanneer de snapshot leeg is, valt de
  * webshop terug op de handmatige `curatedProducts` hieronder.
  */
-const feedProducts = ((feedData as { products?: unknown[] }).products ??
-  []) as unknown as Product[];
+/**
+ * Lost een feed-afbeelding op naar een URL die vanaf élke origin laadt:
+ *   1. channableusercontent.com → direct gebruiken (voorkeur).
+ *   2. cloudimg.io-wrapper → terugbrengen naar de rauwe bron-URL (S3); de
+ *      prosteps-cloudimg laat alleen devoordeelmarkt.nl toe en geeft elders 403.
+ */
+export function resolveImageUrl(url: string): string {
+  if (!url) return url;
+  if (url.includes("channableusercontent.com")) return url;
+  const ci = url.indexOf("cloudimg.io/");
+  if (ci !== -1) {
+    const rest = url.slice(ci);
+    const at = rest.search(/https?:\/\//);
+    if (at !== -1) return rest.slice(at);
+  }
+  return url;
+}
+
+const feedProducts = (
+  ((feedData as { products?: unknown[] }).products ?? []) as unknown as Product[]
+).map((p) => ({
+  ...p,
+  images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
+}));
 
 /* ------------------------------------------------------------------ helpers */
 

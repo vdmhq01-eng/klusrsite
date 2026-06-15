@@ -53,8 +53,10 @@ function normalize(raw) {
       title: String(f.title ?? f.name ?? ""),
       description: String(f.description ?? ""),
       link: String(f.link ?? ""),
-      image: String(f.image_link ?? f.image ?? ""),
-      additionalImage: String(f.additional_image_link ?? ""),
+      // De channableusercontent-afbeelding (`image`) eerst: laadt vanaf elke
+      // origin. Dan pas image_link (S3) / cloudimg als terugval.
+      image: String(f.image ?? f.image_link ?? f.image_link2 ?? ""),
+      additionalImage: String(f.additional_image_link ?? f.image_link2 ?? f.image_link ?? ""),
       availability:
         String(f.availability ?? (stock > 0 ? "in stock" : "out of stock")).includes("out")
           ? "out of stock"
