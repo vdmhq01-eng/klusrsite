@@ -6,6 +6,8 @@ interface PriceProps {
   kluspasPrice?: number;
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** Toon "vanaf" voor de prijs (bij meerdere varianten). */
+  from?: boolean;
 }
 
 /**
@@ -17,6 +19,7 @@ export function Price({
   kluspasPrice,
   size = "md",
   className,
+  from,
 }: PriceProps) {
   const hasKLUSRPAS = kluspasPrice !== undefined && kluspasPrice < price;
   const reference = compareAtPrice && compareAtPrice > price ? compareAtPrice : price;
@@ -37,7 +40,10 @@ export function Price({
           <span className="line-through">{formatPrice(reference)}</span>
         </span>
       )}
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-baseline gap-1.5">
+        {from && (
+          <span className="text-xs font-medium text-muted-foreground">vanaf</span>
+        )}
         <span className={cn("font-extrabold leading-none text-primary", mainSize)}>
           {formatPrice(finalPrice)}
         </span>

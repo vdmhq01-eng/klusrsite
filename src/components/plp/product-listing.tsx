@@ -157,6 +157,22 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
       { id: "b22", label: "B22", re: /\bb22\b/i },
     ],
   },
+  {
+    key: "print",
+    title: "Dessin",
+    defs: [
+      { id: "uni", label: "Uni / effen", re: /\buni\b|effen/i },
+      { id: "streep", label: "Streep", re: /streep/i },
+      { id: "ruit", label: "Ruit", re: /\bruit\b/i },
+      { id: "visgraat", label: "Visgraat", re: /visgraat/i },
+      { id: "bloem", label: "Bloemen", re: /bloem/i },
+      { id: "grafisch", label: "Grafisch", re: /grafisch|driehoek|geometr/i },
+      { id: "hout", label: "Houtlook", re: /\bhout/i },
+      { id: "beton", label: "Betonlook", re: /beton/i },
+      { id: "marmer", label: "Marmerlook", re: /marmer/i },
+      { id: "structuur", label: "Structuur", re: /structuur/i },
+    ],
+  },
 ];
 
 /** Eerste (meest specifieke) attribuut-waarde voor een product, of null. */

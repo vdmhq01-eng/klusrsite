@@ -14,6 +14,7 @@ import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
+import { productKindLabel } from "@/lib/product-kind";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -30,20 +31,24 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
   const mounted = useMounted();
   const isFavorite = mounted && favoriteIds.includes(product.id);
 
-  const defaultVariant = product.variants[0];
+  // Toon altijd de goedkoopste variant (laagste KLUSRPAS-prijs) → meer clicks.
+  const cheapest = product.variants.reduce(
+    (a, b) => (b.kluspasPrice < a.kluspasPrice ? b : a),
+    product.variants[0],
+  );
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
-    addItem({ product, variant: defaultVariant, quantity: 1 });
+    addItem({ product, variant: cheapest, quantity: 1 });
     trackEvent("add_to_cart", {
-      value: defaultVariant.kluspasPrice,
+      value: cheapest.kluspasPrice,
       items: [
         toAnalyticsItem({
           id: product.id,
           title: product.title,
           brand: product.brand,
           category: product.category,
-          price: defaultVariant.kluspasPrice,
+          price: cheapest.kluspasPrice,
         }),
       ],
     });
@@ -116,7 +121,10 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
             {product.title}
           </Link>
           <span className="text-xs text-muted-foreground">
-            {defaultVariant.label}
+            {productKindLabel(product)}
+            {product.variants.length > 1
+              ? ` · ${product.variants.length} maten`
+              : ` · ${cheapest.label}`}
           </span>
         </div>
 
@@ -128,6 +136,7 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
             compareAtPrice={product.compareAtPrice}
             kluspasPrice={product.kluspasPrice}
             size="md"
+            from={product.variants.length > 1}
           />
           <StockStatus stockByStore={product.stockByStore} showScarcity />
           <Button onClick={handleAdd} className="w-full" size="sm">
