@@ -46,19 +46,44 @@ export function ColorPicker({
 
   const allColors = useMemo(() => collections.flatMap((c) => c.colors), [collections]);
 
-  const visibleColors = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const pool = q
-      ? allColors.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.code.toLowerCase().includes(q) ||
-            (c.collection ?? "").toLowerCase().includes(q) ||
-            (c.provider ?? "").toLowerCase().includes(q),
-        )
-      : collections.find((c) => c.id === activeCollection)?.colors ?? [];
-    return pool.slice(0, 200);
-  }, [query, activeCollection, collections, allColors]);
+  const q = query.trim().toLowerCase();
+
+  const matched = useMemo(() => {
+    if (!q) return [];
+    return allColors.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
+        (c.collection ?? "").toLowerCase().includes(q) ||
+        (c.provider ?? "").toLowerCase().includes(q),
+    );
+  }, [q, allColors]);
+
+  // Zoekresultaten gegroepeerd per collectie (met totaal-telling).
+  const searchGroups = useMemo(() => {
+    if (!q) return [];
+    const map = new Map<
+      string,
+      { name: string; id: string; colors: SelectedColor[]; total: number }
+    >();
+    for (const c of matched) {
+      const name = c.collection || "Overig";
+      let g = map.get(name);
+      if (!g) {
+        const coll = collections.find((cc) => cc.name === name);
+        g = { name, id: coll?.id ?? name, colors: [], total: 0 };
+        map.set(name, g);
+      }
+      g.total++;
+      if (g.colors.length < 48) g.colors.push(c);
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  }, [q, matched, collections]);
+
+  const activeColors = useMemo(
+    () => collections.find((c) => c.id === activeCollection)?.colors ?? [],
+    [collections, activeCollection],
+  );
 
   function pick(color: SelectedColor) {
     const enriched = withBase(color);
@@ -77,6 +102,34 @@ export function ColorPicker({
     pick({ name: "Eigen kleur", code: hex.toUpperCase(), hex, collection: "Op maat" });
   }
 
+  const gridStyle = { gridTemplateColumns: "repeat(auto-fill, minmax(3.25rem, 1fr))" };
+
+  const renderSwatch = (color: SelectedColor, key: string) => {
+    const active = selected?.code === color.code && selected?.hex === color.hex;
+    return (
+      <button
+        key={key}
+        onClick={() => pick(color)}
+        title={`${color.name} (${color.code})`}
+        className={cn(
+          "group relative aspect-square rounded-md border transition-all",
+          active ? "ring-2 ring-primary ring-offset-2" : "border-black/10 hover:scale-105",
+        )}
+        style={{ backgroundColor: color.hex }}
+      >
+        {active && (
+          <Check
+            className={cn(
+              "absolute inset-0 m-auto h-5 w-5",
+              isLightColor(color.hex) ? "text-black" : "text-white",
+            )}
+            strokeWidth={3}
+          />
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Search */}
@@ -90,8 +143,8 @@ export function ColorPicker({
         />
       </div>
 
-      {/* Collection tabs */}
-      {!query.trim() && (
+      {/* Collection tabs (bladeren) */}
+      {!q && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {collections.map((c) => (
             <button
@@ -105,47 +158,72 @@ export function ColorPicker({
               )}
             >
               {c.name}
+              <span className="ml-1 opacity-60">{c.colors.length}</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* Swatch grid */}
-      <div
-        className="grid max-h-[55vh] gap-2 overflow-y-auto pr-1"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(3.25rem, 1fr))" }}
-      >
-        {visibleColors.map((color, i) => {
-          const active = selected?.code === color.code && selected?.hex === color.hex;
-          return (
-            <button
-              key={`${color.code}-${color.hex}-${i}`}
-              onClick={() => pick(color)}
-              title={`${color.name} (${color.code})`}
-              className={cn(
-                "group relative aspect-square rounded-md border transition-all",
-                active ? "ring-2 ring-primary ring-offset-2" : "border-black/10 hover:scale-105",
-              )}
-              style={{ backgroundColor: color.hex }}
-            >
-              {active && (
-                <Check
-                  className={cn(
-                    "absolute inset-0 m-auto h-5 w-5",
-                    isLightColor(color.hex) ? "text-black" : "text-white",
+      {/* Bladeren: actieve collectie */}
+      {!q && (
+        <div className="grid max-h-[55vh] gap-2 overflow-y-auto pr-1" style={gridStyle}>
+          {activeColors.map((color, i) =>
+            renderSwatch(color, `${color.code}-${color.hex}-${i}`),
+          )}
+          {activeColors.length === 0 && (
+            <p className="col-span-full py-6 text-center text-sm text-muted-foreground">
+              Nog geen kleuren in deze collectie.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Zoeken: resultaten gegroepeerd per collectie */}
+      {q &&
+        (searchGroups.length > 0 ? (
+          <div className="flex max-h-[58vh] flex-col gap-4 overflow-y-auto pr-1">
+            {searchGroups.map((g) => (
+              <div key={g.id}>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    {g.name} <span className="text-foreground">· {g.total}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCollection(g.id);
+                      setQuery("");
+                    }}
+                    className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                  >
+                    Toon collectie
+                  </button>
+                </div>
+                <div className="grid gap-2" style={gridStyle}>
+                  {g.colors.map((color, i) =>
+                    renderSwatch(color, `${g.id}-${color.code}-${color.hex}-${i}`),
                   )}
-                  strokeWidth={3}
-                />
-              )}
-            </button>
-          );
-        })}
-        {visibleColors.length === 0 && (
-          <p className="col-span-full py-6 text-center text-sm text-muted-foreground">
-            Geen kleuren gevonden. Probeer een andere zoekterm.
+                </div>
+                {g.total > g.colors.length && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCollection(g.id);
+                      setQuery("");
+                    }}
+                    className="mt-1.5 text-xs text-muted-foreground hover:text-primary"
+                  >
+                    +{g.total - g.colors.length} meer in {g.name}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Geen kleuren gevonden voor &ldquo;{query}&rdquo;. Probeer een andere zoekterm.
           </p>
-        )}
-      </div>
+        ))}
 
       {/* Custom colour */}
       <div className="rounded-lg border border-border bg-secondary/40 p-3">
