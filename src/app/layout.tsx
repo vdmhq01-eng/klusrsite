@@ -17,7 +17,36 @@ const inter = Inter({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Store",
+  name: "KLUSR",
+  url: siteUrl,
+  logo: `${siteUrl}/icon.svg`,
+  image: `${siteUrl}/icon.svg`,
+  description:
+    "KLUSR is dé verfspeciaalzaak en lichte bouwmarkt: professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer, met advies van ex-schilders.",
+  sameAs: [
+    "https://www.facebook.com/",
+    "https://www.instagram.com/",
+    "https://www.youtube.com/",
+  ],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "KLUSR",
+  url: siteUrl,
+  inLanguage: "nl-NL",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${siteUrl}/zoeken?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -64,6 +93,16 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans">
         <GoogleTagManagerNoScript />
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <AuthProvider>
           <Header />
           <main className="flex-1 pb-16 lg:pb-0">{children}</main>

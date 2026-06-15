@@ -44,7 +44,7 @@ export default function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const related = getRelatedArticles(article, 3);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
   const jsonLd = {
     "@context": "https://schema.org",

@@ -44,12 +44,46 @@ function sortVariants(variants: ProductVariant[]): ProductVariant[] {
     : variants;
 }
 
+const CAT_LABELS: Record<string, string> = {
+  verf: "verf",
+  "afbouw-fijnbouw": "afbouw & fijnbouw",
+  ijzerwaren: "ijzerwaren",
+  elektra: "elektra",
+  gereedschap: "gereedschap",
+  tuin: "tuin & buiten",
+  verlichting: "verlichting",
+  "vloeren-raam": "vloeren & raamdecoratie",
+};
+
+/** Verrijkt een dunne feed-omschrijving tot een unieke, SEO-vriendelijke tekst. */
+function enrichDescription(p: Product): string {
+  const base = (p.description || "").trim();
+  if (base.length >= 220) return base;
+  const brand = p.brand && p.brand !== "Onbekend" ? `${p.brand} ` : "";
+  const catLabel = CAT_LABELS[p.category] || "klusmateriaal";
+  const out: string[] = [
+    `${brand}${p.title} koop je online bij KLUSR — jouw specialist in ${catLabel}.`,
+  ];
+  if (base) out.push(base);
+  if (p.highlights?.length) {
+    out.push(`Belangrijkste kenmerken: ${p.highlights.slice(0, 4).join(", ")}.`);
+  }
+  if (p.colorMatchable) {
+    out.push("Deze verf mengen wij exact op de door jou gekozen kleur, klaar voor gebruik.");
+  }
+  out.push(
+    "Professionele kwaliteit, scherp geprijsd met je gratis KLUSRPAS en advies van ex-schilders. Voor 16:00 besteld morgen in huis, of gratis afhalen in een KLUSR-winkel.",
+  );
+  return out.join(" ");
+}
+
 const feedProducts = (
   ((feedData as { products?: unknown[] }).products ?? []) as unknown as Product[]
 ).map((p) => ({
   ...p,
   images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
   variants: sortVariants(p.variants ?? []),
+  description: enrichDescription(p),
 }));
 
 /* ------------------------------------------------------------------ helpers */

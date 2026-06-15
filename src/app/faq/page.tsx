@@ -17,21 +17,31 @@ export const metadata: Metadata = {
   alternates: { canonical: "/faq" },
 };
 
-const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = [
+interface QA {
+  q: string;
+  a: React.ReactNode;
+  /** Platte tekst voor de FAQPage-structured-data. */
+  text: string;
+}
+
+const GROUPS: { title: string; items: QA[] }[] = [
   {
     title: "Bestellen & betalen",
     items: [
       {
         q: "Hoe plaats ik een bestelling?",
         a: "Voeg producten toe aan je winkelwagen en reken veilig af. Voor verf kies je eerst je kleur — die mengen wij exact voor je.",
+        text: "Voeg producten toe aan je winkelwagen en reken veilig af. Voor verf kies je eerst je kleur — die mengen wij exact voor je.",
       },
       {
         q: "Welke betaalmethoden accepteren jullie?",
         a: "Je betaalt veilig via Mollie met onder andere iDEAL, creditcard en — waar beschikbaar — achteraf betalen.",
+        text: "Je betaalt veilig via Mollie met onder andere iDEAL, creditcard en — waar beschikbaar — achteraf betalen.",
       },
       {
         q: "Heb ik een account nodig?",
         a: "Nee, je kunt als gast bestellen. Met een (gratis) account en KLUSRPAS profiteer je wel van extra voordeel en bewaar je je bestellingen en kleuren.",
+        text: "Nee, je kunt als gast bestellen. Met een gratis account en KLUSRPAS profiteer je van extra voordeel en bewaar je je bestellingen en kleuren.",
       },
     ],
   },
@@ -41,6 +51,7 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
       {
         q: "Wanneer is mijn bestelling in huis?",
         a: "Voor 16:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
+        text: "Voor 16:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
       },
       {
         q: "Kan ik in de winkel afhalen?",
@@ -50,6 +61,7 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
             <Link href="/winkels">winkels</Link>.
           </>
         ),
+        text: "Ja, afhalen in een KLUSR-winkel is gratis.",
       },
       {
         q: "Hoe retourneer ik een product?",
@@ -60,6 +72,7 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
             uitgesloten van retour (zie <Link href="/voorwaarden">voorwaarden</Link>).
           </>
         ),
+        text: "Je hebt 14 dagen bedenktijd. Meld je retour bij onze klantenservice. Op kleur gemengde verf is uitgesloten van retour.",
       },
     ],
   },
@@ -74,6 +87,7 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
             onze <Link href="/kleurkiezer">kleurkiezer</Link>. Wij mengen de verf exact op kleur.
           </>
         ),
+        text: "Ja. Kies uit duizenden kleuren (Gamma, Sikkens, RAL, AkzoNobel) of je eigen tint in onze kleurkiezer. Wij mengen de verf exact op kleur.",
       },
       {
         q: "Hoe werkt mengverf precies?",
@@ -83,10 +97,12 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
             <Link href="/mengverf">de mengverf-pagina</Link>.
           </>
         ),
+        text: "Je kiest een kleur, wij mengen die professioneel in de juiste basis. Meer lees je op de mengverf-pagina.",
       },
       {
         q: "Kan ik gemengde verf ruilen?",
         a: "Op kleur gemengde verf maken we speciaal voor jou en is daarom uitgesloten van het herroepingsrecht, tenzij er sprake is van een gebrek.",
+        text: "Op kleur gemengde verf maken we speciaal voor jou en is daarom uitgesloten van het herroepingsrecht, tenzij er sprake is van een gebrek.",
       },
     ],
   },
@@ -101,18 +117,35 @@ const GROUPS: { title: string; items: { q: string; a: React.ReactNode }[] }[] = 
             alles over op de <Link href="/kluspas">KLUSRPAS-pagina</Link>.
           </>
         ),
+        text: "De gratis KLUSRPAS geeft je altijd de scherpste prijs en exclusieve acties.",
       },
       {
         q: "Wat kost de KLUSRPAS?",
         a: "Niets — de KLUSRPAS is gratis aan te vragen en te gebruiken.",
+        text: "Niets — de KLUSRPAS is gratis aan te vragen en te gebruiken.",
       },
     ],
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: GROUPS.flatMap((g) => g.items).map((it) => ({
+    "@type": "Question",
+    name: it.q,
+    acceptedAnswer: { "@type": "Answer", text: it.text },
+  })),
+};
+
 export default function FaqPage() {
   return (
     <div className="pb-16">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div className="container-klusr">
         <Breadcrumb items={[{ label: "Veelgestelde vragen" }]} />
       </div>

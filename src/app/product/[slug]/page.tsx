@@ -18,7 +18,7 @@ import { ViewItemTracker } from "@/components/analytics/view-item-tracker";
 import { ProductCarousel } from "@/components/shared/product-carousel";
 import { SectionHeading } from "@/components/shared/section-heading";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
 // Prerender a representative subset at build time; the remaining product pages
 // render on demand (dynamicParams defaults to true). Keeps builds fast with the
@@ -36,9 +36,10 @@ export async function generateMetadata({
   if (!product) return { title: "Product niet gevonden" };
 
   const title = `${product.brand} ${product.title}`;
-  const description = `${product.title} — ${product.highlights
-    .slice(0, 3)
-    .join(", ")}. KLUSRPAS-prijs vanaf €${product.kluspasPrice}. Advies van ex-schilders bij KLUSR.`;
+  const description =
+    product.description.length > 160
+      ? `${product.description.slice(0, 157).trimEnd()}…`
+      : product.description;
 
   return {
     title,
