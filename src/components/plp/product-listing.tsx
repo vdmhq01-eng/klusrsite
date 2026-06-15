@@ -108,6 +108,64 @@ function productVolumes(p: Product): string[] {
   return [...out];
 }
 
+/* ---- Attribuut-facetten: verschijnen alleen waar de data ze heeft ---- */
+interface AttrDef {
+  id: string;
+  label: string;
+  re: RegExp;
+}
+interface AttrFacet {
+  key: string;
+  title: string;
+  defs: AttrDef[];
+}
+
+const ATTRIBUTE_FACETS: AttrFacet[] = [
+  {
+    key: "glans",
+    title: "Glansgraad",
+    defs: [
+      { id: "hoogglans", label: "Hoogglans", re: /hoogglans/i },
+      { id: "zijdeglans", label: "Zijdeglans", re: /zijdeglans/i },
+      { id: "zijdemat", label: "Zijdemat", re: /zijdemat/i },
+      { id: "halfmat", label: "Halfmat", re: /halfmat/i },
+      { id: "satin", label: "Satin", re: /\bsatin\b/i },
+      { id: "mat", label: "Mat", re: /\bmat\b/i },
+      { id: "glans", label: "Glans", re: /\bglans\b/i },
+    ],
+  },
+  {
+    key: "materiaal",
+    title: "Materiaal",
+    defs: [
+      { id: "rvs", label: "RVS", re: /\b(rvs|inox)\b/i },
+      { id: "verzinkt", label: "Verzinkt", re: /verzinkt|gegalvaniseerd|galva/i },
+      { id: "messing", label: "Messing", re: /messing/i },
+      { id: "vernikkeld", label: "Vernikkeld", re: /vernikkeld/i },
+      { id: "staal", label: "Staal", re: /\bstaal\b/i },
+    ],
+  },
+  {
+    key: "fitting",
+    title: "Fitting",
+    defs: [
+      { id: "e27", label: "E27", re: /\be27\b/i },
+      { id: "e14", label: "E14", re: /\be14\b/i },
+      { id: "gu10", label: "GU10", re: /\bgu10\b/i },
+      { id: "gu5", label: "GU5.3", re: /gu\s?5[.,]?3/i },
+      { id: "g9", label: "G9", re: /\bg9\b/i },
+      { id: "b22", label: "B22", re: /\bb22\b/i },
+    ],
+  },
+];
+
+/** Eerste (meest specifieke) attribuut-waarde voor een product, of null. */
+function attrValue(facet: AttrFacet, p: Product): string | null {
+  const hay = `${p.title} ${p.subCategory ?? ""}`;
+  for (const d of facet.defs) if (d.re.test(hay)) return d.id;
+  return null;
+}
+
 interface Filters {
   brands: string[];
   subCategories: string[];
@@ -116,6 +174,8 @@ interface Filters {
   badges: ProductBadge[];
   minRating: number;
   mengverf: boolean;
+  /** Geselecteerde attribuut-waarden per facet-key (glans/materiaal/fitting/…). */
+  attrs: Record<string, string[]>;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -126,6 +186,7 @@ const EMPTY_FILTERS: Filters = {
   badges: [],
   minRating: 0,
   mengverf: false,
+  attrs: {},
 };
 
 /* --------------------------------------------------------------- component */
@@ -188,6 +249,21 @@ export function ProductListing({
     [visibleProducts],
   );
 
+  // Attribuut-facetten die in deze set voorkomen (≥2 waarden) — categorie-afhankelijk.
+  const availableAttrs = useMemo(() => {
+    const out: { facet: AttrFacet; values: AttrDef[] }[] = [];
+    for (const facet of ATTRIBUTE_FACETS) {
+      const present = new Set<string>();
+      for (const p of visibleProducts) {
+        const v = attrValue(facet, p);
+        if (v) present.add(v);
+      }
+      const values = facet.defs.filter((d) => present.has(d.id));
+      if (values.length >= 2) out.push({ facet, values });
+    }
+    return out;
+  }, [visibleProducts]);
+
   const filtered = useMemo(() => {
     return visibleProducts.filter((p) => {
       if (filters.mengverf && !p.colorMatchable) return false;
@@ -216,6 +292,14 @@ export function ProductListing({
       if (filters.badges.length) {
         const hasBadge = filters.badges.some((b) => p.badges?.includes(b));
         if (!hasBadge) return false;
+      }
+
+      for (const facet of ATTRIBUTE_FACETS) {
+        const sel = filters.attrs[facet.key];
+        if (sel && sel.length) {
+          const v = attrValue(facet, p);
+          if (!v || !sel.includes(v)) return false;
+        }
       }
 
       return true;
@@ -247,7 +331,8 @@ export function ProductListing({
     filters.sizes.length +
     filters.badges.length +
     (filters.minRating > 0 ? 1 : 0) +
-    (filters.mengverf ? 1 : 0);
+    (filters.mengverf ? 1 : 0) +
+    Object.values(filters.attrs).reduce((s, a) => s + a.length, 0);
 
   function toggleIn<T>(list: T[], value: T): T[] {
     return list.includes(value)
@@ -268,6 +353,15 @@ export function ProductListing({
   const toggleRating = (min: number) =>
     setFilters((f) => ({ ...f, minRating: f.minRating === min ? 0 : min }));
   const toggleMengverf = () => setFilters((f) => ({ ...f, mengverf: !f.mengverf }));
+  const toggleAttr = (key: string, id: string) =>
+    setFilters((f) => {
+      const cur = f.attrs[key] ?? [];
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      const attrs = { ...f.attrs };
+      if (next.length) attrs[key] = next;
+      else delete attrs[key];
+      return { ...f, attrs };
+    });
   const clearFilters = () => setFilters(EMPTY_FILTERS);
 
   // Fire view_item_list once on mount (matches the ViewItemListTracker shape).
@@ -304,6 +398,8 @@ export function ProductListing({
       onToggleBadge={toggleBadge}
       onToggleRating={toggleRating}
       onToggleMengverf={toggleMengverf}
+      availableAttrs={availableAttrs}
+      onToggleAttr={toggleAttr}
     />
   );
 
@@ -426,6 +522,16 @@ export function ProductListing({
                   {PRICE_BUCKETS.find((b) => b.id === id)?.label ?? id}
                 </FilterChip>
               ))}
+              {availableAttrs.flatMap(({ facet }) =>
+                (filters.attrs[facet.key] ?? []).map((id) => (
+                  <FilterChip
+                    key={`${facet.key}-${id}`}
+                    onRemove={() => toggleAttr(facet.key, id)}
+                  >
+                    {facet.defs.find((d) => d.id === id)?.label ?? id}
+                  </FilterChip>
+                )),
+              )}
               {filters.minRating > 0 && (
                 <FilterChip onRemove={() => toggleRating(filters.minRating)}>
                   {String(filters.minRating).replace(".", ",")}+ sterren
@@ -467,6 +573,7 @@ function FilterControls({
   availableSizes,
   availableBadges,
   hasMengverf,
+  availableAttrs,
   filters,
   onToggleBrand,
   onToggleSub,
@@ -475,12 +582,14 @@ function FilterControls({
   onToggleBadge,
   onToggleRating,
   onToggleMengverf,
+  onToggleAttr,
 }: {
   availableBrands: string[];
   availableSubCategories: string[];
   availableSizes: string[];
   availableBadges: ProductBadge[];
   hasMengverf: boolean;
+  availableAttrs: { facet: AttrFacet; values: AttrDef[] }[];
   filters: Filters;
   onToggleBrand: (brand: string) => void;
   onToggleSub: (slug: string) => void;
@@ -489,6 +598,7 @@ function FilterControls({
   onToggleBadge: (badge: ProductBadge) => void;
   onToggleRating: (min: number) => void;
   onToggleMengverf: () => void;
+  onToggleAttr: (key: string, id: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-5">
@@ -522,6 +632,23 @@ function FilterControls({
           <Separator />
         </>
       )}
+
+      {availableAttrs.map(({ facet, values }) => (
+        <div key={facet.key} className="flex flex-col gap-5">
+          <FilterGroup title={facet.title}>
+            {values.map((v) => (
+              <CheckRow
+                key={v.id}
+                id={`filter-${facet.key}-${v.id}`}
+                checked={(filters.attrs[facet.key] ?? []).includes(v.id)}
+                onChange={() => onToggleAttr(facet.key, v.id)}
+                label={v.label}
+              />
+            ))}
+          </FilterGroup>
+          <Separator />
+        </div>
+      ))}
 
       <FilterGroup title="Prijs">
         {PRICE_BUCKETS.map((bucket) => (
