@@ -1121,17 +1121,110 @@ export function getBundles(): Product[] {
   return products.filter((p) => p.badges?.includes("BUNDEL"));
 }
 
-export function searchProducts(query: string): Product[] {
-  const q = query.trim().toLowerCase();
+/* ----------------------------------------------------------------- search */
+
+function normalizeSearch(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+/** Levenshtein-afstand met vroege afkap — voor typo-tolerantie. */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      cur[j] = v;
+      if (v < best) best = v;
+    }
+    if (best > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+interface SearchEntry {
+  p: Product;
+  title: string;
+  brand: string;
+  hay: string;
+  words: string[];
+}
+
+let searchIndex: SearchEntry[] | null = null;
+function getSearchIndex(): SearchEntry[] {
+  if (searchIndex) return searchIndex;
+  searchIndex = products.map((p) => {
+    const hay = normalizeSearch(
+      `${p.title} ${p.brand} ${p.category} ${p.subCategory ?? ""} ${p.highlights.join(" ")}`,
+    );
+    return {
+      p,
+      title: normalizeSearch(p.title),
+      brand: normalizeSearch(p.brand),
+      hay,
+      words: Array.from(new Set(hay.split(/[^a-z0-9]+/).filter((w) => w.length > 1))),
+    };
+  });
+  return searchIndex;
+}
+
+/**
+ * Relevantie-zoekfunctie met typo-tolerantie (Doofinder-stijl): scoort op
+ * exacte titel-/merktreffers, token-dekking en fuzzy bijna-treffers, en sorteert
+ * op relevantie met populariteit als tie-breaker.
+ */
+export function searchProducts(query: string, limit = 60): Product[] {
+  const q = normalizeSearch(query.trim());
   if (!q) return [];
-  return products.filter(
-    (p) =>
-      p.title.toLowerCase().includes(q) ||
-      p.brand.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      (p.subCategory?.toLowerCase().includes(q) ?? false) ||
-      p.highlights.some((h) => h.toLowerCase().includes(q)),
-  );
+  const tokens = q.split(/\s+/).filter(Boolean);
+  const scored: { p: Product; score: number }[] = [];
+
+  for (const e of getSearchIndex()) {
+    let score = 0;
+    if (e.title === q) score += 120;
+    else if (e.title.startsWith(q)) score += 60;
+    if (e.title.includes(q)) score += 40;
+    if (e.brand.includes(q)) score += 30;
+    else if (e.hay.includes(q)) score += 12;
+
+    let matched = 0;
+    for (const t of tokens) {
+      if (e.hay.includes(t)) {
+        score += e.title.includes(t) ? 12 : 7;
+        matched++;
+        continue;
+      }
+      const tol = t.length <= 4 ? 1 : 2; // typo-tolerantie
+      let best = tol + 1;
+      for (const w of e.words) {
+        const d = editDistance(w, t, tol);
+        if (d < best) best = d;
+        if (best === 0) break;
+      }
+      if (best <= tol) {
+        score += 6 - best * 2;
+        matched++;
+      }
+    }
+
+    if (tokens.length > 1) {
+      if (matched === 0) continue;
+      if (matched < tokens.length) score -= (tokens.length - matched) * 10;
+    } else if (matched === 0 && score === 0) {
+      continue;
+    }
+    if (score <= 0) continue;
+
+    score += Math.min(e.p.reviewCount, 250) / 250; // lichte populariteits-nudge
+    scored.push({ p: e.p, score });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((s) => s.p);
 }
 
 export const allProductSlugs = products.map((p) => p.slug);

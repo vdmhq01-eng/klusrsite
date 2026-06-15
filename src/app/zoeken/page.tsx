@@ -26,7 +26,7 @@ function getQuery(searchParams: SearchPageProps["searchParams"]): string {
 
 export default function SearchPage({ searchParams }: SearchPageProps) {
   const query = getQuery(searchParams);
-  const results = query ? searchProducts(query) : [];
+  const results = query ? searchProducts(query, 240) : [];
   const hasQuery = query.length > 0;
   const hasResults = results.length > 0;
 
