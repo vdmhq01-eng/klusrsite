@@ -25,11 +25,31 @@ export function resolveImageUrl(url: string): string {
   return url;
 }
 
+/** Volume van een variant in ml (voor sortering); valt terug op het eerste getal. */
+function variantVolumeMl(v: ProductVariant): number {
+  const m = v.label.toLowerCase().match(/([\d]+(?:[.,]\d+)?)\s*(ml|cl|l|liter)\b/);
+  if (m) {
+    const n = parseFloat(m[1].replace(",", "."));
+    return m[2] === "ml" ? n : m[2] === "cl" ? n * 10 : n * 1000;
+  }
+  const n = v.label.match(/([\d]+(?:[.,]\d+)?)/);
+  return n ? parseFloat(n[1].replace(",", ".")) : 0;
+}
+
+/** Sorteer maatvarianten klein → groot (bv. 500 ml vóór 1 L). */
+function sortVariants(variants: ProductVariant[]): ProductVariant[] {
+  const hasVolume = variants.some((v) => /\b(ml|cl|l|liter)\b/i.test(v.label));
+  return hasVolume
+    ? [...variants].sort((a, b) => variantVolumeMl(a) - variantVolumeMl(b))
+    : variants;
+}
+
 const feedProducts = (
   ((feedData as { products?: unknown[] }).products ?? []) as unknown as Product[]
 ).map((p) => ({
   ...p,
   images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
+  variants: sortVariants(p.variants ?? []),
 }));
 
 /* ------------------------------------------------------------------ helpers */

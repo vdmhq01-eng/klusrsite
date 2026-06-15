@@ -86,7 +86,7 @@ export default function SubCategoryPage({ params }: SubPageProps) {
       </section>
 
       {/* Klushulp funnel */}
-      <KlushulpFunnel compact />
+      <KlushulpFunnel compact categorySlug={category.slug} />
 
       {/* Fallback notice when the subcategory has no dedicated products yet */}
       {usesFallback && (

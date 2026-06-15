@@ -72,12 +72,14 @@ interface Filters {
   brands: string[];
   priceBuckets: string[];
   badges: ProductBadge[];
+  mengverf: boolean;
 }
 
 const EMPTY_FILTERS: Filters = {
   brands: [],
   priceBuckets: [],
   badges: [],
+  mengverf: false,
 };
 
 /* --------------------------------------------------------------- component */
@@ -119,8 +121,14 @@ export function ProductListing({
     [visibleProducts],
   );
 
+  const hasMengverf = useMemo(
+    () => visibleProducts.some((p) => p.colorMatchable),
+    [visibleProducts],
+  );
+
   const filtered = useMemo(() => {
     return visibleProducts.filter((p) => {
+      if (filters.mengverf && !p.colorMatchable) return false;
       if (filters.brands.length && !filters.brands.includes(p.brand)) return false;
 
       if (filters.priceBuckets.length) {
@@ -160,7 +168,10 @@ export function ProductListing({
   }, [filtered, sort]);
 
   const activeFilterCount =
-    filters.brands.length + filters.priceBuckets.length + filters.badges.length;
+    filters.brands.length +
+    filters.priceBuckets.length +
+    filters.badges.length +
+    (filters.mengverf ? 1 : 0);
 
   function toggleIn<T>(list: T[], value: T): T[] {
     return list.includes(value)
@@ -174,6 +185,7 @@ export function ProductListing({
     setFilters((f) => ({ ...f, priceBuckets: toggleIn(f.priceBuckets, id) }));
   const toggleBadge = (badge: ProductBadge) =>
     setFilters((f) => ({ ...f, badges: toggleIn(f.badges, badge) }));
+  const toggleMengverf = () => setFilters((f) => ({ ...f, mengverf: !f.mengverf }));
   const clearFilters = () => setFilters(EMPTY_FILTERS);
 
   // Fire view_item_list once on mount (matches the ViewItemListTracker shape).
@@ -199,10 +211,12 @@ export function ProductListing({
     <FilterControls
       availableBrands={availableBrands}
       availableBadges={availableBadges}
+      hasMengverf={hasMengverf}
       filters={filters}
       onToggleBrand={toggleBrand}
       onToggleBucket={toggleBucket}
       onToggleBadge={toggleBadge}
+      onToggleMengverf={toggleMengverf}
     />
   );
 
@@ -317,6 +331,9 @@ export function ProductListing({
                   {BADGE_LABELS[badge]}
                 </FilterChip>
               ))}
+              {filters.mengverf && (
+                <FilterChip onRemove={toggleMengverf}>Op kleur te mengen</FilterChip>
+              )}
             </div>
           )}
 
@@ -345,20 +362,37 @@ export function ProductListing({
 function FilterControls({
   availableBrands,
   availableBadges,
+  hasMengverf,
   filters,
   onToggleBrand,
   onToggleBucket,
   onToggleBadge,
+  onToggleMengverf,
 }: {
   availableBrands: string[];
   availableBadges: ProductBadge[];
+  hasMengverf: boolean;
   filters: Filters;
   onToggleBrand: (brand: string) => void;
   onToggleBucket: (id: string) => void;
   onToggleBadge: (badge: ProductBadge) => void;
+  onToggleMengverf: () => void;
 }) {
   return (
     <div className="flex flex-col gap-5">
+      {hasMengverf && (
+        <>
+          <FilterGroup title="Mengverf">
+            <CheckRow
+              id="filter-mengverf"
+              checked={filters.mengverf}
+              onChange={onToggleMengverf}
+              label="Op kleur te mengen"
+            />
+          </FilterGroup>
+          <Separator />
+        </>
+      )}
       <FilterGroup title="Prijs">
         {PRICE_BUCKETS.map((bucket) => (
           <CheckRow

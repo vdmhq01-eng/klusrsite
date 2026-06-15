@@ -127,7 +127,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       )}
 
       {/* Klushulp funnel */}
-      <KlushulpFunnel compact />
+      <KlushulpFunnel compact categorySlug={category.slug} />
 
       {/* Product listing */}
       <ProductListing products={products} listName={category.title} />

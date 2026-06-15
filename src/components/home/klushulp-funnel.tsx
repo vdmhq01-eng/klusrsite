@@ -11,6 +11,8 @@ interface KlushulpFunnelProps {
   subtitle?: string;
   className?: string;
   compact?: boolean;
+  /** Beperk de klussen tot wat bij deze categorie past (relatedCategories). */
+  categorySlug?: string;
 }
 
 /**
@@ -21,7 +23,13 @@ export function KlushulpFunnel({
   subtitle = "Kies je klus en wij helpen je met de juiste producten en advies.",
   className,
   compact = false,
+  categorySlug,
 }: KlushulpFunnelProps) {
+  const tasks = categorySlug
+    ? klushulpTasks.filter((t) => t.relatedCategories.includes(categorySlug))
+    : klushulpTasks;
+  if (tasks.length === 0) return null;
+
   return (
     <section className={cn("container-klusr", className)}>
       <div className="rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6">
@@ -32,7 +40,7 @@ export function KlushulpFunnel({
           </div>
         )}
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-          {klushulpTasks.map((task) => (
+          {tasks.map((task) => (
             <Link
               key={task.id}
               href={`/klushulp/${task.slug}`}
