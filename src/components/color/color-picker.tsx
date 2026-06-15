@@ -47,11 +47,15 @@ export function ColorPicker({
   const allColors = useMemo(() => collections.flatMap((c) => c.colors), [collections]);
 
   const visibleColors = useMemo(() => {
-    const pool = query.trim()
-      ? allColors.filter((c) => {
-          const q = query.toLowerCase();
-          return c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
-        })
+    const q = query.trim().toLowerCase();
+    const pool = q
+      ? allColors.filter(
+          (c) =>
+            c.name.toLowerCase().includes(q) ||
+            c.code.toLowerCase().includes(q) ||
+            (c.collection ?? "").toLowerCase().includes(q) ||
+            (c.provider ?? "").toLowerCase().includes(q),
+        )
       : collections.find((c) => c.id === activeCollection)?.colors ?? [];
     return pool.slice(0, 200);
   }, [query, activeCollection, collections, allColors]);
@@ -146,19 +150,19 @@ export function ColorPicker({
           <Pipette className="h-4 w-4 text-primary" />
           Eigen kleur mengen
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="color"
             value={customHex}
             onChange={(e) => setCustomHex(e.target.value)}
-            className="h-10 w-12 cursor-pointer rounded border border-border bg-card"
+            className="h-10 w-12 shrink-0 cursor-pointer rounded border border-border bg-card"
             aria-label="Kleurkiezer"
           />
           <Input
             value={customHex}
             onChange={(e) => setCustomHex(e.target.value)}
             placeholder="#C90000"
-            className="font-mono uppercase"
+            className="min-w-0 flex-1 font-mono uppercase"
           />
           <Button variant="outline" onClick={applyCustom}>
             Toepassen
@@ -168,7 +172,7 @@ export function ColorPicker({
 
       {/* Selected preview + confirm */}
       {selected && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">
           <div className="flex items-center gap-3">
             <span
               className="h-12 w-12 rounded-md border border-black/10"

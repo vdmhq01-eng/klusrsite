@@ -113,6 +113,8 @@ export interface SelectedColor {
   code: string; // e.g. RAL 9010
   hex: string;
   collection?: string;
+  /** Portal-bron, bv. "kleurenwaaier-gamma" of "akzo" (voor zoeken/filteren). */
+  provider?: string;
   /** Resolved tinting base for this colour. */
   base?: PaintBaseSelection;
 }

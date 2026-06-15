@@ -20,6 +20,7 @@ interface PortalColor {
   hex?: string;
   collectionId?: string | number;
   collection?: string;
+  provider?: string;
 }
 
 function normalizeHex(h?: string): string {
@@ -51,6 +52,7 @@ export async function fetchPortalColors(): Promise<ColorCollection[]> {
         code: String(c?.code || name),
         hex: normalizeHex(c?.hex),
         collection: collectionName,
+        provider: c?.provider ? String(c.provider) : undefined,
       } as SelectedColor);
     }
     const collections = [...byId.values()].filter((c) => c.colors.length);
