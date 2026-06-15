@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* KLUSR design tokens (mapped to shadcn variables) */
+    --background: 0 0% 97%; /* #F7F7F7 */
+    --foreground: 0 0% 6%; /* #101010 */
+
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 6%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 6%;
+
+    --primary: 0 100% 39%; /* KLUSR red #C90000 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 0 0% 95%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 100% 39%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%; /* #E5E5E5 */
+    --input: 0 0% 90%;
+    --ring: 0 100% 39%;
+
+    --radius: 0.625rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+  }
+  /* Hide scrollbar utility for horizontal scrollers */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  /* Subtle diagonal "kraft / bouwmarkt" band */
+  .klusr-stripes {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(255, 196, 0, 0.12) 0,
+      rgba(255, 196, 0, 0.12) 12px,
+      transparent 12px,
+      transparent 24px
+    );
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Standard page width wrapper */
+  .container-klusr {
+    @apply mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Reduce layout shift while web fonts load */
+html {
+  scroll-behavior: smooth;
+}

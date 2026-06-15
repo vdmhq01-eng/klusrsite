@@ -1,0 +1,169 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Check, Search, Pipette } from "lucide-react";
+import type { SelectedColor } from "@/types";
+import { colorCollections, allColors, isLightColor } from "@/lib/data/colors";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/tracking";
+import { cn } from "@/lib/utils";
+
+interface ColorPickerProps {
+  value?: SelectedColor;
+  onSelect: (color: SelectedColor) => void;
+  /** Show the confirm button (used in dialog mode). */
+  onConfirm?: (color: SelectedColor) => void;
+  confirmLabel?: string;
+}
+
+export function ColorPicker({
+  value,
+  onSelect,
+  onConfirm,
+  confirmLabel = "Kies deze kleur",
+}: ColorPickerProps) {
+  const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<SelectedColor | undefined>(value);
+  const [customHex, setCustomHex] = useState(value?.hex ?? "#C90000");
+
+  const visibleColors = useMemo(() => {
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      return allColors.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
+      );
+    }
+    return colorCollections.find((c) => c.id === activeCollection)?.colors ?? [];
+  }, [query, activeCollection]);
+
+  function pick(color: SelectedColor) {
+    setSelected(color);
+    onSelect(color);
+    trackEvent("color_selected", { color_code: color.code, color_name: color.name });
+  }
+
+  function applyCustom() {
+    const hex = customHex.startsWith("#") ? customHex : `#${customHex}`;
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+    pick({ name: "Eigen kleur", code: hex.toUpperCase(), hex, collection: "Op maat" });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Zoek op kleurnaam of code (bijv. RAL 9010)"
+          className="pl-9"
+        />
+      </div>
+
+      {/* Collection tabs */}
+      {!query.trim() && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {colorCollections.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setActiveCollection(c.id)}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                activeCollection === c.id
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/40",
+              )}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Swatch grid */}
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+        {visibleColors.map((color) => {
+          const active = selected?.code === color.code;
+          return (
+            <button
+              key={color.code}
+              onClick={() => pick(color)}
+              title={`${color.name} (${color.code})`}
+              className={cn(
+                "group relative aspect-square rounded-md border transition-all",
+                active ? "ring-2 ring-primary ring-offset-2" : "border-black/10 hover:scale-105",
+              )}
+              style={{ backgroundColor: color.hex }}
+            >
+              {active && (
+                <Check
+                  className={cn(
+                    "absolute inset-0 m-auto h-5 w-5",
+                    isLightColor(color.hex) ? "text-black" : "text-white",
+                  )}
+                  strokeWidth={3}
+                />
+              )}
+            </button>
+          );
+        })}
+        {visibleColors.length === 0 && (
+          <p className="col-span-full py-6 text-center text-sm text-muted-foreground">
+            Geen kleuren gevonden. Probeer een andere zoekterm.
+          </p>
+        )}
+      </div>
+
+      {/* Custom colour */}
+      <div className="rounded-lg border border-border bg-secondary/40 p-3">
+        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+          <Pipette className="h-4 w-4 text-primary" />
+          Eigen kleur mengen
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={customHex}
+            onChange={(e) => setCustomHex(e.target.value)}
+            className="h-10 w-12 cursor-pointer rounded border border-border bg-card"
+            aria-label="Kleurkiezer"
+          />
+          <Input
+            value={customHex}
+            onChange={(e) => setCustomHex(e.target.value)}
+            placeholder="#C90000"
+            className="font-mono uppercase"
+          />
+          <Button variant="outline" onClick={applyCustom}>
+            Toepassen
+          </Button>
+        </div>
+      </div>
+
+      {/* Selected preview + confirm */}
+      {selected && (
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-3">
+          <div className="flex items-center gap-3">
+            <span
+              className="h-12 w-12 rounded-md border border-black/10"
+              style={{ backgroundColor: selected.hex }}
+            />
+            <div>
+              <p className="text-sm font-bold">{selected.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {selected.code}
+                {selected.collection ? ` · ${selected.collection}` : ""}
+              </p>
+            </div>
+          </div>
+          {onConfirm && (
+            <Button onClick={() => onConfirm(selected)}>{confirmLabel}</Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

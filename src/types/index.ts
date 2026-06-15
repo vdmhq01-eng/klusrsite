@@ -1,0 +1,200 @@
+/**
+ * KLUSR domain types.
+ * These model the webshop data described in the project brief.
+ */
+
+export type AiContentStatus = "complete" | "missing" | "suggested" | "approved";
+
+export interface StoreStock {
+  storeId: string;
+  /** Units available in this store. */
+  quantity: number;
+}
+
+export interface ProductVariant {
+  id: string;
+  /** Human label e.g. "2.5L", "5L", "10L". */
+  label: string;
+  /** Content size in liters / units, for "per liter" calculations. */
+  size?: number;
+  unit?: "L" | "kg" | "st" | "m";
+  price: number;
+  compareAtPrice?: number;
+  kluspasPrice: number;
+  /** Stock per store for this specific variant. */
+  stockByStore: StoreStock[];
+}
+
+export interface Review {
+  id: string;
+  author: string;
+  rating: number;
+  title?: string;
+  body: string;
+  date: string;
+  verified?: boolean;
+}
+
+export interface Specification {
+  group: string;
+  items: { label: string; value: string }[];
+}
+
+export interface ProductFaq {
+  question: string;
+  answer: string;
+}
+
+export type ProductBadge = "ACTIE" | "BESTSELLER" | "PRO KEUZE" | "NIEUW" | "BUNDEL";
+
+export interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  brand: string;
+  /** Short benefit bullets shown high on the PDP. */
+  highlights: string[];
+  description: string;
+  images: string[];
+  /** Base price (mirrors the default variant). */
+  price: number;
+  compareAtPrice?: number;
+  kluspasPrice: number;
+  category: string; // category slug
+  subCategory?: string;
+  badges?: ProductBadge[];
+  rating: number;
+  reviewCount: number;
+  reviews?: Review[];
+  specifications: Specification[];
+  faqs?: ProductFaq[];
+  processingAdvice?: string;
+  variants: ProductVariant[];
+  stockByStore: StoreStock[];
+  /** Product ids frequently bought together. */
+  frequentlyBoughtTogether: string[];
+  /** Whether this product can be colour-matched (paint). */
+  colorMatchable?: boolean;
+  aiGeneratedContentStatus: AiContentStatus;
+  /** Whether description/specs/faqs were AI generated (for the admin view). */
+  contentFlags?: {
+    description?: AiContentStatus;
+    specifications?: AiContentStatus;
+    faqs?: AiContentStatus;
+    seo?: AiContentStatus;
+  };
+}
+
+export interface Category {
+  id: string;
+  title: string;
+  slug: string;
+  image: string;
+  icon?: string;
+  description: string;
+  seoTitle: string;
+  seoDescription: string;
+  subCategories?: { title: string; slug: string }[];
+  /** Whether products in this category are paint (enables colour picker). */
+  paint?: boolean;
+}
+
+export interface SelectedColor {
+  name: string;
+  code: string; // e.g. RAL 9010
+  hex: string;
+  collection?: string;
+}
+
+export interface CartItem {
+  /** Stable line key (product + variant + color). */
+  key: string;
+  productId: string;
+  variantId: string;
+  title: string;
+  brand: string;
+  image: string;
+  variantLabel: string;
+  slug: string;
+  quantity: number;
+  price: number;
+  kluspasPrice: number;
+  selectedColor?: SelectedColor;
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  slug: string;
+  city: string;
+  address: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+  openingHours: { day: string; hours: string }[];
+  lat: number;
+  lng: number;
+  image: string;
+  isFlagship?: boolean;
+  opening?: string;
+}
+
+export interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  image: string;
+  category: string;
+  readingTime: number;
+  date: string;
+  author: string;
+  body: string[];
+}
+
+export type OrderStatus =
+  | "open"
+  | "pending"
+  | "paid"
+  | "authorized"
+  | "shipped"
+  | "delivered"
+  | "canceled"
+  | "failed"
+  | "expired";
+
+export interface OrderCustomer {
+  email: string;
+  firstName: string;
+  lastName: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  phone?: string;
+}
+
+export interface Order {
+  id: string;
+  reference: string;
+  customer: OrderCustomer;
+  items: CartItem[];
+  paymentStatus: OrderStatus;
+  paymentMethod?: string;
+  molliePaymentId?: string;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  kluspasSavings: number;
+  createdAt: string;
+  estimatedDelivery?: string;
+}
+
+export interface KlushulpTask {
+  id: string;
+  title: string;
+  slug: string;
+  icon: string;
+  description: string;
+  /** Suggested category slugs / product ids for this job. */
+  relatedCategories: string[];
+}

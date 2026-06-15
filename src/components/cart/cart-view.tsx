@@ -1,0 +1,344 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Trash2,
+  ArrowRight,
+  ShoppingCart,
+  Sparkles,
+  ShieldCheck,
+  Truck,
+  RotateCcw,
+  Heart,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { QuantityStepper } from "./quantity-stepper";
+import { FreeShippingBar } from "./free-shipping-bar";
+import { ColorChip } from "./color-chip";
+import { ProductCarousel } from "@/components/shared/product-carousel";
+import { SectionHeading } from "@/components/shared/section-heading";
+import {
+  useCart,
+  cartSubtotal,
+  cartRegularSubtotal,
+  kluspasSavings,
+  shippingFor,
+  linePrice,
+} from "@/lib/store/cart";
+import { useMounted } from "@/lib/hooks/use-mounted";
+import {
+  getBestsellers,
+  getProductById,
+  getBundles,
+} from "@/lib/data/products";
+import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
+import { formatPrice } from "@/lib/utils";
+
+export function CartView() {
+  const {
+    items,
+    savedForLater,
+    kluspasActive,
+    updateQuantity,
+    removeItem,
+    saveForLater,
+    moveToCart,
+  } = useCart();
+  const mounted = useMounted();
+
+  if (!mounted) {
+    return <div className="container-klusr py-16 text-center text-muted-foreground">Laden…</div>;
+  }
+
+  const subtotal = cartSubtotal(items, kluspasActive);
+  const regular = cartRegularSubtotal(items);
+  const savings = kluspasSavings(items);
+  const shipping = shippingFor(subtotal);
+  const total = subtotal + shipping;
+
+  // "Maak je klus compleet" — bestsellers/bundles not already in cart.
+  const inCart = new Set(items.map((i) => i.productId));
+  const upsell = [...getBundles(), ...getBestsellers(8)]
+    .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
+    .filter((p) => !inCart.has(p.id))
+    .slice(0, 8);
+
+  const forgotten = ["frogtape-afplaktape", "anza-kwast-50", "schuurpapier-set"]
+    .map(getProductById)
+    .filter((p) => p && !inCart.has(p.id))
+    .slice(0, 3);
+
+  if (items.length === 0) {
+    return (
+      <div className="container-klusr py-16">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-5 text-center">
+          <div className="grid h-20 w-20 place-items-center rounded-full bg-secondary">
+            <ShoppingCart className="h-9 w-9 text-muted-foreground" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold">Je winkelwagen is leeg</h1>
+            <p className="mt-1 text-muted-foreground">
+              Bekijk ons assortiment en maak je klus compleet.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button asChild size="lg">
+              <Link href="/categorie/verf">Bekijk verf</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/klushulp">Klushulp</Link>
+            </Button>
+          </div>
+        </div>
+
+        {savedForLater.length > 0 && (
+          <SavedForLater items={savedForLater} onMove={moveToCart} onRemove={removeItem} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="container-klusr py-6">
+      <h1 className="mb-6 text-2xl font-extrabold sm:text-3xl">
+        Winkelwagen <span className="text-muted-foreground">({items.length})</span>
+      </h1>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        {/* Items */}
+        <div>
+          <FreeShippingBar subtotal={subtotal} className="mb-4" />
+
+          <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+            {items.map((item) => (
+              <li key={item.key} className="flex gap-4 p-4">
+                <Link
+                  href={`/product/${item.slug}`}
+                  className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-white"
+                >
+                  <Image src={item.image} alt={item.title} fill sizes="96px" className="object-cover" />
+                </Link>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold uppercase text-muted-foreground">
+                        {item.brand}
+                      </p>
+                      <Link href={`/product/${item.slug}`} className="font-semibold hover:text-primary">
+                        {item.title}
+                      </Link>
+                      <p className="text-sm text-muted-foreground">{item.variantLabel}</p>
+                      {item.selectedColor && (
+                        <ColorChip color={item.selectedColor} className="mt-1.5" />
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-primary">
+                        {formatPrice(linePrice(item, kluspasActive) * item.quantity)}
+                      </p>
+                      {kluspasActive && item.price > item.kluspasPrice && (
+                        <p className="text-xs text-muted-foreground line-through">
+                          {formatPrice(item.price * item.quantity)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-auto flex items-center gap-3 pt-3">
+                    <QuantityStepper
+                      size="sm"
+                      value={item.quantity}
+                      onChange={(q) => updateQuantity(item.key, q)}
+                    />
+                    <button
+                      onClick={() => saveForLater(item.key)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
+                    >
+                      <Heart className="h-3.5 w-3.5" /> Bewaar
+                    </button>
+                    <button
+                      onClick={() => removeItem(item.key)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Verwijder
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Vaak vergeten */}
+          {forgotten.length > 0 && (
+            <div className="mt-5 rounded-xl border border-border bg-card p-4">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold">
+                <Sparkles className="h-4 w-4 text-primary" /> Vaak vergeten
+              </p>
+              <ul className="grid gap-2 sm:grid-cols-3">
+                {forgotten.map((p) => (
+                  <ForgottenItem key={p!.id} productId={p!.id} />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {savedForLater.length > 0 && (
+            <SavedForLater items={savedForLater} onMove={moveToCart} onRemove={removeItem} />
+          )}
+        </div>
+
+        {/* Summary */}
+        <aside className="lg:sticky lg:top-28 lg:self-start">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-4 text-lg font-bold">Overzicht</h2>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Subtotaal</dt>
+                <dd className="font-medium">{formatPrice(regular)}</dd>
+              </div>
+              {kluspasActive && savings > 0 && (
+                <div className="flex justify-between text-primary">
+                  <dt className="inline-flex items-center gap-1 font-medium">
+                    <Sparkles className="h-3.5 w-3.5" /> Kluspas-voordeel
+                  </dt>
+                  <dd className="font-bold">-{formatPrice(savings)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Verzendkosten</dt>
+                <dd className="font-medium">
+                  {shipping === 0 ? (
+                    <span className="text-klusr-stock">Gratis</span>
+                  ) : (
+                    formatPrice(shipping)
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <Separator className="my-3" />
+            <div className="flex items-baseline justify-between">
+              <span className="font-bold">Totaal</span>
+              <span className="text-2xl font-black">{formatPrice(total)}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
+
+            <Button
+              asChild
+              size="lg"
+              className="mt-4 w-full"
+              onClick={() =>
+                trackEvent("begin_checkout", {
+                  value: total,
+                  items: items.map((i) =>
+                    toAnalyticsItem({
+                      id: i.productId,
+                      title: i.title,
+                      brand: i.brand,
+                      price: linePrice(i, kluspasActive),
+                      quantity: i.quantity,
+                    }),
+                  ),
+                })
+              }
+            >
+              <Link href="/checkout">
+                Verder naar afrekenen
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="mt-2 w-full">
+              <Link href="/categorie/verf">Verder winkelen</Link>
+            </Button>
+
+            <ul className="mt-4 space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-primary" /> Voor 16:00 besteld, morgen in huis
+              </li>
+              <li className="flex items-center gap-2">
+                <RotateCcw className="h-4 w-4 text-primary" /> Gratis retouren in de winkel
+              </li>
+              <li className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Veilig betalen via Mollie
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+      {/* Upsell */}
+      {upsell.length > 0 && (
+        <section className="mt-12">
+          <SectionHeading
+            title="Maak je klus compleet"
+            subtitle="Klussers kochten hier vaak ook"
+          />
+          <ProductCarousel products={upsell} listName="Maak je klus compleet" />
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ForgottenItem({ productId }: { productId: string }) {
+  const addItem = useCart((s) => s.addItem);
+  const product = getProductById(productId);
+  if (!product) return null;
+  return (
+    <li className="flex items-center gap-2 rounded-lg border border-border p-2">
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-white">
+        <Image src={product.images[0]} alt={product.title} fill sizes="48px" className="object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-semibold">{product.title}</p>
+        <p className="text-xs font-bold text-primary">{formatPrice(product.kluspasPrice)}</p>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => addItem({ product, variant: product.variants[0], quantity: 1 })}
+      >
+        +
+      </Button>
+    </li>
+  );
+}
+
+function SavedForLater({
+  items,
+  onMove,
+  onRemove,
+}: {
+  items: ReturnType<typeof useCart.getState>["savedForLater"];
+  onMove: (key: string) => void;
+  onRemove: (key: string) => void;
+}) {
+  return (
+    <div className="mt-6 rounded-xl border border-border bg-card p-4">
+      <p className="mb-3 text-sm font-bold">Bewaard voor later ({items.length})</p>
+      <ul className="space-y-3">
+        {items.map((item) => (
+          <li key={item.key} className="flex items-center gap-3">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-border bg-white">
+              <Image src={item.image} alt={item.title} fill sizes="56px" className="object-cover" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{item.title}</p>
+              <p className="text-xs font-bold text-primary">{formatPrice(item.kluspasPrice)}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => onMove(item.key)}>
+              In winkelwagen
+            </Button>
+            <button
+              onClick={() => onRemove(item.key)}
+              aria-label="Verwijder"
+              className="text-muted-foreground hover:text-primary"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
