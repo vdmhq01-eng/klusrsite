@@ -20,6 +20,13 @@ const COLLECTION_LOCATION =
 // Barcode-serie/range voor de Barcode-API (bv. "0000000-9999999").
 const BARCODE_SERIE = process.env.POSTNL_BARCODE_SERIE;
 const SENDER_NAME = process.env.POSTNL_SENDER_NAME || "KLUSR B.V.";
+// Afzender-/retouradres (AddressType 02) — PostNL vereist dit naast de ontvanger.
+const SENDER_STREET = process.env.POSTNL_SENDER_STREET || "";
+const SENDER_HOUSENR = process.env.POSTNL_SENDER_HOUSENR || "";
+const SENDER_HOUSENR_EXT = process.env.POSTNL_SENDER_HOUSENR_EXT || "";
+const SENDER_ZIPCODE = process.env.POSTNL_SENDER_ZIPCODE || "";
+const SENDER_CITY = process.env.POSTNL_SENDER_CITY || "";
+const SENDER_COUNTRY = process.env.POSTNL_SENDER_COUNTRY || "NL";
 const API_BASE = (process.env.POSTNL_API_BASE || "https://api.postnl.nl").replace(/\/$/, "");
 
 export function isPostNLConfigured(): boolean {
@@ -123,6 +130,17 @@ export async function createLabel(order: Order): Promise<LabelResult> {
               Zipcode: c.postalCode.replace(/\s/g, "").toUpperCase(),
               City: c.city,
               Countrycode: "NL",
+            },
+            {
+              AddressType: "02",
+              CompanyName: SENDER_NAME,
+              Name: SENDER_NAME,
+              Street: SENDER_STREET,
+              HouseNr: SENDER_HOUSENR,
+              ...(SENDER_HOUSENR_EXT ? { HouseNrExt: SENDER_HOUSENR_EXT } : {}),
+              Zipcode: SENDER_ZIPCODE.replace(/\s/g, "").toUpperCase(),
+              City: SENDER_CITY,
+              Countrycode: SENDER_COUNTRY,
             },
           ],
           Barcode: barcode,
