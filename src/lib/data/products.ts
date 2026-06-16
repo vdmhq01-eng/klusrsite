@@ -1,5 +1,6 @@
 import type { Product, ProductVariant, Review, StoreStock } from "@/types";
 import { stores } from "./stores";
+import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
 
 /**
@@ -1166,9 +1167,22 @@ const subsByCategory: Record<string, SubCategory[]> = (() => {
   return out;
 })();
 
-/** Subcategorieën afgeleid uit de échte catalogus (slug + nette titel + aantal). */
+/**
+ * Subcategorieën van een categorie. Bron-van-waarheid is de taxonomie in
+ * categories.ts (zodat SEO-landingspagina's altijd geldige routes zijn, ook als
+ * de feed er nog geen producten voor heeft); aangevuld met subcategorieën die
+ * alleen uit de catalogus komen. Het aantal (`count`) komt uit de echte feed.
+ */
 export function getSubCategories(categorySlug: string): SubCategory[] {
-  return subsByCategory[categorySlug] ?? [];
+  const catalog = subsByCategory[categorySlug] ?? [];
+  const defined = categories.find((c) => c.slug === categorySlug)?.subCategories ?? [];
+  if (defined.length === 0) return catalog;
+
+  const seen = new Set(catalog.map((s) => s.slug));
+  const extras: SubCategory[] = defined
+    .filter((d) => !seen.has(d.slug))
+    .map((d) => ({ slug: d.slug, title: d.title, count: 0 }));
+  return [...catalog, ...extras];
 }
 
 export function getSubCategory(
