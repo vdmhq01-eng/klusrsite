@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LayoutDashboard, ShieldAlert } from "lucide-react";
 import { AiContentManager } from "@/components/admin/ai-content-manager";
+import { OrdersPanel } from "@/components/admin/orders-panel";
 import { ChannableTestOrder } from "@/components/admin/channable-test-order";
 
 export const metadata: Metadata = {
@@ -37,6 +38,11 @@ export default function AdminPage() {
         {/* Manager */}
         <div className="mt-8">
           <AiContentManager />
+        </div>
+
+        {/* Orders + PostNL-verzendlabels */}
+        <div className="mt-8">
+          <OrdersPanel />
         </div>
 
         {/* Channable koppeling — testorder versturen */}

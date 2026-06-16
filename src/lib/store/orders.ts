@@ -112,6 +112,29 @@ export function markChannable(
   if (channableOrderId) order.channableOrderId = channableOrderId;
 }
 
+/** Alle orders (in-memory + seeded), nieuwste eerst — voor het admin-overzicht. */
+export function listOrders(): Order[] {
+  const live = [...orders.values()];
+  const liveIds = new Set(live.map((o) => o.id));
+  return [...live, ...seededOrders.filter((o) => !liveIds.has(o.id))].sort((a, b) =>
+    a.createdAt < b.createdAt ? 1 : -1,
+  );
+}
+
+/** Markeer een order als verzonden en bewaar de PostNL-verzendgegevens. */
+export function setShipped(
+  orderId: string,
+  shipment: NonNullable<Order["shipment"]>,
+): Order | undefined {
+  const order = orders.get(orderId) ?? seededOrders.find((o) => o.id === orderId);
+  if (!order) return undefined;
+  order.shipment = shipment;
+  if (order.paymentStatus === "paid" || order.paymentStatus === "authorized") {
+    order.paymentStatus = "shipped";
+  }
+  return order;
+}
+
 /** Seeded example orders for the bestelstatus lookup page. */
 export const seededOrders: Order[] = [
   {
