@@ -336,7 +336,11 @@ export function orderConfirmationEmail(order: Order): { subject: string; html: s
       ${button("Volg je bestelling", trackUrl)}
     </td></tr></table>
 
-    <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:${C.muted};text-align:center;">
+    <p style="margin:16px 0 0;font-size:13px;line-height:1.6;text-align:center;">
+      <a href="${SITE_URL}/factuur/${order.id}" style="color:${C.red};text-decoration:none;font-weight:bold;">Download je factuur (PDF)</a>
+    </p>
+
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:${C.muted};text-align:center;">
       Vragen over je bestelling? Mail naar
       <a href="mailto:${esc(CONTACT_EMAIL)}" style="color:${C.red};text-decoration:none;">${esc(CONTACT_EMAIL)}</a>
       of bel ${esc(flagshipStore.phone)}.
