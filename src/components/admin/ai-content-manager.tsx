@@ -145,24 +145,25 @@ export function AiContentManager() {
     });
   }
 
-  async function bulkGenerateDescriptions() {
-    const targets = items.filter((p) => missingTypes(p).includes("description"));
-    if (targets.length === 0) {
-      toast("Niets te genereren", {
-        description: "Er ontbreken geen productbeschrijvingen.",
-      });
+  // Generieke bulk-runner: verwerkt een lijst {product, type}-jobs op volgorde.
+  async function runBulk(jobs: { product: Product; type: ContentType }[], label: string) {
+    if (jobs.length === 0) {
+      toast("Niets te genereren", { description: `Er ontbreekt geen ${label}.` });
       return;
     }
-    setBulk({ running: true, done: 0, total: targets.length });
-    for (let i = 0; i < targets.length; i++) {
-      await generate(targets[i], "description");
+    setBulk({ running: true, done: 0, total: jobs.length });
+    for (let i = 0; i < jobs.length; i++) {
+      await generate(jobs[i].product, jobs[i].type);
       setBulk((prev) => ({ ...prev, done: i + 1 }));
     }
     setBulk((prev) => ({ ...prev, running: false }));
     toast.success("Bulk genereren voltooid", {
-      description: `${targets.length} beschrijving(en) gegenereerd. Beoordeel ze hieronder.`,
+      description: `${jobs.length} item(s) gegenereerd. Beoordeel ze hieronder.`,
     });
   }
+
+  const jobsForType = (type: ContentType) =>
+    items.filter((p) => missingTypes(p).includes(type)).map((product) => ({ product, type }));
 
   const seoTargets = items.filter((p) => missingTypes(p).includes("seo"));
   const faqTargets = items.filter((p) => missingTypes(p).includes("faqs"));
@@ -206,23 +207,33 @@ export function AiContentManager() {
             <p className="text-sm text-muted-foreground">
               {items.length} producten met ontbrekende of voorgestelde content.
             </p>
-            <Button
-              onClick={bulkGenerateDescriptions}
-              disabled={bulk.running}
-              variant="dark"
-            >
-              {bulk.running ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Bezig… {bulk.done}/{bulk.total}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Bulk genereren (beschrijvingen)
-                </>
-              )}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => runBulk(jobsForType("description"), "beschrijvingen")}
+                disabled={bulk.running}
+                variant="dark"
+              >
+                {bulk.running ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Bezig… {bulk.done}/{bulk.total}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Bulk: beschrijvingen
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => runBulk([...jobsForType("seo"), ...jobsForType("faqs")], "SEO of FAQ")}
+                disabled={bulk.running}
+                variant="outline"
+              >
+                <Sparkles className="h-4 w-4" />
+                Bulk: SEO + FAQ
+              </Button>
+            </div>
           </div>
 
           {bulk.running && (
@@ -252,10 +263,29 @@ export function AiContentManager() {
 
         {/* SEO */}
         <TabsContent value="seo" className="mt-5">
-          <p className="mb-4 text-sm text-muted-foreground">
-            Genereer meta titel, meta beschrijving en SEO-tekst voor producten
-            zonder SEO-content.
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Genereer meta titel, meta beschrijving en SEO-tekst voor producten
+              zonder SEO-content.
+            </p>
+            <Button
+              onClick={() => runBulk(jobsForType("seo"), "SEO")}
+              disabled={bulk.running}
+              variant="dark"
+            >
+              {bulk.running ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Bezig… {bulk.done}/{bulk.total}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Bulk genereer alle SEO ({seoTargets.length})
+                </>
+              )}
+            </Button>
+          </div>
           <div className="flex flex-col gap-4">
             {seoTargets.map((product) => (
               <ProductRow
@@ -274,9 +304,28 @@ export function AiContentManager() {
 
         {/* FAQ */}
         <TabsContent value="faq" className="mt-5">
-          <p className="mb-4 text-sm text-muted-foreground">
-            Genereer veelgestelde vragen voor producten zonder FAQ.
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Genereer veelgestelde vragen voor producten zonder FAQ.
+            </p>
+            <Button
+              onClick={() => runBulk(jobsForType("faqs"), "FAQ")}
+              disabled={bulk.running}
+              variant="dark"
+            >
+              {bulk.running ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Bezig… {bulk.done}/{bulk.total}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Bulk genereer alle FAQ ({faqTargets.length})
+                </>
+              )}
+            </Button>
+          </div>
           <div className="flex flex-col gap-4">
             {faqTargets.map((product) => (
               <ProductRow
