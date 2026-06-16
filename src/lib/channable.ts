@@ -63,16 +63,38 @@ function itemsUrl(offset: number, limit: number): string {
   return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/items?offset=${offset}&limit=${limit}`;
 }
 
-function ordersUrl(): string {
-  // Volledige override (accepteer CHANNABLE_ORDERS_URL én het alias CHANNABLE_ORDER_URL).
+/** Kandidaat orders-endpoints. Override wint; anders proberen we meerdere
+ * bekende varianten (company-scoped eerst, dan project-scoped). */
+function orderCandidates(): string[] {
   const override = process.env.CHANNABLE_ORDERS_URL || process.env.CHANNABLE_ORDER_URL;
-  if (override) return override;
-  const scope = PROJECT_ID
-    ? `companies/${COMPANY_ID}/projects/${PROJECT_ID}`
-    : `companies/${COMPANY_ID}`;
-  // Channable orders-endpoint eindigt op een slash:
-  // https://api.channable.com/v1/companies/{companyId}/projects/{projectId}/orders/
-  return `${BASE}/${scope}/orders/`;
+  if (override) return [override];
+  const list = [
+    `${BASE}/companies/${COMPANY_ID}/orders/`,
+    PROJECT_ID ? `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/orders/` : "",
+    `${BASE}/companies/${COMPANY_ID}/orders`,
+  ].filter(Boolean);
+  return [...new Set(list)];
+}
+
+/** POST de order naar de eerste werkende kandidaat; bij 401/403/404 de volgende. */
+async function postOrderToChannable(
+  payload: unknown,
+  signal?: AbortSignal,
+): Promise<{ res: Response; text: string; url: string } | null> {
+  let last: { res: Response; text: string; url: string } | null = null;
+  for (const url of orderCandidates()) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+      signal,
+    });
+    const text = await res.text();
+    if (res.ok) return { res, text, url };
+    last = { res, text, url };
+    if (![401, 403, 404].includes(res.status)) break;
+  }
+  return last;
 }
 
 /* --------------------------------------------------------------- products */
@@ -232,22 +254,19 @@ export async function pushChannableOrder(order: Order): Promise<ChannableOrderRe
   }
 
   try {
-    const res = await fetch(ordersUrl(), {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("[channable] order push failed", res.status, text);
-      return { ok: false, demo: false, error: `${res.status}: ${text.slice(0, 200)}` };
+    const out = await postOrderToChannable(payload);
+    if (!out) return { ok: false, demo: false, error: "geen endpoint" };
+    if (!out.res.ok) {
+      console.error("[channable] order push failed", out.res.status, out.text);
+      return { ok: false, demo: false, error: `${out.res.status}: ${out.text.slice(0, 200)}` };
     }
-    const body = await res.json().catch(() => ({}));
-    return {
-      ok: true,
-      demo: false,
-      channableOrderId: body.id ? String(body.id) : undefined,
-    };
+    let id: unknown;
+    try {
+      id = JSON.parse(out.text)?.id;
+    } catch {
+      /* geen json */
+    }
+    return { ok: true, demo: false, channableOrderId: id ? String(id) : undefined };
   } catch (err) {
     console.error("[channable] order push error", err);
     return { ok: false, demo: false, error: err instanceof Error ? err.message : "unknown" };
@@ -354,35 +373,31 @@ export async function sendTestOrder(
   const timeout = setTimeout(() => controller.abort(), 10_000);
 
   try {
-    const res = await fetch(ordersUrl(), {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+    const out = await postOrderToChannable(payload, controller.signal);
+    if (!out) {
+      return { ok: false, status: 0, configured: true, message: "Geen Channable orders-endpoint beschikbaar." };
+    }
 
-    // Parse als JSON, val terug op platte tekst.
-    const text = await res.text();
-    let parsed: unknown = text;
+    let parsed: unknown = out.text;
     try {
-      parsed = text ? JSON.parse(text) : null;
+      parsed = out.text ? JSON.parse(out.text) : null;
     } catch {
       /* houd platte tekst aan */
     }
 
-    if (!res.ok) {
+    if (!out.res.ok) {
       return {
         ok: false,
-        status: res.status,
+        status: out.res.status,
         configured: true,
-        message: `Channable gaf een fout terug (HTTP ${res.status}). Controleer de credentials en het order-schema.`,
+        message: `Channable gaf een fout (HTTP ${out.res.status}) op ${out.url}. Controleer de credentials/het order-schema, of zet CHANNABLE_ORDERS_URL op het juiste endpoint.`,
         response: parsed,
       };
     }
 
     return {
       ok: true,
-      status: res.status,
+      status: out.res.status,
       configured: true,
       message: `Testorder verstuurd naar Channable (referentie ${reference}).`,
       response: parsed,

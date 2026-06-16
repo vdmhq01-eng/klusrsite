@@ -19,6 +19,7 @@ import { OrdersPanel } from "./orders-panel";
 import { CustomersPanel } from "./customers-panel";
 import { AiContentManager } from "./ai-content-manager";
 import { ChannableTestOrder } from "./channable-test-order";
+import { MollieTest } from "./mollie-test";
 
 type SectionId = "overzicht" | "orders" | "klanten" | "rapportages" | "content" | "channable";
 
@@ -28,7 +29,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "content", label: "AI-content", icon: Sparkles },
-  { id: "channable", label: "Channable", icon: Send },
+  { id: "channable", label: "Koppelingen", icon: Send },
 ];
 
 const PAID: OrderStatus[] = ["paid", "authorized", "shipped", "delivered"];
@@ -75,7 +76,12 @@ export function AdminDashboard() {
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {section === "rapportages" && <Reports orders={orders} />}
         {section === "content" && <AiContentManager />}
-        {section === "channable" && <ChannableTestOrder />}
+        {section === "channable" && (
+          <div className="space-y-6">
+            <MollieTest />
+            <ChannableTestOrder />
+          </div>
+        )}
       </div>
     </div>
   );

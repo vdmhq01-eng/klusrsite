@@ -25,6 +25,7 @@ interface LabelResult {
   barcode?: string;
   trackTrace?: string;
   labelBase64?: string;
+  response?: unknown;
 }
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -222,9 +223,18 @@ export function OrdersPanel() {
                             )}
                           </Button>
                           {res && !res.ok && (
-                            <p className="flex items-center gap-1 text-xs text-destructive">
-                              <AlertTriangle className="h-3 w-3" /> {res.message}
-                            </p>
+                            <div className="text-xs text-destructive">
+                              <p className="flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" /> {res.message}
+                              </p>
+                              {res.response != null && (
+                                <pre className="mt-1 max-h-32 overflow-auto rounded bg-destructive/5 p-1.5 text-[10px] text-muted-foreground">
+                                  {typeof res.response === "string"
+                                    ? res.response
+                                    : JSON.stringify(res.response, null, 2)}
+                                </pre>
+                              )}
+                            </div>
                           )}
                         </div>
                       ) : (

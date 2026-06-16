@@ -114,3 +114,50 @@ export function mapMollieStatus(status: string) {
       return "open" as const;
   }
 }
+
+export interface MollieCheckResult {
+  ok: boolean;
+  configured: boolean;
+  status: number;
+  message: string;
+  /** Geactiveerde betaalmethoden (id's), indien beschikbaar. */
+  methods?: string[];
+  error?: string;
+}
+
+/**
+ * Controleer of de Mollie-koppeling werkt: valideert de API-sleutel en haalt de
+ * geactiveerde betaalmethoden op (mollie.methods.list). Maakt geen betaling aan.
+ */
+export async function checkMollie(): Promise<MollieCheckResult> {
+  const mollie = getClient();
+  if (!mollie) {
+    return {
+      ok: false,
+      configured: false,
+      status: 0,
+      message: "Mollie is niet geconfigureerd — zet MOLLIE_API_KEY in de omgeving.",
+    };
+  }
+  try {
+    const methods = await mollie.methods.list();
+    const ids = methods.map((m) => m.id);
+    return {
+      ok: true,
+      configured: true,
+      status: 200,
+      message: ids.length
+        ? `Mollie werkt. Actieve betaalmethoden: ${ids.join(", ")}.`
+        : "Mollie-sleutel werkt, maar er zijn nog géén betaalmethoden geactiveerd. Zet ze aan in je Mollie-dashboard.",
+      methods: ids,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      configured: true,
+      status: 0,
+      message: "De Mollie-sleutel werkt niet of het profiel is nog niet geactiveerd.",
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
