@@ -4,10 +4,14 @@ import { articleKeywords } from "@/lib/topic-images";
 import Link from "next/link";
 import { ArrowRight, Clock, Sparkles } from "lucide-react";
 import { articles } from "@/lib/data";
+import { listBlogPosts } from "@/lib/store/blog";
 import { ArticleFilter } from "@/components/content/article-filter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+
+// Verse AI-blogs komen uit KV; haal ze bij elk bezoek op.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Advies & inspiratie",
@@ -20,8 +24,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AdviesPage() {
+export default async function AdviesPage() {
   const [featured, ...rest] = articles;
+  const blogPosts = await listBlogPosts(6);
 
   return (
     <div className="flex flex-col gap-12 py-8 sm:gap-16">
@@ -84,6 +89,52 @@ export default function AdviesPage() {
         </h2>
         <ArticleFilter articles={rest} />
       </section>
+
+      {/* Vers van de Klus-AI — automatisch gegenereerde blogs */}
+      {blogPosts.length > 0 && (
+        <section className="container-klusr">
+          <div className="mb-5 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Vers van de Klus-AI
+            </span>
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+              Nieuwe klustips
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {blogPosts.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/advies/blog/${post.slug}`}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-shadow hover:shadow-card-hover"
+              >
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <TopicImage seed={post.slug} keywords="painting,wall,roller" />
+                </div>
+                <div className="flex flex-1 flex-col gap-2 p-5">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="muted" className="w-fit">
+                      {post.category}
+                    </Badge>
+                    <time dateTime={post.date}>{formatDate(post.date)}</time>
+                  </div>
+                  <h3 className="font-extrabold leading-tight tracking-tight group-hover:text-primary">
+                    {post.title}
+                  </h3>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">
+                    {post.excerpt}
+                  </p>
+                  <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-primary">
+                    Lees de blog
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* AI klushulp CTA */}
       <section className="container-klusr">
