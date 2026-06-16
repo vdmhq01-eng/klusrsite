@@ -83,10 +83,17 @@ export function ColorPicker({
         map.set(name, g);
       }
       g.total++;
-      if (g.colors.length < 48) g.colors.push(c);
+      if (g.colors.length < 14) g.colors.push(c);
     }
-    return [...map.values()].sort((a, b) => b.total - a.total);
+    return [...map.values()].sort((a, b) => b.total - a.total).slice(0, 12);
   }, [q, matched, collections]);
+
+  // Collecties waarvan de naam matcht (bv. "gamma") — als snelle filter bovenaan,
+  // zodat je niet door honderden losse kleuren hoeft te scrollen.
+  const matchedCollections = useMemo(() => {
+    if (!q) return [];
+    return collections.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 12);
+  }, [q, collections]);
 
   const activeColors = useMemo(
     () => collections.find((c) => c.id === activeCollection)?.colors ?? [],
@@ -237,49 +244,86 @@ export function ColorPicker({
           </>
         )}
 
-        {/* Zoeken: gegroepeerd per collectie */}
-        {q &&
-          (searchGroups.length > 0 ? (
-            <div className="space-y-5">
-              {searchGroups.map((g) => (
-                <div key={g.id}>
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      {g.name} <span className="text-foreground">· {g.total}</span>
-                    </p>
+        {/* Zoeken: eerst passende collecties (snelle filter), dan losse kleuren */}
+        {q && (
+          <div className="space-y-5">
+            {matchedCollections.length > 0 && (
+              <div className="rounded-xl border border-border bg-secondary/30 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Collecties voor &ldquo;{query}&rdquo; — kies er één
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {matchedCollections.map((c) => (
                     <button
+                      key={c.id}
                       type="button"
-                      onClick={() => openCollection(g.id)}
-                      className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                      onClick={() => openCollection(c.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold transition-colors hover:border-primary/40 hover:text-primary"
                     >
-                      Toon collectie
+                      {c.name}
+                      <span className="rounded-full bg-border px-1.5 text-[10px] font-bold leading-4 text-muted-foreground">
+                        {c.colors.length}
+                      </span>
                     </button>
-                  </div>
-                  <div className="grid gap-2.5" style={GRID_STYLE}>
-                    {g.colors.map((color, i) =>
-                      renderSwatch(color, `${g.id}-${color.code}-${color.hex}-${i}`),
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Zo bekijk je alle kleuren van de collectie overzichtelijk in plaats van
+                  eindeloos scrollen.
+                </p>
+              </div>
+            )}
+
+            {searchGroups.length > 0 ? (
+              <div className="space-y-5">
+                {matchedCollections.length > 0 && (
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Losse kleuren
+                  </p>
+                )}
+                {searchGroups.map((g) => (
+                  <div key={g.id}>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                        {g.name} <span className="text-foreground">· {g.total}</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openCollection(g.id)}
+                        className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Toon collectie
+                      </button>
+                    </div>
+                    <div className="grid gap-2.5" style={GRID_STYLE}>
+                      {g.colors.map((color, i) =>
+                        renderSwatch(color, `${g.id}-${color.code}-${color.hex}-${i}`),
+                      )}
+                    </div>
+                    {g.total > g.colors.length && (
+                      <button
+                        type="button"
+                        onClick={() => openCollection(g.id)}
+                        className="mt-2 text-xs font-medium text-muted-foreground hover:text-primary"
+                      >
+                        +{g.total - g.colors.length} meer in {g.name} — toon collectie
+                      </button>
                     )}
                   </div>
-                  {g.total > g.colors.length && (
-                    <button
-                      type="button"
-                      onClick={() => openCollection(g.id)}
-                      className="mt-2 text-xs font-medium text-muted-foreground hover:text-primary"
-                    >
-                      +{g.total - g.colors.length} meer in {g.name}
-                    </button>
-                  )}
+                ))}
+              </div>
+            ) : (
+              matchedCollections.length === 0 && (
+                <div className="py-10 text-center">
+                  <p className="text-sm font-semibold">Geen kleuren gevonden</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Voor &ldquo;{query}&rdquo; — probeer een andere naam of code.
+                  </p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-10 text-center">
-              <p className="text-sm font-semibold">Geen kleuren gevonden</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Voor &ldquo;{query}&rdquo; — probeer een andere naam of code.
-              </p>
-            </div>
-          ))}
+              )
+            )}
+          </div>
+        )}
 
         {/* Eigen kleur mengen */}
         <div className="mt-5 rounded-xl border border-dashed border-border bg-secondary/30 p-3">
