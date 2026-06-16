@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrder, setShipped } from "@/lib/store/orders";
 import { createLabel, isPostNLConfigured } from "@/lib/postnl";
+import { pushShipment } from "@/lib/channable";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,15 @@ export async function POST(req: Request) {
         trackTrace: result.trackTrace,
         labelCreatedAt: new Date().toISOString(),
       });
+
+      // Marketplace-order? Koppel de PostNL-tracking terug aan Channable, die
+      // de verzending doorzet naar de betreffende marketplace. (Demo-safe.)
+      if (order.channableOrderId) {
+        void pushShipment(order.channableOrderId, {
+          trackingCode: result.barcode,
+          transporter: "POSTNL",
+        }).catch(() => {});
+      }
     }
 
     return NextResponse.json(result);

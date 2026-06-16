@@ -22,6 +22,8 @@ type State =
 
 export function ChannableTestOrder() {
   const [state, setState] = useState<State>({ status: "idle" });
+  const [itemId, setItemId] = useState("");
+  const [country, setCountry] = useState("NL");
 
   async function send() {
     setState({ status: "loading" });
@@ -29,7 +31,7 @@ export function ChannableTestOrder() {
       const res = await fetch("/api/admin/channable-test-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ itemId: itemId.trim(), country }),
       });
       const result = (await res.json()) as TestOrderResult;
       setState({ status: "done", result });
@@ -54,15 +56,38 @@ export function ChannableTestOrder() {
       <CardHeader>
         <CardTitle className="text-base">Channable</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Stuur een gemarkeerde testorder naar de Channable Orders-API om de
-          koppeling (Channable → Tilroy) te controleren. Er wordt een neppe klant
-          &quot;KLUSR Test&quot; met één voorbeeldregel verstuurd.
+          Maak een <strong>Sandbox-testorder</strong> aan via Channable. Channable
+          fabriceert dan zelf een marketplace-order voor het opgegeven artikel,
+          zodat je de hele orderafhandeling (incl. doorzetten naar Tilroy) kunt
+          testen. Werkt alleen op een Sandbox-project met een ingestelde{" "}
+          <code>CHANNABLE_ORDER_CONFIG_ID</code>.
         </p>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+          <label className="space-y-1">
+            <span className="text-xs font-semibold text-muted-foreground">Artikel-id (item_id)</span>
+            <input
+              value={itemId}
+              onChange={(e) => setItemId(e.target.value)}
+              placeholder="bijv. 12345 of EAN"
+              className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm outline-none ring-primary/20 focus:ring-2"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-semibold text-muted-foreground">Land</span>
+            <input
+              value={country}
+              onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
+              placeholder="NL"
+              className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm uppercase outline-none ring-primary/20 focus:ring-2"
+            />
+          </label>
+        </div>
+
         <div>
-          <Button onClick={send} disabled={loading} variant="dark">
+          <Button onClick={send} disabled={loading || !itemId.trim()} variant="dark">
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -71,7 +96,7 @@ export function ChannableTestOrder() {
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                Stuur testorder
+                Maak test-order
               </>
             )}
           </Button>
