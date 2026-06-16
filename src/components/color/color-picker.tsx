@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Search, Pipette, X } from "lucide-react";
 import type { SelectedColor } from "@/types";
-import { colorCollections, isLightColor } from "@/lib/data/colors";
+import { colorCollections, popularColors2026, isLightColor } from "@/lib/data/colors";
 import { fetchPortalColors } from "@/lib/portal-colors";
 import { withBase } from "@/lib/paint-bases";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ interface ColorPickerProps {
   className?: string;
 }
 
-const GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(3.25rem, 1fr))" };
+const GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(9.5rem, 1fr))" };
 
 export function ColorPicker({
   value,
@@ -41,8 +41,13 @@ export function ColorPicker({
     let active = true;
     fetchPortalColors().then((cols) => {
       if (!active || !cols.length) return;
-      setCollections(cols);
-      setActiveCollection((cur) => (cols.some((c) => c.id === cur) ? cur : cols[0].id));
+      // "Populair 2026" altijd vooraan houden, ook met live portal-kleuren.
+      const merged = [
+        popularColors2026,
+        ...cols.filter((c) => c.id !== popularColors2026.id),
+      ];
+      setCollections(merged);
+      setActiveCollection((cur) => (merged.some((c) => c.id === cur) ? cur : merged[0].id));
     });
     return () => {
       active = false;
@@ -121,22 +126,32 @@ export function ColorPicker({
         aria-label={color.name}
         aria-pressed={active}
         className={cn(
-          "group relative aspect-square rounded-lg border shadow-sm outline-none transition-transform focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+          "group flex items-center gap-2 rounded-lg border p-1.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary",
           active
-            ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
-            : "border-black/10 hover:-translate-y-0.5 hover:shadow-md",
+            ? "border-primary bg-primary/5"
+            : "border-border hover:border-primary/40 hover:bg-secondary/40",
         )}
-        style={{ backgroundColor: color.hex }}
       >
-        {active && (
-          <Check
-            className={cn(
-              "absolute inset-0 m-auto h-5 w-5 drop-shadow",
-              isLightColor(color.hex) ? "text-black/80" : "text-white",
-            )}
-            strokeWidth={3}
-          />
-        )}
+        <span
+          className="relative grid h-9 w-9 shrink-0 place-items-center rounded-md border border-black/10 shadow-sm"
+          style={{ backgroundColor: color.hex }}
+        >
+          {active && (
+            <Check
+              className={cn(
+                "h-4 w-4 drop-shadow",
+                isLightColor(color.hex) ? "text-black/80" : "text-white",
+              )}
+              strokeWidth={3}
+            />
+          )}
+        </span>
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block truncate text-xs font-semibold">{color.name}</span>
+          {color.code && (
+            <span className="block truncate text-[10px] text-muted-foreground">{color.code}</span>
+          )}
+        </span>
       </button>
     );
   };

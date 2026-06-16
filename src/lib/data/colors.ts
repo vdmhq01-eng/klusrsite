@@ -12,6 +12,25 @@ export interface ColorCollection {
  */
 export const colorCollections: ColorCollection[] = [
   {
+    id: "populair-2026",
+    name: "Populair 2026",
+    colors: [
+      // Wit blijft veruit de meest gekozen kleur — daarom bovenaan.
+      { name: "Zuiver Wit", code: "RAL 9010", hex: "#F1ECE1", collection: "Populair 2026" },
+      { name: "Gebroken Wit", code: "RAL 9001", hex: "#E9E0D2", collection: "Populair 2026" },
+      { name: "Warm Crème", code: "PP-26-01", hex: "#EDE3D1", collection: "Populair 2026" },
+      { name: "Greige", code: "PP-26-02", hex: "#CFC6B8", collection: "Populair 2026" },
+      { name: "Mocha", code: "PP-26-03", hex: "#A0826D", collection: "Populair 2026" },
+      { name: "Saliegroen", code: "PP-26-04", hex: "#A7B5A0", collection: "Populair 2026" },
+      { name: "Olijfgroen", code: "PP-26-05", hex: "#7A7A52", collection: "Populair 2026" },
+      { name: "Kleibruin", code: "PP-26-06", hex: "#B07458", collection: "Populair 2026" },
+      { name: "Mistblauw", code: "PP-26-07", hex: "#8FA3AD", collection: "Populair 2026" },
+      { name: "Oudroze", code: "PP-26-08", hex: "#D8B9AE", collection: "Populair 2026" },
+      { name: "Diep Bosgroen", code: "PP-26-09", hex: "#2F4538", collection: "Populair 2026" },
+      { name: "Warm Antraciet", code: "PP-26-10", hex: "#3A3A3C", collection: "Populair 2026" },
+    ],
+  },
+  {
     id: "klusr-trends",
     name: "KLUSR Trendkleuren",
     colors: [
@@ -61,7 +80,10 @@ export const colorCollections: ColorCollection[] = [
 
 export const allColors: SelectedColor[] = colorCollections.flatMap((c) => c.colors);
 
-export const defaultColor: SelectedColor = colorCollections[1].colors[0]; // RAL 9010
+/** Meest gekozen kleuren van dit jaar (wit voorop) — voor de kleurkiezer. */
+export const popularColors2026: ColorCollection = colorCollections[0];
+
+export const defaultColor: SelectedColor = colorCollections[0].colors[0]; // Zuiver Wit
 
 export function findColor(code: string): SelectedColor | undefined {
   return allColors.find((c) => c.code === code);
