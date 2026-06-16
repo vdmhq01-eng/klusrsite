@@ -82,3 +82,28 @@ export async function kvSMembers(key: string): Promise<string[]> {
   const res = await cmd<string[]>(["SMEMBERS", key]);
   return Array.isArray(res) ? res : [];
 }
+
+/** Push een JSON-waarde vooraan een lijst (voor event-logs). */
+export async function kvLPush(key: string, value: unknown): Promise<void> {
+  await cmd(["LPUSH", key, JSON.stringify(value)]);
+}
+
+/** Knip de lijst af tot [start, stop] (om 'm begrensd te houden). */
+export async function kvLTrim(key: string, start: number, stop: number): Promise<void> {
+  await cmd(["LTRIM", key, start, stop]);
+}
+
+/** Lees JSON-waarden uit een lijst. */
+export async function kvLRange<T>(key: string, start: number, stop: number): Promise<T[]> {
+  const res = await cmd<string[]>(["LRANGE", key, start, stop]);
+  if (!Array.isArray(res)) return [];
+  return res
+    .map((s) => {
+      try {
+        return JSON.parse(s) as T;
+      } catch {
+        return null;
+      }
+    })
+    .filter((v): v is T => v != null);
+}

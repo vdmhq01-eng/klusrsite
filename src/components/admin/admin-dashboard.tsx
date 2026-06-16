@@ -11,6 +11,8 @@ import {
   Euro,
   Package,
   TrendingUp,
+  Search,
+  MessageCircle,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -21,13 +23,21 @@ import { AiContentManager } from "./ai-content-manager";
 import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
 
-type SectionId = "overzicht" | "orders" | "klanten" | "rapportages" | "content" | "channable";
+type SectionId =
+  | "overzicht"
+  | "orders"
+  | "klanten"
+  | "rapportages"
+  | "inzichten"
+  | "content"
+  | "channable";
 
 const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
+  { id: "inzichten", label: "Inzichten", icon: Search },
   { id: "content", label: "AI-content", icon: Sparkles },
   { id: "channable", label: "Koppelingen", icon: Send },
 ];
@@ -75,6 +85,7 @@ export function AdminDashboard() {
         {section === "orders" && <OrdersPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {section === "rapportages" && <Reports orders={orders} />}
+        {section === "inzichten" && <Insights />}
         {section === "content" && <AiContentManager />}
         {section === "channable" && (
           <div className="space-y-6">
@@ -257,6 +268,84 @@ function Reports({ orders }: { orders: Order[] }) {
           </p>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+interface InsightsData {
+  total: number;
+  searchCount: number;
+  chatCount: number;
+  conversions: number;
+  revenue: number;
+  topSearches: { query: string; count: number }[];
+  recentChats: { question: string; ts: number }[];
+}
+
+function Insights() {
+  const [data, setData] = useState<InsightsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/analytics", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p className="text-sm text-muted-foreground">Inzichten laden…</p>;
+  if (!data) return <p className="text-sm text-muted-foreground">Geen inzichten beschikbaar.</p>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={Search} label="Zoekopdrachten" value={String(data.searchCount)} />
+        <StatCard icon={MessageCircle} label="Chat-vragen" value={String(data.chatCount)} />
+        <StatCard icon={ShoppingBag} label="Conversies" value={String(data.conversions)} />
+        <StatCard icon={Euro} label="Omzet (events)" value={formatPrice(data.revenue)} />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Top zoekopdrachten</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="divide-y divide-border text-sm">
+            {data.topSearches.map((s) => (
+              <li key={s.query} className="flex justify-between py-1.5">
+                <span className="truncate">{s.query}</span>
+                <span className="font-semibold">{s.count}×</span>
+              </li>
+            ))}
+            {data.topSearches.length === 0 && (
+              <li className="py-3 text-center text-muted-foreground">Nog geen zoekdata.</li>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recente chat-vragen</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-1.5 text-sm">
+            {data.recentChats.map((c, i) => (
+              <li key={i} className="rounded-md bg-secondary/40 px-3 py-2">
+                {c.question}
+              </li>
+            ))}
+            {data.recentChats.length === 0 && (
+              <li className="py-3 text-center text-muted-foreground">Nog geen chat-vragen.</li>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <p className="text-xs text-muted-foreground">
+        Laatste ~1000 events (zoeken, chat, conversie), bewaard in KV. Zet KV aan voor persistentie.
+      </p>
     </div>
   );
 }

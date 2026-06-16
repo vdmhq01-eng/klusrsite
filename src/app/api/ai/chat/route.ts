@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { chat, type ChatMessage } from "@/lib/ai/client";
+import { logEvent } from "@/lib/store/analytics";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,12 @@ export async function POST(req: Request) {
 
     if (messages.length === 0) {
       return NextResponse.json({ error: "Geen bericht ontvangen" }, { status: 400 });
+    }
+
+    // Registreer de laatste klantvraag (analytics — best-effort).
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUser?.content) {
+      void logEvent("chat", { question: lastUser.content.slice(0, 300) }).catch(() => {});
     }
 
     const system = context ? `${SYSTEM_PROMPT}\n\nContext: ${context}` : SYSTEM_PROMPT;

@@ -7,6 +7,7 @@ import {
 } from "@/lib/store/orders";
 import { sendOrderConfirmation } from "@/lib/email";
 import { clearPendingCart } from "@/lib/store/pending-cart";
+import { logEvent } from "@/lib/store/analytics";
 
 /**
  * Verwerk een betaalde order: schiet hem in Channable (die routeert naar Tilroy)
@@ -36,6 +37,9 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
   void clearPendingCart(order.customer.email).catch(() => {});
 
   if (!(await claimConfirmationEmail(order.id))) return;
+
+  // Conversie registreren — precies één keer per order (na de mail-claim).
+  void logEvent("conversion", { value: order.total, reference: order.reference }).catch(() => {});
 
   const result = await sendOrderConfirmation(order);
   if (!result.ok && !result.demo) {
