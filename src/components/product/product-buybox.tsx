@@ -23,7 +23,6 @@ import { QuantityStepper } from "@/components/cart/quantity-stepper";
 import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
-import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { baseStockByStore, paintBases } from "@/lib/paint-bases";
 import { isLightColor } from "@/lib/data/colors";
@@ -52,7 +51,6 @@ export function ProductBuybox({
 
   const addItem = useCart((s) => s.addItem);
   const saveForLater = useCart((s) => s.saveForLater);
-  const openCart = useUI((s) => s.openCart);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const favoriteIds = useFavorites((s) => s.ids);
   const mounted = useMounted();
@@ -121,7 +119,6 @@ export function ProductBuybox({
     toast.success("Toegevoegd aan winkelwagen", {
       description: `${product.title} · ${variant.label}${color ? ` · ${color.name}` : ""}`,
     });
-    openCart();
   }
 
   function handleSaveForLater() {
