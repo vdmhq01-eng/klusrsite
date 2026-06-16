@@ -66,6 +66,8 @@ export interface Product {
   rating: number;
   reviewCount: number;
   reviews?: Review[];
+  /** EAN/GTIN — sterk signaal voor Google Shopping. */
+  gtin?: string;
   specifications: Specification[];
   faqs?: ProductFaq[];
   processingAdvice?: string;

@@ -806,6 +806,7 @@ export function buildCatalog(items, stockMap, opts = {}) {
       price: round2(base.price),
       kluspasPrice: round2(base.kluspasPrice),
       compareAtPrice: adviesprijs > round2(base.price) ? adviesprijs : undefined,
+      gtin: lead.gtin || undefined,
       category,
       subCategory,
       badges: badges.length ? [...new Set(badges)].slice(0, 3) : undefined,
