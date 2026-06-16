@@ -147,7 +147,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
       {/* AI advice */}
       <div className="mt-8">
-        <AiProductAdvice productId={product.id} productTitle={product.title} />
+        <AiProductAdvice
+          productId={product.id}
+          productTitle={product.title}
+          category={product.category}
+        />
       </div>
 
       {/* Alternatives */}

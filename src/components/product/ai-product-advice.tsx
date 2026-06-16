@@ -6,22 +6,67 @@ import { Button } from "@/components/ui/button";
 import { FormattedText } from "@/components/shared/formatted-text";
 import { trackEvent } from "@/lib/tracking";
 
-const quickQuestions = [
-  "Is dit de juiste verf voor mijn klus?",
-  "Hoeveel heb ik nodig?",
-  "Welke ondergrond is geschikt?",
-];
+interface Copy {
+  heading: string;
+  questions: string[];
+}
 
-/**
- * "Twijfel je of dit de juiste verf is? Stel je vraag." — PDP AI advice block.
- */
+/** Categorie-specifieke kop + snelle vragen, zodat het advies klopt per soort product. */
+const COPY: Record<string, Copy> = {
+  verf: {
+    heading: "Twijfel je of dit de juiste verf is?",
+    questions: [
+      "Is dit de juiste verf voor mijn klus?",
+      "Hoeveel heb ik nodig?",
+      "Welke ondergrond is geschikt?",
+    ],
+  },
+  verlichting: {
+    heading: "Twijfel je of dit de juiste lamp is?",
+    questions: ["Past deze fitting bij mijn armatuur?", "Hoeveel lumen heb ik nodig?", "Is dit dimbaar?"],
+  },
+  gereedschap: {
+    heading: "Twijfel je of dit het juiste gereedschap is?",
+    questions: ["Is dit geschikt voor mijn klus?", "Welke maat heb ik nodig?", "Waar moet ik op letten?"],
+  },
+  ijzerwaren: {
+    heading: "Twijfel je of dit het juiste artikel is?",
+    questions: ["Welke maat heb ik nodig?", "Is dit geschikt voor mijn materiaal?", "Hoeveel heb ik nodig?"],
+  },
+  "afbouw-fijnbouw": {
+    heading: "Twijfel je of dit het juiste product is?",
+    questions: ["Is dit geschikt voor mijn klus?", "Hoeveel heb ik nodig?", "Welke ondergrond is geschikt?"],
+  },
+  elektra: {
+    heading: "Twijfel je of dit het juiste artikel is?",
+    questions: ["Is dit geschikt voor mijn klus?", "Waar moet ik op letten?", "Welke maat heb ik nodig?"],
+  },
+  tuin: {
+    heading: "Twijfel je of dit het juiste product is?",
+    questions: ["Is dit geschikt voor buiten?", "Hoeveel heb ik nodig?", "Waar moet ik op letten?"],
+  },
+  "vloeren-raam": {
+    heading: "Twijfel je of dit het juiste product is?",
+    questions: ["Is dit geschikt voor mijn ruimte?", "Hoeveel heb ik nodig?", "Waar moet ik op letten?"],
+  },
+};
+
+const DEFAULT_COPY: Copy = {
+  heading: "Twijfel je of dit het juiste product is?",
+  questions: ["Is dit geschikt voor mijn klus?", "Hoeveel heb ik nodig?", "Waar moet ik op letten?"],
+};
+
+/** PDP AI-adviesblok — categorie-bewust. */
 export function AiProductAdvice({
   productId,
   productTitle,
+  category,
 }: {
   productId: string;
   productTitle: string;
+  category?: string;
 }) {
+  const copy = (category && COPY[category]) || DEFAULT_COPY;
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,10 +100,9 @@ export function AiProductAdvice({
             <Sparkles className="h-5 w-5" />
           </span>
           <div>
-            <h3 className="font-bold">Twijfel je of dit de juiste verf is?</h3>
+            <h3 className="font-bold">{copy.heading}</h3>
             <p className="text-sm text-muted-foreground">
-              Stel je vraag aan onze AI-assistent — getraind op het advies van
-              ex-schilders.
+              Stel je vraag aan onze AI-assistent — we helpen je de juiste keuze maken.
             </p>
           </div>
         </div>
@@ -83,7 +127,7 @@ export function AiProductAdvice({
 
         {!answer && !loading && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {quickQuestions.map((q) => (
+            {copy.questions.map((q) => (
               <button
                 key={q}
                 onClick={() => {
