@@ -45,6 +45,7 @@ const bodySchema = z.object({
   total: z.number(),
   kluspasSavings: z.number(),
   method: z.string().optional(),
+  issuer: z.string().optional(),
   cardToken: z.string().optional(),
 });
 
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
       reference: order.reference,
       amount: data.total,
       method: data.method,
+      issuer: data.issuer,
       baseUrl: origin,
       cardToken: data.cardToken,
     });

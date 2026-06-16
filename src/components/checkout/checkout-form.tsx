@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -21,8 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ColorChip } from "@/components/cart/color-chip";
-import { PaymentMethods, type PaymentMethodId } from "./payment-methods";
+import { PaymentMethods } from "./payment-methods";
 import { MollieCard, type MollieCardHandle } from "./mollie-card";
+import type { PaymentMethodInfo } from "@/types";
 import {
   useCart,
   cartSummary,
@@ -52,6 +53,15 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
+/** Fallback wanneer de methodenroute onverhoopt niet bereikbaar is. */
+const FALLBACK_METHODS: PaymentMethodInfo[] = [
+  { id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` },
+  { id: "bancontact", label: "Bancontact", image: `${MOLLIE_ICON}/bancontact.svg` },
+  { id: "creditcard", label: "Creditcard", image: `${MOLLIE_ICON}/creditcard.svg` },
+  { id: "klarna", label: "Achteraf betalen met Klarna", image: `${MOLLIE_ICON}/klarna.svg` },
+];
+
 export function CheckoutForm({
   mollieProfile,
   mollieTest,
@@ -63,11 +73,44 @@ export function CheckoutForm({
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("ideal");
+  // Geen voorgekozen methode — de klant kiest bewust zelf.
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [issuer, setIssuer] = useState<string | null>(null);
+  const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
+  const [methodsLoading, setMethodsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const cardRef = useRef<MollieCardHandle>(null);
+
+  // Geactiveerde betaalmethoden (incl. officiële logo's + iDEAL-banken) ophalen.
+  useEffect(() => {
+    let active = true;
+    const total = cartSummary(items, mode, kluspasActive).grossTotal;
+    const qs = total > 0 ? `?amount=${total.toFixed(2)}` : "";
+    setMethodsLoading(true);
+    fetch(`/api/checkout/payment-methods${qs}`)
+      .then((r) => r.json())
+      .then((d: { methods?: PaymentMethodInfo[] }) => {
+        if (!active) return;
+        setMethods(d.methods?.length ? d.methods : FALLBACK_METHODS);
+        setMethodsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setMethods(FALLBACK_METHODS);
+        setMethodsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [items, mode, kluspasActive]);
+
+  function selectMethod(id: string) {
+    setPaymentMethod(id);
+    // Bank-keuze alleen relevant voor iDEAL.
+    if (id !== "ideal") setIssuer(null);
+  }
 
   const {
     register,
@@ -124,8 +167,20 @@ export function CheckoutForm({
   );
 
   const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
+  const selectedMethod = methods.find((m) => m.id === paymentMethod);
+  // iDEAL met banklijst → eerst een bank kiezen voordat je kunt betalen.
+  const needsIssuer = paymentMethod === "ideal" && (selectedMethod?.issuers?.length ?? 0) > 0;
+  const canPay = Boolean(paymentMethod) && (!needsIssuer || Boolean(issuer));
 
   async function onSubmit(values: FormValues) {
+    if (!paymentMethod) {
+      setError("Kies eerst een betaalmethode.");
+      return;
+    }
+    if (needsIssuer && !issuer) {
+      setError("Kies eerst je bank voor iDEAL.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -182,6 +237,7 @@ export function CheckoutForm({
           total: summary.grossTotal,
           kluspasSavings: summary.savings,
           method: paymentMethod,
+          ...(issuer && paymentMethod === "ideal" ? { issuer } : {}),
           ...(cardToken ? { cardToken } : {}),
         }),
       });
@@ -294,7 +350,14 @@ export function CheckoutForm({
           </Section>
 
           <Section title="Betaalmethode" step={4}>
-            <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
+            <PaymentMethods
+              methods={methods}
+              value={paymentMethod}
+              onChange={selectMethod}
+              issuer={issuer}
+              onIssuerChange={setIssuer}
+              loading={methodsLoading}
+            />
             {useMollieComponents && (
               <div className="mt-4">
                 <MollieCard ref={cardRef} profileId={mollieProfile!} testmode={Boolean(mollieTest)} />
@@ -397,7 +460,7 @@ export function CheckoutForm({
               </p>
             )}
 
-            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting}>
+            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting || !canPay}>
               {submitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
@@ -407,6 +470,11 @@ export function CheckoutForm({
                 </>
               )}
             </Button>
+            {!canPay && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {needsIssuer ? "Kies je bank om verder te gaan." : "Kies eerst een betaalmethode."}
+              </p>
+            )}
 
             <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-klusr-stock" />

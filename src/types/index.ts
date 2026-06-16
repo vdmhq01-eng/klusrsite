@@ -218,6 +218,18 @@ export interface Order {
   };
 }
 
+/** Betaalmethode zoals getoond op de checkout (uit Mollie of de fallback). */
+export interface PaymentMethodInfo {
+  /** Mollie method-id (bv. "ideal", "bancontact", "creditcard", "klarna"). */
+  id: string;
+  /** Weergavenaam (Mollie `description`). */
+  label: string;
+  /** Officieel logo (SVG-URL). */
+  image?: string;
+  /** iDEAL-banken (alleen aanwezig wanneer Mollie issuers teruggeeft). */
+  issuers?: { id: string; name: string; image?: string }[];
+}
+
 export interface KlushulpTask {
   id: string;
   title: string;
