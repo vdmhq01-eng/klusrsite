@@ -148,7 +148,7 @@ export function ColorPicker({
         </span>
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block truncate text-xs font-semibold">{color.name}</span>
-          {color.code && (
+          {color.code && color.code !== color.name && (
             <span className="block truncate text-[10px] text-muted-foreground">{color.code}</span>
           )}
         </span>
@@ -217,16 +217,24 @@ export function ColorPicker({
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {/* Bladeren: actieve collectie */}
         {!q && (
-          <div className="grid gap-2.5" style={GRID_STYLE}>
-            {activeColors.map((color, i) =>
-              renderSwatch(color, `${color.code}-${color.hex}-${i}`),
-            )}
-            {activeColors.length === 0 && (
-              <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-                Nog geen kleuren in deze collectie.
+          <>
+            <div className="grid gap-2.5" style={GRID_STYLE}>
+              {activeColors.slice(0, 300).map((color, i) =>
+                renderSwatch(color, `${color.code}-${color.hex}-${i}`),
+              )}
+              {activeColors.length === 0 && (
+                <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
+                  Nog geen kleuren in deze collectie.
+                </p>
+              )}
+            </div>
+            {activeColors.length > 300 && (
+              <p className="pt-3 text-center text-xs text-muted-foreground">
+                Eerste 300 van {activeColors.length} kleuren — zoek op naam of code om alles te
+                vinden.
               </p>
             )}
-          </div>
+          </>
         )}
 
         {/* Zoeken: gegroepeerd per collectie */}
