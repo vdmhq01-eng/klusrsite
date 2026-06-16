@@ -34,6 +34,7 @@ const IMAGES = [
   { name: "categorie-tuin", size: "square_hd", seed: 2006, prompt: `Applying wood stain to a garden fence on a sunny day, outdoor, ${STYLE}` },
   { name: "categorie-verlichting", size: "square_hd", seed: 2007, prompt: `Warm LED bulbs and a modern pendant lamp glowing in a cosy interior, ${STYLE}` },
   { name: "categorie-vloeren-raam", size: "square_hd", seed: 2008, prompt: `Installing light oak laminate flooring in a bright living room, ${STYLE}` },
+  { name: "categorie-acties", size: "square_hd", seed: 2009, prompt: `Hardware and paint store aisle with bright red sale and discount price tags on shelves of paint cans and tools, ${STYLE}` },
   { name: "winkel-nijverdal", size: "landscape_4_3", seed: 3001, prompt: `Bright modern paint and hardware store interior with shelves of paint cans, ${STYLE}` },
 ];
 
