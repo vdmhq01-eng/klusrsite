@@ -48,6 +48,12 @@ const schema = z.object({
   companyName: z.string().optional(),
   cocNumber: z.string().optional(),
   vatNumber: z.string().optional(),
+  // Afwijkend factuuradres (optioneel).
+  billingDifferent: z.boolean().optional(),
+  billingCompany: z.string().optional(),
+  billingStreet: z.string().optional(),
+  billingPostalCode: z.string().optional(),
+  billingCity: z.string().optional(),
   terms: z.boolean().refine((v) => v === true, {
     message: "Ga akkoord met de algemene voorwaarden om te bestellen.",
   }),
@@ -260,6 +266,16 @@ export function CheckoutForm({
             vatNumber: values.vatNumber?.trim() || undefined,
           }
         : {}),
+      ...(values.billingDifferent && values.billingStreet?.trim()
+        ? {
+            billing: {
+              company: values.billingCompany?.trim() || undefined,
+              street: values.billingStreet.trim(),
+              postalCode: values.billingPostalCode?.trim() || "",
+              city: values.billingCity?.trim() || "",
+            },
+          }
+        : {}),
     };
 
     // Optioneel inschrijven voor de nieuwsbrief (demo-safe, fire-and-forget).
@@ -411,6 +427,34 @@ export function CheckoutForm({
             <Field label="Telefoon (optioneel)" error={errors.phone?.message}>
               <Input type="tel" {...register("phone")} />
             </Field>
+
+            {/* Afwijkend factuuradres */}
+            <label className="mt-1 flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                {...register("billingDifferent")}
+                className="h-4 w-4 accent-primary"
+              />
+              Factuuradres wijkt af van het bezorgadres
+            </label>
+            {watch("billingDifferent") && (
+              <div className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-3">
+                <Field label="Bedrijfsnaam (optioneel)">
+                  <Input {...register("billingCompany")} />
+                </Field>
+                <Field label="Straat en huisnummer">
+                  <Input placeholder="Straatnaam 1" {...register("billingStreet")} />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Postcode">
+                    <Input placeholder="7442 CK" {...register("billingPostalCode")} />
+                  </Field>
+                  <Field label="Plaats">
+                    <Input {...register("billingCity")} />
+                  </Field>
+                </div>
+              </div>
+            )}
           </Section>
 
           <Section title="Verzendmethode" step={3}>

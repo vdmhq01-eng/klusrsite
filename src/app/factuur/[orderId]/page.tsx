@@ -87,12 +87,17 @@ export default async function InvoicePage({ params }: { params: { orderId: strin
         <div className="mt-8 rounded-lg bg-neutral-50 p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">Factuuradres</p>
           <p className="mt-1 leading-relaxed">
-            {c.company && <span className="font-semibold">{c.company}<br /></span>}
+            {(c.billing?.company || c.company) && (
+              <span className="font-semibold">
+                {c.billing?.company || c.company}
+                <br />
+              </span>
+            )}
             {c.firstName} {c.lastName}
             <br />
-            {c.street}
+            {c.billing?.street || c.street}
             <br />
-            {c.postalCode} {c.city}
+            {c.billing?.postalCode || c.postalCode} {c.billing?.city || c.city}
             {c.cocNumber && <><br />KVK {c.cocNumber}</>}
             {c.vatNumber && <><br />BTW {c.vatNumber}</>}
           </p>

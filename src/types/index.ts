@@ -196,6 +196,13 @@ export interface OrderCustomer {
   company?: string;
   cocNumber?: string;
   vatNumber?: string;
+  /** Afwijkend factuuradres (optioneel). */
+  billing?: {
+    company?: string;
+    street: string;
+    postalCode: string;
+    city: string;
+  };
 }
 
 export interface Order {
