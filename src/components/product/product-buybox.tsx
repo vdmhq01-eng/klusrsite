@@ -54,7 +54,6 @@ export function ProductBuybox({
   const [quantity, setQuantity] = useState(1);
 
   const addItem = useCart((s) => s.addItem);
-  const saveForLater = useCart((s) => s.saveForLater);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const favoriteIds = useFavorites((s) => s.ids);
   const mounted = useMounted();
@@ -141,12 +140,6 @@ export function ProductBuybox({
     });
   }
 
-  function handleSaveForLater() {
-    const item = buildItem();
-    saveForLater(item.key);
-    trackEvent("save_for_later", { item_id: product.id });
-    toast("Bewaard voor later", { description: product.title });
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -400,23 +393,19 @@ export function ProductBuybox({
         >
           Direct afrekenen
         </Button>
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={handleSaveForLater}>
-            <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
-            Bewaar voor later
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Favoriet"
-            onClick={() => {
-              toggleFavorite(product.id);
-              toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten");
-            }}
-          >
-            <Heart className={cn("h-5 w-5", isFavorite && "fill-primary text-primary")} />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => {
+            toggleFavorite(product.id);
+            toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten", {
+              description: product.title,
+            });
+          }}
+        >
+          <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
+          {isFavorite ? "Bewaard in favorieten" : "Bewaar voor later"}
+        </Button>
       </div>
 
       {/* USPs */}
