@@ -85,7 +85,7 @@ export function MainNav() {
               </>
             ) : (
               <div className="grid grid-cols-2 gap-x-8 gap-y-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {activeSubs.map((sub) => (
+                {activeSubs.slice(0, 15).map((sub) => (
                   <Link
                     key={sub.slug}
                     href={`/categorie/${active.slug}/${sub.slug}`}

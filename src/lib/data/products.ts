@@ -1150,6 +1150,17 @@ export interface SubCategory {
   count: number;
 }
 
+/**
+ * Rommel-subcategorieën uit de feed die we niet in de navigatie willen: merk-
+ * namen, "diversen/overig/toebehoren", de categorie zelf en feed-prefixen.
+ */
+const JUNK_SUB_RE =
+  /^(diversen|overig|overige|toebehoren|huishoudelijk|anza|euromat|zelfklevende-artikelen|non-paint|fitex-.+|interbosch-.+|overige-.+|alabastine-.+|.+-diversen|.+-toebehoren|.+-non-paint)$/i;
+
+function isJunkSub(slug: string, categorySlug: string): boolean {
+  return slug === categorySlug || JUNK_SUB_RE.test(slug);
+}
+
 const subsByCategory: Record<string, SubCategory[]> = (() => {
   const map = new Map<string, Map<string, number>>();
   for (const p of products) {
@@ -1161,6 +1172,7 @@ const subsByCategory: Record<string, SubCategory[]> = (() => {
   const out: Record<string, SubCategory[]> = {};
   for (const [cat, m] of map) {
     out[cat] = [...m.entries()]
+      .filter(([slug]) => !isJunkSub(slug, cat))
       .map(([slug, count]) => ({ slug, title: prettySubTitle(slug), count }))
       .sort((a, b) => b.count - a.count);
   }
