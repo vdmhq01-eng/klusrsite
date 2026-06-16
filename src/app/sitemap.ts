@@ -37,6 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/klantenservice", { priority: 0.5 }),
     entry("/faq", { priority: 0.5 }),
     entry("/voorwaarden", { priority: 0.3, changeFrequency: "yearly" }),
+    entry("/retourvoorwaarden", { priority: 0.3, changeFrequency: "yearly" }),
     entry("/privacy", { priority: 0.3, changeFrequency: "yearly" }),
     entry("/cookiebeleid", { priority: 0.3, changeFrequency: "yearly" }),
   ];
