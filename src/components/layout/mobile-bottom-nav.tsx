@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Wrench, Heart, ShoppingCart } from "lucide-react";
+import { Home, Search, Wrench, Heart } from "lucide-react";
+import { TrailerIcon } from "@/components/shared/trailer-icon";
 import { useCart, cartCount } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useUI } from "@/lib/store/ui";
@@ -61,7 +62,7 @@ export function MobileBottomNav() {
             className="relative flex w-full flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground"
           >
             <span className={cn("relative inline-flex", bump && "animate-cart-bump")}>
-              <ShoppingCart className="h-5 w-5" />
+              <TrailerIcon className="h-5 w-5" />
               {count > 0 && (
                 <span className="absolute -right-2 -top-1.5 grid h-3.5 min-w-3.5 place-items-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
                   {count}

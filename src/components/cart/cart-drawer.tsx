@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { TrailerIcon } from "@/components/shared/trailer-icon";
 import {
   Sheet,
   SheetContent,
@@ -63,7 +64,7 @@ export function CartDrawer() {
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
+            <TrailerIcon className="h-5 w-5 text-primary" />
             Winkelwagen ({items.length})
           </SheetTitle>
         </SheetHeader>
@@ -71,7 +72,7 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-secondary">
-              <ShoppingCart className="h-7 w-7 text-muted-foreground" />
+              <TrailerIcon className="h-7 w-7 text-muted-foreground" />
             </div>
             <div>
               <p className="font-semibold">Je winkelwagen is leeg</p>

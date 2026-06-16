@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart } from "lucide-react";
+import { TrailerIcon } from "@/components/shared/trailer-icon";
 import { useCart, cartCount } from "@/lib/store/cart";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
@@ -24,7 +24,7 @@ export function CartButton({ className }: { className?: string }) {
       )}
     >
       <span className={cn("relative inline-flex", bump && "animate-cart-bump")}>
-        <ShoppingCart className="h-5 w-5" />
+        <TrailerIcon className="h-5 w-5" />
         {count > 0 && (
           <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
             {count}

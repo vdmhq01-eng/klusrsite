@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User } from "lucide-react";
+import { HardHat } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 /** Header-actie die meebeweegt met de inlogstatus (Inloggen ↔ Account). */
@@ -15,7 +15,7 @@ export function AccountNav() {
       href={href}
       className="hidden flex-col items-center justify-center gap-0.5 text-xs font-medium text-foreground transition-colors hover:text-primary md:flex"
     >
-      <User className="h-5 w-5" />
+      <HardHat className="h-5 w-5" />
       <span className="hidden lg:inline">{label}</span>
     </Link>
   );
