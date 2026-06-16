@@ -118,12 +118,15 @@ interface AttrFacet {
   key: string;
   title: string;
   defs: AttrDef[];
+  /** Specificatie-labels waarvan de waarde meetelt voor dit facet (naast de titel). */
+  specKeys?: string[];
 }
 
 const ATTRIBUTE_FACETS: AttrFacet[] = [
   {
     key: "glans",
     title: "Glansgraad",
+    specKeys: ["Glansgraad"],
     defs: [
       { id: "hoogglans", label: "Hoogglans", re: /hoogglans/i },
       { id: "zijdeglans", label: "Zijdeglans", re: /zijdeglans/i },
@@ -137,6 +140,7 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
   {
     key: "materiaal",
     title: "Materiaal",
+    specKeys: ["Materiaal"],
     defs: [
       { id: "rvs", label: "RVS", re: /\b(rvs|inox)\b/i },
       { id: "verzinkt", label: "Verzinkt", re: /verzinkt|gegalvaniseerd|galva/i },
@@ -148,6 +152,7 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
   {
     key: "fitting",
     title: "Fitting",
+    specKeys: ["Fitting"],
     defs: [
       { id: "e27", label: "E27", re: /\be27\b/i },
       { id: "e14", label: "E14", re: /\be14\b/i },
@@ -176,6 +181,7 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
   {
     key: "toepassing",
     title: "Toepassing",
+    specKeys: ["Geschikt voor"],
     defs: [
       { id: "binnen", label: "Binnen", re: /\bbinnen\b|interior|muurverf|latex|sausverf/i },
       { id: "buiten", label: "Buiten", re: /\bbuiten\b|gevel|exterior/i },
@@ -184,6 +190,7 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
   {
     key: "korrel",
     title: "Korrel",
+    specKeys: ["Korrel"],
     defs: [
       { id: "k40", label: "K40", re: /\bk\s?40\b|\bp40\b|korrel\s?40/i },
       { id: "k60", label: "K60", re: /\bk\s?60\b|\bp60\b|korrel\s?60/i },
@@ -199,17 +206,27 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
   {
     key: "lichtkleur",
     title: "Lichtkleur",
+    specKeys: ["Lichtkleur", "Kleurtemperatuur"],
     defs: [
-      { id: "warmwit", label: "Warmwit", re: /warm\s*wit|2700k?|extra\s*warm/i },
-      { id: "koelwit", label: "Koelwit", re: /koel\s*wit|4000k?|neutraal\s*wit/i },
-      { id: "daglicht", label: "Daglicht", re: /daglicht|6[45]00k?/i },
+      { id: "warmwit", label: "Warmwit", re: /warm\s*wit|2[678]00\s*k|extra\s*warm/i },
+      { id: "koelwit", label: "Koelwit", re: /koel\s*wit|4000\s*k|neutraal\s*wit/i },
+      { id: "daglicht", label: "Daglicht", re: /daglicht|6[45]00\s*k/i },
     ],
   },
 ];
 
 /** Eerste (meest specifieke) attribuut-waarde voor een product, of null. */
 function attrValue(facet: AttrFacet, p: Product): string | null {
-  const hay = `${p.title} ${p.subCategory ?? ""}`;
+  let hay = `${p.title} ${p.subCategory ?? ""}`;
+  // Vul aan met de echte feature-waarden uit de specificaties (Lichtkleur,
+  // Korrel, Materiaal, Geschikt voor, …) — die staan vaak niet in de titel.
+  if (facet.specKeys?.length) {
+    for (const group of p.specifications) {
+      for (const item of group.items) {
+        if (facet.specKeys.includes(item.label)) hay += ` ${item.label} ${item.value}`;
+      }
+    }
+  }
   for (const d of facet.defs) if (d.re.test(hay)) return d.id;
   return null;
 }

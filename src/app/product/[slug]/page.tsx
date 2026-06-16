@@ -95,11 +95,20 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ratingValue: product.rating,
       reviewCount: product.reviewCount,
     },
+    review: (product.reviews ?? []).slice(0, 3).map((r) => ({
+      "@type": "Review",
+      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
+      author: { "@type": "Person", name: r.author },
+      datePublished: r.date,
+      reviewBody: r.body,
+    })),
     offers: {
       "@type": "Offer",
       url: `${SITE_URL}/product/${product.slug}`,
       priceCurrency: "EUR",
       price: product.kluspasPrice.toFixed(2),
+      priceValidUntil: `${new Date().getFullYear()}-12-31`,
+      itemCondition: "https://schema.org/NewCondition",
       availability:
         totalStock > 0
           ? "https://schema.org/InStock"
