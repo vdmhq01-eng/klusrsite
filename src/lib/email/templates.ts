@@ -222,6 +222,46 @@ export function magicLinkEmail(
   };
 }
 
+export function abandonedCartEmail(input: {
+  name?: string;
+  items: { title: string; quantity: number; price: number }[];
+  total: number;
+}): { subject: string; html: string; text: string } {
+  const hi = input.name ? `Hoi ${esc(input.name.split(" ")[0])},` : "Hoi,";
+  const cartUrl = `${SITE_URL}/winkelwagen`;
+  const rows = input.items
+    .slice(0, 8)
+    .map(
+      (it) =>
+        `<tr>` +
+        `<td style="padding:8px 0;border-bottom:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${C.text};">${esc(it.title)}${it.quantity > 1 ? ` <span style="color:${C.muted};">× ${it.quantity}</span>` : ""}</td>` +
+        `<td align="right" style="padding:8px 0;border-bottom:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${C.text};white-space:nowrap;">${euro(it.price * it.quantity)}</td>` +
+        `</tr>`,
+    )
+    .join("");
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Je winkelwagen wacht nog op je</h1>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${hi} je liet wat moois achter in je winkelwagen. We hebben het voor je bewaard — rond je bestelling af voordat het uitverkocht is.</p>` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">${rows}` +
+    `<tr><td style="padding:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:${C.text};">Totaal</td>` +
+    `<td align="right" style="padding:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:${C.red};">${euro(input.total)}</td></tr></table>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Rond je bestelling af", cartUrl)}</td></tr></table>` +
+    `<p style="margin:0;font-size:13px;color:${C.muted};">Voor 16:00 besteld, morgen in huis. Met de gratis KLUSRPAS pak je bovendien altijd extra voordeel.</p>`;
+  return {
+    subject: "Je winkelwagen staat nog klaar bij KLUSR",
+    html: layout({
+      title: "Je winkelwagen wacht nog op je",
+      preheader: "Rond je bestelling af — voor 16:00 besteld, morgen in huis.",
+      content,
+      footerNote: "Je ontvangt deze herinnering omdat je een bestelling bij KLUSR bent begonnen.",
+    }),
+    text:
+      `${hi} je liet wat moois achter in je winkelwagen bij KLUSR.\n` +
+      input.items.map((it) => `- ${it.title}${it.quantity > 1 ? ` x${it.quantity}` : ""}`).join("\n") +
+      `\nTotaal: ${euro(input.total)}\n\nRond je bestelling af: ${cartUrl}`,
+  };
+}
+
 export function orderConfirmationEmail(order: Order): { subject: string; html: string; text: string } {
   const c = order.customer;
   const trackUrl = `${SITE_URL}/bestelstatus`;

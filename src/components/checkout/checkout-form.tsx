@@ -116,11 +116,42 @@ export function CheckoutForm({
     handleSubmit,
     setValue,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { terms: false, newsletter: false },
   });
+
+  // "Winkelwagen-vergeten": zodra de klant een geldig e-mailadres invult, bewaren
+  // we de winkelwagen (debounced) zodat de cron later een herinnering kan sturen.
+  const watchedEmail = watch("email");
+  const watchedFirstName = watch("firstName");
+  useEffect(() => {
+    const email = (watchedEmail || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || items.length === 0) return;
+    const timer = setTimeout(() => {
+      const name = [watchedFirstName, getValues("lastName")].filter(Boolean).join(" ").trim();
+      fetch("/api/cart/remember", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: name || undefined,
+          items: items.map((i) => ({
+            title: i.title,
+            quantity: i.quantity,
+            price: kluspasActive ? i.kluspasPrice : i.price,
+            image: i.image,
+            slug: i.slug,
+          })),
+          total: cartSummary(items, mode, kluspasActive).grossTotal,
+        }),
+      }).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedEmail, watchedFirstName, items, mode, kluspasActive]);
 
   // Postcode + huisnummer → straat + plaats automatisch invullen (PDOK).
   async function lookupAddress() {

@@ -6,6 +6,7 @@ import {
   releaseConfirmationEmail,
 } from "@/lib/store/orders";
 import { sendOrderConfirmation } from "@/lib/email";
+import { clearPendingCart } from "@/lib/store/pending-cart";
 
 /**
  * Verwerk een betaalde order: schiet hem in Channable (die routeert naar Tilroy)
@@ -31,6 +32,9 @@ export async function fulfillPaidOrder(order: Order): Promise<void> {
  * een echte verzendfout geven we de claim vrij zodat een retry alsnog mag.
  */
 export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
+  // Betaald → geen "winkelwagen-vergeten" herinnering meer nodig.
+  void clearPendingCart(order.customer.email).catch(() => {});
+
   if (!(await claimConfirmationEmail(order.id))) return;
 
   const result = await sendOrderConfirmation(order);

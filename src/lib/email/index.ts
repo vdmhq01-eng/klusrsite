@@ -5,7 +5,23 @@ import {
   welcomeEmail,
   verificationEmail,
   magicLinkEmail,
+  abandonedCartEmail,
 } from "./templates";
+
+/** Verstuur een "winkelwagen-vergeten" herinnering. */
+export async function sendAbandonedCart(input: {
+  email: string;
+  name?: string;
+  items: { title: string; quantity: number; price: number }[];
+  total: number;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = abandonedCartEmail({
+    name: input.name,
+    items: input.items,
+    total: input.total,
+  });
+  return sendEmail({ to: input.email, subject, html, text });
+}
 
 export { isEmailConfigured };
 export type { SendEmailResult };
