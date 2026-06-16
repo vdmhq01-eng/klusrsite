@@ -37,6 +37,8 @@ export interface CreatePaymentInput {
   description?: string;
   /** Basis-URL voor redirect/webhook (uit de request-origin); valt terug op SITE_URL. */
   baseUrl?: string;
+  /** Mollie Components card-token (creditcard ingebed op onze eigen pagina). */
+  cardToken?: string;
 }
 
 export interface CreatePaymentResult {
@@ -60,16 +62,17 @@ export async function createPayment(
     };
   }
 
-  const payment = await mollie.payments.create({
+  const params: Record<string, unknown> = {
     amount: { currency: "EUR", value },
     description: input.description ?? `KLUSR bestelling ${input.reference}`,
     redirectUrl: `${base}/bedankt?order=${input.orderId}`,
     webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
     metadata: { orderId: input.orderId, reference: input.reference },
-    ...(input.method && methodMap[input.method]
-      ? { method: methodMap[input.method] as never }
-      : {}),
-  });
+    ...(input.method && methodMap[input.method] ? { method: methodMap[input.method] } : {}),
+  };
+  // Mollie Components: card-token meegeven bij een ingebedde creditcard-betaling.
+  if (input.cardToken) params.cardToken = input.cardToken;
+  const payment = await mollie.payments.create(params as never);
 
   return {
     checkoutUrl: payment.getCheckoutUrl() ?? `${base}/bedankt?order=${input.orderId}`,

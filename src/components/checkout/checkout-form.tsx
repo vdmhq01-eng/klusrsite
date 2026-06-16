@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ColorChip } from "@/components/cart/color-chip";
 import { PaymentMethods, type PaymentMethodId } from "./payment-methods";
+import { MollieCard, type MollieCardHandle } from "./mollie-card";
 import {
   useCart,
   cartSummary,
@@ -47,7 +48,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function CheckoutForm() {
+export function CheckoutForm({
+  mollieProfile,
+  mollieTest,
+}: {
+  mollieProfile?: string;
+  mollieTest?: boolean;
+}) {
   const { items, kluspasActive } = useCart();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
@@ -55,6 +62,7 @@ export function CheckoutForm() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("ideal");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cardRef = useRef<MollieCardHandle>(null);
 
   const {
     register,
@@ -85,9 +93,23 @@ export function CheckoutForm() {
     shippingMethod === "pickup" ? 0 : undefined,
   );
 
+  const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
+
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     setError(null);
+
+    // Mollie Components: maak client-side een card-token aan (blijft op onze pagina).
+    let cardToken: string | null = null;
+    if (useMollieComponents) {
+      cardToken = (await cardRef.current?.createToken()) ?? null;
+      if (!cardToken) {
+        setError("Controleer je kaartgegevens en probeer het opnieuw.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
     trackEvent("add_payment_info", { payment_type: paymentMethod, value: summary.total });
 
@@ -103,6 +125,7 @@ export function CheckoutForm() {
           total: summary.grossTotal,
           kluspasSavings: summary.savings,
           method: paymentMethod,
+          ...(cardToken ? { cardToken } : {}),
         }),
       });
       const data = await res.json();
@@ -207,6 +230,11 @@ export function CheckoutForm() {
 
           <Section title="Betaalmethode" step={4}>
             <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
+            {useMollieComponents && (
+              <div className="mt-4">
+                <MollieCard ref={cardRef} profileId={mollieProfile!} testmode={Boolean(mollieTest)} />
+              </div>
+            )}
           </Section>
         </div>
 
