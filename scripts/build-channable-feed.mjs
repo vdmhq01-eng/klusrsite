@@ -73,6 +73,12 @@ function normalize(b) {
       tag(b, "image_link2") || tag(b, "additional_image_link") || tag(b, "image_link"),
     availability: inStock ? "in stock" : "out of stock",
     price: num(tag(b, "price") || tag(b, "sale_price")),
+    // Adviesprijs (RRP) — doorgestreepte referentie. Map dit veld in je
+    // Channable-feed vanuit Tilroy's "Adviesprijs" als je het wilt tonen.
+    adviesprijs: num(
+      tag(b, "adviesprijs") || tag(b, "advies_prijs") || tag(b, "rrp") ||
+      tag(b, "list_price") || tag(b, "msrp"),
+    ),
     productType:
       tag(b, "product_type") || tag(b, "google_product_category") ||
       tag(b, "categorie") || tag(b, "category"),

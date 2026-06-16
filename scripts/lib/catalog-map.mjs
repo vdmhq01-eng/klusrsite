@@ -750,6 +750,10 @@ export function buildCatalog(items, stockMap, opts = {}) {
     if (variants.length === 0) continue;
 
     const base = variants.reduce((a, b) => (b.price < a.price ? b : a), variants[0]);
+    // Adviesprijs (RRP) hoort bij de goedkoopste variant; alleen tonen als die
+    // écht boven de verkoopprijs ligt.
+    const baseSrc = group.reduce((a, b) => (b.price < a.price ? b : a), group[0]);
+    const adviesprijs = baseSrc.adviesprijs ? round2(baseSrc.adviesprijs) : 0;
     const leadStock = stockMap.get(lead.id);
     const totalStock =
       leadStock?.total ?? variants[0].stockByStore.reduce((s, x) => s + x.quantity, 0);
@@ -801,6 +805,7 @@ export function buildCatalog(items, stockMap, opts = {}) {
       images: [lead.image, lead.additionalImage].filter(Boolean),
       price: round2(base.price),
       kluspasPrice: round2(base.kluspasPrice),
+      compareAtPrice: adviesprijs > round2(base.price) ? adviesprijs : undefined,
       category,
       subCategory,
       badges: badges.length ? [...new Set(badges)].slice(0, 3) : undefined,
