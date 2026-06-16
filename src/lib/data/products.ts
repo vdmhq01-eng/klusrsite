@@ -1271,21 +1271,35 @@ export function getBestsellers(limit = 8): Product[] {
 /* ----------------------------------------------- glansgraad-varianten (verf) */
 
 const GLANS_LEVELS: { id: string; label: string; re: RegExp }[] = [
+  // Nederlands
   { id: "mat", label: "Mat", re: /\bmat\b/i },
   { id: "zijdemat", label: "Zijdemat", re: /zijdemat/i },
   { id: "halfmat", label: "Halfmat", re: /halfmat/i },
-  { id: "satin", label: "Satin", re: /\bsatin\b/i },
   { id: "zijdeglans", label: "Zijdeglans", re: /zijdeglans/i },
   { id: "hoogglans", label: "Hoogglans", re: /hoogglans/i },
   { id: "glans", label: "Glans", re: /\bglans\b/i },
+  // Engels (o.a. Sikkens) — blijft Engels, kiesbaar als glans-variant
+  { id: "matt", label: "Matt", re: /\bmatte?\b/i },
+  { id: "eggshell", label: "Eggshell", re: /\beggshell\b/i },
+  { id: "satin", label: "Satin", re: /\bsatin\b/i },
+  { id: "silk", label: "Silk", re: /\bsilk\b/i },
+  { id: "highgloss", label: "High Gloss", re: /high[\s-]*gloss/i },
+  { id: "semigloss", label: "Semi-gloss", re: /semi[\s-]*gloss/i },
+  { id: "gloss", label: "Gloss", re: /\bgloss\b/i },
 ];
 const GLANS_SPECIFICITY = [
   "zijdemat",
   "zijdeglans",
   "halfmat",
   "hoogglans",
+  "highgloss",
+  "semigloss",
+  "eggshell",
   "satin",
+  "silk",
+  "matt",
   "mat",
+  "gloss",
   "glans",
 ];
 
