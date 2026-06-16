@@ -1,0 +1,204 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { QuantityStepper } from "./quantity-stepper";
+import { FreeShippingBar } from "./free-shipping-bar";
+import { ColorChip } from "./color-chip";
+import {
+  useCart,
+  cartSubtotal,
+  kluspasSavings,
+  linePrice,
+} from "@/lib/store/cart";
+import { useUI } from "@/lib/store/ui";
+import { useMounted } from "@/lib/hooks/use-mounted";
+import type { Product } from "@/types";
+import { trackEvent } from "@/lib/tracking";
+import { formatPrice } from "@/lib/utils";
+
+export function CartDrawer() {
+  const open = useUI((s) => s.cartOpen);
+  const setCartOpen = useUI((s) => s.setCartOpen);
+  const { items, kluspasActive, updateQuantity, removeItem, addItem } = useCart();
+  const mounted = useMounted();
+
+  const subtotal = mounted ? cartSubtotal(items, kluspasActive) : 0;
+  const savings = mounted ? kluspasSavings(items) : 0;
+
+  // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
+  // drawer opens, so the catalogus stays out of the global bundle.
+  const [forgotten, setForgotten] = useState<Product[]>([]);
+  useEffect(() => {
+    if (!open) return;
+    const exclude = items.map((i) => i.productId).join(",");
+    let active = true;
+    fetch(`/api/products?list=accessory&limit=2&exclude=${exclude}`)
+      .then((r) => r.json())
+      .then((d) => active && setForgotten(d.products ?? []))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [open, items]);
+
+  return (
+    <Sheet open={open} onOpenChange={setCartOpen}>
+      <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
+        <SheetHeader className="border-b border-border">
+          <SheetTitle className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-primary" />
+            Winkelwagen ({items.length})
+          </SheetTitle>
+        </SheetHeader>
+
+        {items.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-secondary">
+              <ShoppingCart className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="font-semibold">Je winkelwagen is leeg</p>
+              <p className="text-sm text-muted-foreground">
+                Voeg producten toe om je klus compleet te maken.
+              </p>
+            </div>
+            <Button asChild onClick={() => setCartOpen(false)}>
+              <Link href="/categorie/verf">Begin met verf</Link>
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              <FreeShippingBar subtotal={subtotal} className="mb-4" />
+
+              <ul className="space-y-3">
+                {items.map((item) => (
+                  <li key={item.key} className="flex gap-3">
+                    <Link
+                      href={`/product/${item.slug}`}
+                      onClick={() => setCartOpen(false)}
+                      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md border border-border bg-white"
+                    >
+                      <Image src={item.image} alt={item.title} fill sizes="80px" className="object-cover" />
+                    </Link>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold uppercase text-muted-foreground">
+                            {item.brand}
+                          </p>
+                          <p className="truncate text-sm font-semibold">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
+                        </div>
+                        <button
+                          onClick={() => removeItem(item.key)}
+                          aria-label="Verwijder"
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {item.selectedColor && (
+                        <ColorChip color={item.selectedColor} className="mt-1 w-fit" />
+                      )}
+                      <div className="mt-auto flex items-center justify-between pt-2">
+                        <QuantityStepper
+                          size="sm"
+                          value={item.quantity}
+                          onChange={(q) => updateQuantity(item.key, q)}
+                        />
+                        <span className="font-bold text-primary">
+                          {formatPrice(linePrice(item, kluspasActive) * item.quantity)}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {forgotten.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-2 text-sm font-bold">Vaak vergeten</p>
+                  <div className="space-y-2">
+                    {forgotten.map((p) => (
+                      <div
+                        key={p!.id}
+                        className="flex items-center gap-3 rounded-md border border-border p-2"
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-white">
+                          <Image src={p!.images[0]} alt={p!.title} fill sizes="48px" className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-semibold">{p!.title}</p>
+                          <p className="text-xs font-bold text-primary">
+                            {formatPrice(p!.kluspasPrice)}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            addItem({ product: p!, variant: p!.variants[0], quantity: 1 })
+                          }
+                        >
+                          Toevoegen
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-border p-4">
+              {savings > 0 && kluspasActive && (
+                <div className="mb-2 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
+                  <span className="inline-flex items-center gap-1.5 font-medium text-primary">
+                    <Sparkles className="h-4 w-4" />
+                    KLUSRPAS-voordeel
+                  </span>
+                  <span className="font-bold text-primary">-{formatPrice(savings)}</span>
+                </div>
+              )}
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Subtotaal</span>
+                <span className="text-lg font-extrabold">{formatPrice(subtotal)}</span>
+              </div>
+              <Button
+                asChild
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  trackEvent("view_cart", { value: subtotal });
+                  setCartOpen(false);
+                }}
+              >
+                <Link href="/winkelwagen">
+                  Naar winkelwagen
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <button
+                onClick={() => setCartOpen(false)}
+                className="mt-2 w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Verder winkelen
+              </button>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
