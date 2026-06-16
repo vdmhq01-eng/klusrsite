@@ -26,6 +26,7 @@ const KEY = {
   ref: (reference: string) => `orderref:${reference.toUpperCase()}`,
   mollie: (paymentId: string) => `ordermollie:${paymentId}`,
   mailLock: (id: string) => `ordermail:${id}`,
+  email: (e: string) => `orders:email:${e.trim().toLowerCase()}`,
   index: "order:index",
 };
 
@@ -45,6 +46,7 @@ async function persist(order: Order): Promise<void> {
   await kvSetJSON(KEY.order(order.id), order);
   await kvSetJSON(KEY.ref(order.reference), order.id);
   await kvSAdd(KEY.index, order.id);
+  if (order.customer.email) await kvSAdd(KEY.email(order.customer.email), order.id);
   if (order.molliePaymentId) await kvSetJSON(KEY.mollie(order.molliePaymentId), order.id);
 }
 
@@ -184,6 +186,25 @@ export async function markChannable(
   order.channableStatus = status;
   if (channableOrderId) order.channableOrderId = channableOrderId;
   await persist(order);
+}
+
+/** Orders van één klant (op e-mailadres), nieuwste eerst — voor "Mijn account". */
+export async function listOrdersByEmail(email: string): Promise<Order[]> {
+  const target = email.trim().toLowerCase();
+  if (!target) return [];
+  const byId = new Map<string, Order>();
+  if (isKvEnabled()) {
+    const ids = await kvSMembers(KEY.email(target));
+    const loaded = await Promise.all(ids.map((id) => loadById(id)));
+    for (const o of loaded) if (o) byId.set(o.id, o);
+  }
+  for (const o of orders.values()) {
+    if (o.customer.email.trim().toLowerCase() === target) byId.set(o.id, o);
+  }
+  for (const o of seededOrders) {
+    if (o.customer.email.trim().toLowerCase() === target && !byId.has(o.id)) byId.set(o.id, o);
+  }
+  return [...byId.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 /** Alle orders (KV + in-memory + seeded), nieuwste eerst — voor het admin-overzicht. */
