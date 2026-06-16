@@ -38,12 +38,16 @@ const schema = z.object({
   email: z.string().email("Vul een geldig e-mailadres in"),
   firstName: z.string().min(1, "Verplicht"),
   lastName: z.string().min(1, "Verplicht"),
-  street: z.string().min(3, "Vul je straat en huisnummer in"),
-  postalCode: z
-    .string()
-    .regex(/^\d{4}\s?[A-Za-z]{2}$/, "Bijv. 7443 BR"),
+  postalCode: z.string().regex(/^\d{4}\s?[A-Za-z]{2}$/, "Bijv. 7443 BR"),
+  houseNumber: z.string().min(1, "Verplicht"),
+  houseNumberAddition: z.string().optional(),
+  street: z.string().min(2, "Vul je straatnaam in"),
   city: z.string().min(1, "Verplicht"),
   phone: z.string().optional(),
+  terms: z.boolean().refine((v) => v === true, {
+    message: "Ga akkoord met de algemene voorwaarden om te bestellen.",
+  }),
+  newsletter: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -62,13 +66,39 @@ export function CheckoutForm({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("ideal");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
   const cardRef = useRef<MollieCardHandle>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { terms: false, newsletter: false },
+  });
+
+  // Postcode + huisnummer → straat + plaats automatisch invullen (PDOK).
+  async function lookupAddress() {
+    const postcode = (getValues("postalCode") || "").replace(/\s/g, "").toUpperCase();
+    const number = (getValues("houseNumber") || "").trim();
+    if (!/^\d{4}[A-Z]{2}$/.test(postcode) || !number) return;
+    setLookingUp(true);
+    try {
+      const res = await fetch(
+        `/api/address-lookup?postcode=${encodeURIComponent(postcode)}&number=${encodeURIComponent(number)}`,
+      );
+      const data = await res.json();
+      if (data.street) setValue("street", data.street, { shouldValidate: true });
+      if (data.city) setValue("city", data.city, { shouldValidate: true });
+    } catch {
+      /* laat de velden gewoon handmatig invulbaar */
+    } finally {
+      setLookingUp(false);
+    }
+  }
 
   if (!mounted) {
     return <div className="container-klusr py-16 text-center text-muted-foreground">Laden…</div>;
@@ -99,7 +129,6 @@ export function CheckoutForm({
     setSubmitting(true);
     setError(null);
 
-    // Mollie Components: maak client-side een card-token aan (blijft op onze pagina).
     let cardToken: string | null = null;
     if (useMollieComponents) {
       cardToken = (await cardRef.current?.createToken()) ?? null;
@@ -110,6 +139,34 @@ export function CheckoutForm({
       }
     }
 
+    // Straat + huisnummer (+ toevoeging) samenvoegen voor het order-adres.
+    const street = `${values.street} ${values.houseNumber}${
+      values.houseNumberAddition ? `-${values.houseNumberAddition}` : ""
+    }`.trim();
+    const customer = {
+      email: values.email,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      street,
+      postalCode: values.postalCode,
+      city: values.city,
+      phone: values.phone,
+    };
+
+    // Optioneel inschrijven voor de nieuwsbrief (demo-safe, fire-and-forget).
+    if (values.newsletter) {
+      void fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          source: "checkout",
+        }),
+      }).catch(() => {});
+    }
+
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
     trackEvent("add_payment_info", { payment_type: paymentMethod, value: summary.total });
 
@@ -118,7 +175,7 @@ export function CheckoutForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer: values,
+          customer,
           items,
           subtotal: summary.grossSubtotal,
           shipping: summary.grossShipping,
@@ -130,7 +187,6 @@ export function CheckoutForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Betaling aanmaken mislukt");
-      // Redirect to Mollie hosted checkout (or the thank-you page in demo mode).
       window.location.href = data.checkoutUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis");
@@ -151,15 +207,12 @@ export function CheckoutForm({
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left: details */}
         <div className="space-y-6">
-          {/* Account of als gast */}
           <div className="rounded-xl border border-border bg-secondary/40 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2.5">
                 <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="text-sm font-semibold">
-                    Reken af als gast — geen account nodig
-                  </p>
+                  <p className="text-sm font-semibold">Reken af als gast — geen account nodig</p>
                   <p className="text-xs text-muted-foreground">
                     Vul hieronder je gegevens in en bestel direct. Liever een account voor je
                     bestelhistorie en sneller afrekenen?
@@ -167,7 +220,7 @@ export function CheckoutForm({
                 </div>
               </div>
               <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link href="/inloggen">Inloggen of account aanmaken</Link>
+                <Link href="/registreren">Account aanmaken</Link>
               </Button>
             </div>
           </div>
@@ -187,17 +240,29 @@ export function CheckoutForm({
                 <Input {...register("lastName")} />
               </Field>
             </div>
-            <Field label="Straat en huisnummer" error={errors.street?.message}>
-              <Input placeholder="Grotestraat 124" {...register("street")} />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
+
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Postcode" error={errors.postalCode?.message}>
-                <Input placeholder="7443 BR" {...register("postalCode")} />
+                <Input placeholder="7442 CK" {...register("postalCode", { onBlur: lookupAddress })} />
               </Field>
-              <Field label="Plaats" error={errors.city?.message}>
-                <Input placeholder="Nijverdal" {...register("city")} />
+              <Field label="Huisnr." error={errors.houseNumber?.message}>
+                <Input placeholder="3" {...register("houseNumber", { onBlur: lookupAddress })} />
+              </Field>
+              <Field label="Toevoeging">
+                <Input placeholder="A" {...register("houseNumberAddition")} />
               </Field>
             </div>
+
+            <Field
+              label={lookingUp ? "Straat (adres ophalen…)" : "Straat"}
+              error={errors.street?.message}
+            >
+              <Input placeholder="Wordt automatisch ingevuld" {...register("street")} />
+            </Field>
+            <Field label="Plaats" error={errors.city?.message}>
+              <Input placeholder="Wordt automatisch ingevuld" {...register("city")} />
+            </Field>
+
             <Field label="Telefoon (optioneel)" error={errors.phone?.message}>
               <Input type="tel" {...register("phone")} />
             </Field>
@@ -254,9 +319,7 @@ export function CheckoutForm({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.title}</p>
                     <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
-                    {item.selectedColor && (
-                      <ColorChip color={item.selectedColor} className="mt-1" />
-                    )}
+                    {item.selectedColor && <ColorChip color={item.selectedColor} className="mt-1" />}
                   </div>
                   <span className="text-sm font-semibold">
                     {formatPrice(displayLine(item, mode, kluspasActive).main)}
@@ -303,8 +366,33 @@ export function CheckoutForm({
               <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
             )}
 
+            {/* Akkoord + nieuwsbrief */}
+            <div className="mt-4 space-y-2">
+              <label className="flex items-start gap-2 text-xs leading-snug">
+                <input type="checkbox" {...register("terms")} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
+                <span>
+                  Ik ga akkoord met de{" "}
+                  <Link href="/voorwaarden" target="_blank" className="font-medium text-primary hover:underline">
+                    algemene voorwaarden
+                  </Link>{" "}
+                  en het{" "}
+                  <Link href="/privacy" target="_blank" className="font-medium text-primary hover:underline">
+                    privacybeleid
+                  </Link>
+                  .
+                </span>
+              </label>
+              {errors.terms && (
+                <p className="text-xs font-medium text-primary">{errors.terms.message}</p>
+              )}
+              <label className="flex items-start gap-2 text-xs leading-snug">
+                <input type="checkbox" {...register("newsletter")} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
+                <span>Houd me op de hoogte van klustips en KLUSRPAS-aanbiedingen (nieuwsbrief).</span>
+              </label>
+            </div>
+
             {error && (
-              <p className="mt-3 rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+              <p className="mt-3 rounded-md bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
                 {error}
               </p>
             )}

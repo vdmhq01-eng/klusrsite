@@ -118,8 +118,10 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[api/checkout/create-payment]", err);
+    // Toon de echte (Mollie) reden zodat fouten te diagnosticeren zijn.
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Betaling aanmaken mislukt. Probeer het opnieuw." },
+      { error: `Betaling aanmaken mislukt: ${detail}` },
       { status: 500 },
     );
   }
