@@ -265,7 +265,16 @@ function expandPaintAbbrev(s = "") {
     .replace(/\bZG\b/gi, "Zijdeglans")
     .replace(/\bHG\b/gi, "Hoogglans")
     .replace(/\bZM\b/gi, "Zijdemat")
-    .replace(/\bHM\b/gi, "Halfmat");
+    .replace(/\bHM\b/gi, "Halfmat")
+    // Engelse glansaanduidingen (o.a. Sikkens) naar Nederlands.
+    .replace(/\bhigh[\s-]*gloss\b/gi, "Hoogglans")
+    .replace(/\bsemi[\s-]*gloss\b/gi, "Zijdeglans")
+    .replace(/\beggshell\b/gi, "Zijdemat")
+    .replace(/\bsatin\b/gi, "Zijdeglans")
+    .replace(/\bsilk\b/gi, "Zijdeglans")
+    .replace(/\bgloss\b/gi, "Hoogglans")
+    .replace(/\bmatte\b/gi, "Mat")
+    .replace(/\bmatt\b/gi, "Mat");
 }
 
 /** Schone, klantvriendelijke verf-titel: zonder kleur, kleurcode, basis of maat. */
@@ -427,12 +436,14 @@ function paintOndergrond(text = "", feat = {}) {
 }
 function paintGlansOf(title = "") {
   const t = title.toLowerCase();
-  if (/hoogglans/.test(t)) return "Hoogglans";
-  if (/zijdeglans/.test(t)) return "Zijdeglans";
-  if (/zijdemat/.test(t)) return "Zijdemat";
-  if (/halfmat/.test(t)) return "Halfmat";
-  if (/\bsatin\b/.test(t)) return "Satin";
-  if (/\bmat\b/.test(t)) return "Mat";
+  // Herken zowel Nederlandse als Engelse glansaanduidingen (bv. Sikkens) en
+  // geef altijd het Nederlandse label terug.
+  if (/hoogglans|high[\s-]*gloss/.test(t)) return "Hoogglans";
+  if (/zijdeglans|zijdeglanzend|semi[\s-]*gloss|\bsatin\b|\bsilk\b/.test(t)) return "Zijdeglans";
+  if (/zijdemat|\beggshell\b|\bei[\s-]*schaal\b/.test(t)) return "Zijdemat";
+  if (/halfmat|half[\s-]*mat/.test(t)) return "Halfmat";
+  if (/\bmatt?e?\b|\bdof\b/.test(t)) return "Mat";
+  if (/\bgloss\b|\bglanzend\b|\bglans\b/.test(t)) return "Hoogglans";
   return null;
 }
 const VERF_SOORT = {
