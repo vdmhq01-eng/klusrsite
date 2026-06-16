@@ -9,6 +9,7 @@ Importeerbaar GTM-containerbestand: [`klusr-gtm-container.json`](./klusr-gtm-con
 | GTM-container | **GTM-TQSG438L** (`NEXT_PUBLIC_GTM_ID`, default in de code) |
 | GA4 Measurement ID | **G-M854M83RJW** (stream: klus-r / www.klus-r.nl) |
 | Google Ads account | **773-903-6525** |
+| Google Ads conversie-ID | **AW-18243904404** |
 
 ## Wat zit erin
 
@@ -19,8 +20,9 @@ Importeerbaar GTM-containerbestand: [`klusr-gtm-container.json`](./klusr-gtm-con
   `remove_from_cart`, `view_cart`, `begin_checkout`, `add_shipping_info`,
   `add_payment_info`, `purchase`, `search`, `sign_up`.
 - **Custom Event-triggers** per event.
-- **Google Ads — Conversion Linker** op alle pagina's (voor correcte
-  conversie-attributie/remarketing).
+- **Google Ads — Google tag** (`AW-18243904404`) op alle pagina's (remarketing),
+  een **Conversion Linker** (`gclidw`) en een **purchase-conversietag** (`awct`)
+  — vul nog het conversielabel in, zie hieronder.
 - **Consent Mode v2**: GA4-tags hebben `analytics_storage`, de Conversion Linker
   `ad_storage` als vereiste. De site zet de defaults op `denied` en stuurt een
   consent-update zodra de bezoeker in de cookiebanner kiest
@@ -40,13 +42,11 @@ Importeerbaar GTM-containerbestand: [`klusr-gtm-container.json`](./klusr-gtm-con
 
 ## Nog afmaken
 
-- **Google Ads-conversies**: de Conversion Linker staat klaar, maar voor échte
-  conversies heb je per conversieactie een **Conversie-ID (`AW-…`) + label**
-  nodig (Google Ads → Doelen → Conversies). Voeg per conversie een
-  *Google Ads Conversion Tracking*-tag toe (bv. op `purchase`) en, als je
-  remarketing wilt, een *Google Ads Remarketing*-tag met je account.
-  Het account-ID `773-903-6525` is voor de **GA4 ↔ Ads-koppeling** en
-  remarketing-audiences, niet de conversie-ID.
+- **Google Ads conversielabel**: de purchase-conversietag staat klaar met
+  conversie-ID `AW-18243904404`, maar je moet nog het **conversielabel** invullen
+  (Google Ads → Doelen → Conversies → je aankoop-conversie). Vervang in de tag
+  *"Google Ads — Conversie: purchase"* de waarde `PLAK_HIER_HET_CONVERSIELABEL`.
+  Voeg desgewenst extra conversies toe op andere events (bv. `sign_up`).
 - **GA4 ↔ Google Ads koppelen** (GA4 Admin → Product links → Google Ads).
 - **Consent overview (BETA)** in GTM mag je gerust aanzetten — puur een overzicht
   van de consent-instellingen per tag.

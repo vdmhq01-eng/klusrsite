@@ -1,13 +1,13 @@
 {
   "exportFormatVersion": 2,
-  "exportTime": "2026-06-16T12:01:40.062Z",
+  "exportTime": "2026-06-16T12:10:19.667Z",
   "containerVersion": {
     "path": "accounts/0/containers/0/versions/0",
     "accountId": "0",
     "containerId": "0",
     "containerVersionId": "0",
-    "name": "KLUSR — GA4 + Consent Mode v2",
-    "description": "GA4 (G-M854M83RJW) configuratie + ecommerce-events gekoppeld aan de KLUSR dataLayer, met Consent Mode v2 en een Conversion Linker voor Google Ads.",
+    "name": "KLUSR — GA4 + Google Ads + Consent Mode v2",
+    "description": "GA4 (G-M854M83RJW) + Google Ads (AW-18243904404) met ecommerce-events uit de KLUSR dataLayer, Conversion Linker, purchase-conversie en Consent Mode v2.",
     "container": {
       "path": "accounts/0/containers/0",
       "accountId": "0",
@@ -42,15 +42,29 @@
         "fingerprint": "0"
       },
       {
-        "name": "Google Ads — Conversion Linker",
-        "type": "sp",
+        "name": "Google Ads — Google tag (remarketing)",
+        "type": "googtag",
         "parameter": [
           {
-            "type": "BOOLEAN",
-            "key": "enableCrossDomain",
-            "value": "false"
+            "type": "TEMPLATE",
+            "key": "tagId",
+            "value": "AW-18243904404"
           }
         ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NOT_SET"
+        },
+        "tagId": "2",
+        "fingerprint": "0"
+      },
+      {
+        "name": "Google Ads — Conversion Linker",
+        "type": "gclidw",
+        "parameter": [],
         "firingTriggerId": [
           "2147479553"
         ],
@@ -67,7 +81,7 @@
             ]
           }
         },
-        "tagId": "2",
+        "tagId": "3",
         "fingerprint": "0"
       },
       {
@@ -597,6 +611,65 @@
         },
         "tagId": "111",
         "fingerprint": "0"
+      },
+      {
+        "name": "Google Ads — Conversie: purchase (LABEL INVULLEN)",
+        "type": "awct",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "conversionId",
+            "value": "18243904404"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionLabel",
+            "value": "PLAK_HIER_HET_CONVERSIELABEL"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionValue",
+            "value": "{{DLV — value}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "currencyCode",
+            "value": "{{DLV — currency}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "orderId",
+            "value": "{{DLV — transaction_id}}"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enableProductReporting",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "rdp",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "109"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              }
+            ]
+          }
+        },
+        "tagId": "200",
+        "fingerprint": "0"
       }
     ],
     "trigger": [
@@ -902,6 +975,80 @@
         "fingerprint": "0"
       },
       {
+        "name": "DLV — value",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce.value"
+          }
+        ],
+        "variableId": "2",
+        "fingerprint": "0"
+      },
+      {
+        "name": "DLV — currency",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "defaultValue",
+            "value": "EUR"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce.currency"
+          }
+        ],
+        "variableId": "3",
+        "fingerprint": "0"
+      },
+      {
+        "name": "DLV — transaction_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce.transaction_id"
+          }
+        ],
+        "variableId": "4",
+        "fingerprint": "0"
+      },
+      {
         "name": "Const — GA4 Measurement ID",
         "type": "c",
         "parameter": [
@@ -911,7 +1058,7 @@
             "value": "G-M854M83RJW"
           }
         ],
-        "variableId": "2",
+        "variableId": "5",
         "fingerprint": "0"
       }
     ],
