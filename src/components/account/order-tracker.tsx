@@ -26,6 +26,7 @@ import {
   activeStepIndex,
   isCanceledStatus,
   orderStatusBadgeVariant,
+  orderStatusBeleving,
   orderStatusLabel,
   timelineSteps,
 } from "./order-status-meta";
@@ -170,6 +171,11 @@ function OrderDetail({ order }: { order: Order }) {
               {orderStatusLabel[order.paymentStatus]}
             </Badge>
           </div>
+          {!canceled && (
+            <p className="rounded-lg bg-primary/5 p-3 text-sm font-medium text-foreground">
+              {orderStatusBeleving[order.paymentStatus]}
+            </p>
+          )}
           {!canceled && order.estimatedDelivery && (
             <p className="flex items-center gap-2 rounded-lg bg-klusr-stock/10 p-3 text-sm font-medium text-klusr-stock">
               <Truck className="h-4 w-4 shrink-0" />

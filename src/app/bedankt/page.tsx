@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PurchaseTracker } from "@/components/checkout/purchase-tracker";
+import { ClearCart } from "@/components/checkout/clear-cart";
 import { getOrder } from "@/lib/store/orders";
 import { formatPrice, formatDate } from "@/lib/utils";
 
@@ -28,6 +29,8 @@ export default function ThankYouPage({
 
   return (
     <div className="container-klusr py-10">
+      {/* Mand altijd legen na het afrekenen (ook als de order niet geladen kon worden). */}
+      {(searchParams.order || searchParams.demo) && <ClearCart />}
       <div className="mx-auto max-w-2xl">
         {/* Confirmation header */}
         <div className="flex flex-col items-center text-center">
