@@ -17,6 +17,7 @@ const serviceLinks = [
 const aboutLinks = [
   { href: "/over-klusr", label: "Over KLUSR" },
   { href: "/kluspas", label: "KLUSRPAS" },
+  { href: "/zakelijk", label: "Zakelijk & ProfPas" },
   { href: "/mengverf", label: "Mengverf" },
   { href: "/advies", label: "Advies & inspiratie" },
   { href: "/klushulp", label: "Klushulp AI" },

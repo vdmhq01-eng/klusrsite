@@ -28,6 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/mengverf", { priority: 0.9 }),
     entry("/kleurkiezer", { priority: 0.9 }),
     entry("/kluspas", { priority: 0.7 }),
+    entry("/zakelijk", { priority: 0.7 }),
     entry("/advies", { priority: 0.7 }),
     entry("/klushulp", { priority: 0.6 }),
     entry("/winkels", { priority: 0.6 }),
