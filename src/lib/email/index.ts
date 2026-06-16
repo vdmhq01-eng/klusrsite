@@ -6,6 +6,8 @@ import {
   verificationEmail,
   magicLinkEmail,
   abandonedCartEmail,
+  supportConfirmationEmail,
+  supportReplyEmail,
 } from "./templates";
 
 /** Verstuur een "winkelwagen-vergeten" herinnering. */
@@ -58,5 +60,33 @@ export async function sendWelcomeEmail(input: {
   firstName?: string;
 }): Promise<SendEmailResult> {
   const { subject, html, text } = welcomeEmail({ firstName: input.firstName });
+  return sendEmail({ to: input.email, subject, html, text });
+}
+
+/** Bevestig de ontvangst van een klantenservicevraag. */
+export async function sendSupportConfirmation(input: {
+  email: string;
+  name?: string;
+  reference: string;
+  subject: string;
+  body: string;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = supportConfirmationEmail(
+    input.name ?? "",
+    input.reference,
+    input.subject,
+    input.body,
+  );
+  return sendEmail({ to: input.email, subject, html, text });
+}
+
+/** Verstuur het antwoord van de klantenservice op een ticket. */
+export async function sendSupportReply(input: {
+  email: string;
+  name?: string;
+  reference: string;
+  body: string;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = supportReplyEmail(input.name ?? "", input.reference, input.body);
   return sendEmail({ to: input.email, subject, html, text });
 }

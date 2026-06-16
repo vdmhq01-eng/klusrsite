@@ -18,6 +18,7 @@ import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrdersPanel } from "./orders-panel";
+import { TicketsPanel } from "./tickets-panel";
 import { CustomersPanel } from "./customers-panel";
 import { AiContentManager } from "./ai-content-manager";
 import { ChannableTestOrder } from "./channable-test-order";
@@ -26,6 +27,7 @@ import { MollieTest } from "./mollie-test";
 type SectionId =
   | "overzicht"
   | "orders"
+  | "tickets"
   | "klanten"
   | "rapportages"
   | "inzichten"
@@ -35,6 +37,7 @@ type SectionId =
 const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: ShoppingBag },
+  { id: "tickets", label: "Tickets", icon: MessageCircle },
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "inzichten", label: "Inzichten", icon: Search },
@@ -83,6 +86,7 @@ export function AdminDashboard() {
       <div className="min-w-0">
         {section === "overzicht" && <Overview orders={orders} onGo={setSection} />}
         {section === "orders" && <OrdersPanel />}
+        {section === "tickets" && <TicketsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {section === "rapportages" && <Reports orders={orders} />}
         {section === "inzichten" && <Insights />}

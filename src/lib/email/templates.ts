@@ -222,6 +222,65 @@ export function magicLinkEmail(
   };
 }
 
+// --- Klantenservice / tickets ----------------------------------------------
+
+/** Escape + behoud regelovergangen voor weergave in HTML-mails. */
+function nl2br(s: string): string {
+  return esc(s).replace(/\r?\n/g, "<br>");
+}
+
+/** Ontvangstbevestiging van een klantenservicevraag. */
+export function supportConfirmationEmail(
+  name: string,
+  reference: string,
+  subject: string,
+  body: string,
+): { subject: string; html: string; text: string } {
+  const hi = name ? `Hoi ${esc(name.split(" ")[0])},` : "Hoi,";
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">We hebben je bericht ontvangen</h1>` +
+    `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">${hi} bedankt voor je bericht aan de KLUSR-klantenservice. Onze klussers kijken er zo snel mogelijk naar — meestal binnen 1 werkdag.</p>` +
+    `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${C.muted};">Je ticketnummer is <strong style="color:${C.text};">${esc(reference)}</strong>. Houd dit nummer in de onderwerpregel als je reageert, dan koppelen we je bericht automatisch.</p>` +
+    `<div style="margin:0 0 8px;padding:16px;border:1px solid ${C.border};border-radius:10px;background:${C.bg};">` +
+    `<p style="margin:0 0 6px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.04em;color:${C.muted};">${esc(subject)}</p>` +
+    `<p style="margin:0;font-size:14px;line-height:1.6;color:${C.text};">${nl2br(body)}</p>` +
+    `</div>`;
+  return {
+    subject: `We hebben je bericht ontvangen [${reference}]`,
+    html: layout({
+      title: "Bericht ontvangen",
+      preheader: `Je ticketnummer is ${reference}`,
+      content,
+      footerNote: `Reageren? Houd ${reference} in de onderwerpregel.`,
+    }),
+    text: `${hi} bedankt voor je bericht aan de KLUSR-klantenservice.\nJe ticketnummer is ${reference}. We reageren meestal binnen 1 werkdag.\n\nOnderwerp: ${subject}\n${body}`,
+  };
+}
+
+/** Antwoord van de klantenservice op een ticket. */
+export function supportReplyEmail(
+  name: string,
+  reference: string,
+  replyBody: string,
+): { subject: string; html: string; text: string } {
+  const hi = name ? `Hoi ${esc(name.split(" ")[0])},` : "Hoi,";
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Antwoord van de klantenservice</h1>` +
+    `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">${hi}</p>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${nl2br(replyBody)}</p>` +
+    `<p style="margin:0;font-size:13px;line-height:1.6;color:${C.muted};">Heb je nog een vraag? Beantwoord deze e-mail en houd <strong style="color:${C.text};">${esc(reference)}</strong> in de onderwerpregel, dan pakken we het direct weer op.</p>`;
+  return {
+    subject: `Re: je vraag aan KLUSR [${reference}]`,
+    html: layout({
+      title: "Antwoord van de klantenservice",
+      preheader: replyBody.slice(0, 100),
+      content,
+      footerNote: `Ticket ${reference}`,
+    }),
+    text: `${hi}\n\n${replyBody}\n\nHeb je nog een vraag? Beantwoord deze e-mail en houd ${reference} in de onderwerpregel.`,
+  };
+}
+
 export function abandonedCartEmail(input: {
   name?: string;
   items: { title: string; quantity: number; price: number }[];

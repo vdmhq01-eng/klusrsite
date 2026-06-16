@@ -23,6 +23,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { ContactForm } from "@/components/support/contact-form";
 
 export const metadata: Metadata = {
   title: "Klantenservice",
@@ -368,24 +369,23 @@ export default function KlantenservicePage() {
               Staat je vraag er niet bij?
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Onze klantenservice helpt je graag persoonlijk verder. Je kunt ook
-              24/7 terecht bij de KLUSR AI assistent voor direct antwoord op je
-              vraag.
+              Stuur ons een bericht. Je ontvangt direct een ticketnummer en een
+              bevestiging per e-mail — we reageren meestal binnen 1 werkdag.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <a href="mailto:klantenservice@klus-r.nl">
-                  <Mail className="h-4 w-4" />
-                  Mail de klantenservice
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/klushulp">
-                  <MessageCircle className="h-4 w-4" />
-                  Vraag de AI assistent
-                </Link>
-              </Button>
+            <div className="mt-5">
+              <ContactForm />
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Liever meteen antwoord?{" "}
+              <Link
+                href="/klushulp"
+                className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Vraag de AI klushulp
+              </Link>{" "}
+              — 24/7 beschikbaar.
+            </p>
           </div>
 
           <div className="rounded-xl bg-secondary p-6">
