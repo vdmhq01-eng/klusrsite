@@ -12,8 +12,9 @@ import { colorCollections, type ColorCollection } from "@/lib/data/colors";
 const API_BASE = (
   process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app"
 ).replace(/\/+$/, "");
-// Volledige feed: alle collecties + kleuren (en later bases). Val terug op de
-// lichtere public-colors als de feed onverhoopt faalt.
+// Eerst onze gecachete server-proxy (zelfde origin, klein + snel), dan de
+// volledige bron-feed, dan de lichtere public-colors, dan de gecureerde set.
+const PROXY_URL = "/api/colors";
 const FEED_URL = `${API_BASE}/api/kleurenkiezer/feed`;
 const FALLBACK_URL = `${API_BASE}/api/kleurenkiezer/public-colors`;
 
@@ -68,6 +69,10 @@ async function loadFrom(url: string): Promise<ColorCollection[] | null> {
 
 export async function fetchPortalColors(): Promise<ColorCollection[]> {
   if (cache) return cache;
-  cache = (await loadFrom(FEED_URL)) || (await loadFrom(FALLBACK_URL)) || colorCollections;
+  cache =
+    (await loadFrom(PROXY_URL)) ||
+    (await loadFrom(FEED_URL)) ||
+    (await loadFrom(FALLBACK_URL)) ||
+    colorCollections;
   return cache;
 }
