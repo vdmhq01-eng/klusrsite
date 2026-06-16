@@ -14,7 +14,7 @@ const API_KEY = process.env.RESEND_API_KEY;
 /** Afzender. Het domein moet geverifieerd zijn in Resend. */
 const FROM = process.env.EMAIL_FROM || "KLUSR <bestellingen@klus-r.nl>";
 /** Antwoorden komen bij de klantenservice terecht. */
-const REPLY_TO = process.env.EMAIL_REPLY_TO || "klantenservice@klusr.nl";
+const REPLY_TO = process.env.EMAIL_REPLY_TO || "klantenservice@klus-r.nl";
 
 const ENDPOINT = "https://api.resend.com/emails";
 

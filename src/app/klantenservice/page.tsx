@@ -44,8 +44,8 @@ const contactCards = [
     icon: Mail,
     title: "Mail ons",
     description: "Reactie binnen 1 werkdag",
-    actionLabel: "klantenservice@klusr.nl",
-    href: "mailto:klantenservice@klusr.nl",
+    actionLabel: "klantenservice@klus-r.nl",
+    href: "mailto:klantenservice@klus-r.nl",
   },
   {
     icon: Store,
@@ -266,7 +266,7 @@ export default function KlantenservicePage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <a href="mailto:klantenservice@klusr.nl">
+                <a href="mailto:klantenservice@klus-r.nl">
                   <Mail className="h-4 w-4" />
                   Mail de klantenservice
                 </a>

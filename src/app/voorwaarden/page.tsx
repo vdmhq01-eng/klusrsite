@@ -29,7 +29,7 @@ export default function VoorwaardenPage() {
                 {COMPANY.phone}
               </li>
               <li>
-                KvK: {COMPANY.kvk} · Btw: {COMPANY.btw}
+                KvK: {COMPANY.kvk} · Btw: {COMPANY.btw} · IBAN: {COMPANY.iban}
               </li>
             </ul>
           ),

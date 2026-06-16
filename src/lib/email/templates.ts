@@ -10,7 +10,7 @@ import { flagshipStore } from "@/lib/data/stores";
  */
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
-const CONTACT_EMAIL = process.env.EMAIL_REPLY_TO || "klantenservice@klusr.nl";
+const CONTACT_EMAIL = process.env.EMAIL_REPLY_TO || "klantenservice@klus-r.nl";
 
 /** KLUSR huisstijlkleuren (gespiegeld vanuit tailwind.config.ts). */
 const C = {
