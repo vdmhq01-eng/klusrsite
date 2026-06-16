@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
@@ -90,6 +91,22 @@ export function ProductBuybox({
 
   function buildItem() {
     return addItem({ product, variant, quantity, color });
+  }
+
+  const router = useRouter();
+
+  /** Direct afrekenen: leg in de winkelwagen en ga meteen naar de checkout
+   * (daar staan o.a. Apple Pay / Google Pay zodra die in Mollie actief zijn). */
+  function handleBuyNow() {
+    if (product.colorMatchable && !color) {
+      toast("Kies eerst een kleur", {
+        description: "Selecteer een kleur voordat je deze verf bestelt.",
+      });
+      return;
+    }
+    buildItem();
+    trackEvent("begin_checkout", { value: variant.kluspasPrice * quantity });
+    router.push("/checkout");
   }
 
   function handleAdd() {
@@ -356,6 +373,13 @@ export function ProductBuybox({
             In winkelwagen
           </Button>
         </div>
+        <Button
+          onClick={handleBuyNow}
+          size="lg"
+          className="w-full bg-klusr-black text-white hover:bg-klusr-black/90"
+        >
+          Direct afrekenen
+        </Button>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={handleSaveForLater}>
             <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
