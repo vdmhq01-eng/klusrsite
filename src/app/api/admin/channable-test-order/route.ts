@@ -1,30 +1,18 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/auth";
+import { getAdminSession } from "@/auth";
 import { sendTestOrder, type SendTestOrderInput } from "@/lib/channable";
 
 /**
- * Admin-only: stuur een test-order naar Channable.
- *
- * AUTH-GUARD / PARITEIT:
- * De /admin-omgeving draait momenteel open (demo — "geen authenticatie", zie
- * src/app/admin/page.tsx) en er is geen middleware die /admin afschermt. We
- * houden hier dezelfde pariteit: de route blokkeert niet hard. Zodra echte
- * authenticatie (AUTH_SECRET + OAuth) is geconfigureerd kun je onderstaande
- * sessie-check aanzetten door de `return` te activeren. We lezen de sessie nu
- * al defensief uit zodat de overstap naar afgeschermd één regel is.
+ * Admin-only: stuur een test-order naar Channable. Afgeschermd via de
+ * ADMIN_EMAILS-allowlist (zie src/auth.ts).
  */
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "Niet geautoriseerd." }, { status: 401 });
+  }
   try {
-    // Defensief: sessie ophalen (crasht niet zonder auth-config). Wanneer je
-    // /admin wilt afschermen, vervang de no-op hieronder door een 401.
-    const session = await getSession();
-    void session; // bewust ongebruikt zolang /admin in demo-modus draait.
-    // if (!session) {
-    //   return NextResponse.json({ error: "Niet geautoriseerd." }, { status: 401 });
-    // }
-
     // Optionele overrides voor het test-orderregel-item (allemaal optioneel).
     let input: SendTestOrderInput = {};
     try {

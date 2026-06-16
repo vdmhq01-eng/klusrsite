@@ -66,3 +66,24 @@ export async function getSession() {
     return null;
   }
 }
+
+/**
+ * Admin-allowlist via env `ADMIN_EMAILS` (komma-gescheiden). Fail-closed: zonder
+ * deze env-var is er GEEN admin en is het beheer volledig dicht. Zo voeg je een
+ * "admin-account" toe door het e-mailadres aan ADMIN_EMAILS te zetten in Vercel.
+ */
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(/[,\s;]+/)
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
+/** Sessie alleen teruggeven als de ingelogde gebruiker admin is, anders null. */
+export async function getAdminSession() {
+  const session = await getSession();
+  return isAdminEmail(session?.user?.email) ? session : null;
+}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAdminSession } from "@/auth";
 import { getOrder, setShipped } from "@/lib/store/orders";
 import { createLabel, isPostNLConfigured } from "@/lib/postnl";
 import { pushShipment } from "@/lib/channable";
@@ -7,6 +8,12 @@ export const runtime = "nodejs";
 
 /** Admin: maak een PostNL-verzendlabel voor een order. */
 export async function POST(req: Request) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json(
+      { ok: false, status: 401, message: "Niet geautoriseerd." },
+      { status: 401 },
+    );
+  }
   try {
     const { orderId } = (await req.json().catch(() => ({}))) as { orderId?: string };
     const order = orderId ? await getOrder(orderId) : undefined;
