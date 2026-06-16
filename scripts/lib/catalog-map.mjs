@@ -656,11 +656,30 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const title = cleanTitle(lead.title);
     if (!title) continue;
 
+    // Mengverf-vlag over de hele groep + "vaste-kleur-variant"-modus: een
+    // niet-mengverf verflijn die in meerdere vaste kleuren bestaat, toont die
+    // kleuren als varianten i.p.v. ze stil te laten samenvallen op maat.
+    const meng = category === "verf" && groupIsMengverf(group, featuresById, true);
+    const colorOf = (it) =>
+      featKleur(featuresById && featuresById.get(String(it.id)), it.color);
+    const colorVariant =
+      category === "verf" && !meng && new Set(group.map(colorOf).filter(Boolean)).size > 1;
+    const multiSize =
+      new Set(group.map((it) => cleanSizeLabel(variantLabel(it)))).size > 1;
+
     const seenLabels = new Set();
     const variants = [];
     const sortedGroup = [...group].sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
     for (const it of sortedGroup) {
-      const label = cleanSizeLabel(variantLabel(it));
+      const sizeLabel = cleanSizeLabel(variantLabel(it));
+      let label = sizeLabel;
+      if (colorVariant) {
+        const kleur = colorOf(it);
+        if (kleur) {
+          label =
+            multiSize && sizeLabel !== "Standaard" ? `${cap(kleur)} · ${sizeLabel}` : cap(kleur);
+        }
+      }
       if (seenLabels.has(label)) continue;
       seenLabels.add(label);
       const st = stockMap.get(it.id);
@@ -704,13 +723,19 @@ export function buildCatalog(items, stockMap, opts = {}) {
           : dedupeWords(cleanProductTitle(dropBrandEcho(lead.title, lead.brand))) || title,
       ) || title;
 
-    // Rijke productattributen uit de feature-feed (per lead-SKU) + mengvlag (over
-    // de hele groep, want die staat vaak alleen op de gekleurde basissen).
+    // Rijke productattributen uit de feature-feed (per lead-SKU).
     const feat = (featuresById && featuresById.get(String(lead.id))) || {};
-    const meng = category === "verf" && groupIsMengverf(group, featuresById, category === "verf");
-    const sizeLabels = [...new Set(variants.map((v) => v.label).filter((l) => l && l !== "Standaard"))].sort(
-      (a, b) => sizeRank(a) - sizeRank(b),
-    );
+    const sizeLabels = (
+      colorVariant
+        ? [
+            ...new Set(
+              group
+                .map((it) => cleanSizeLabel(variantLabel(it)))
+                .filter((l) => l && l !== "Standaard"),
+            ),
+          ]
+        : [...new Set(variants.map((v) => v.label).filter((l) => l && l !== "Standaard"))]
+    ).sort((a, b) => sizeRank(a) - sizeRank(b));
 
     products.push({
       id: `tilroy-${lead.id}`,
