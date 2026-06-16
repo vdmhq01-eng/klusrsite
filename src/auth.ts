@@ -1,6 +1,12 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { randomBytes } from "crypto";
+import {
+  verifyPassword,
+  getUser,
+  setVerified,
+  consumeAuthToken,
+} from "@/lib/store/users";
 
 /**
  * Authenticatie via Auth.js (NextAuth v5) met **e-mail + wachtwoord** en
@@ -35,20 +41,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "E-mailadres", type: "email" },
         password: { label: "Wachtwoord", type: "password" },
-        name: { label: "Naam", type: "text" },
+        magicToken: { label: "Magic token", type: "text" },
       },
-      authorize(credentials) {
+      async authorize(credentials) {
+        // 1) Magic-link login: token uit de inlogmail. Klikken op de link bewijst
+        //    e-mailbezit, dus we bevestigen het account meteen.
+        const magicToken = String(credentials?.magicToken ?? "");
+        if (magicToken) {
+          const email = await consumeAuthToken(magicToken);
+          if (!email) return null;
+          await setVerified(email);
+          const user = await getUser(email);
+          return user ? { id: user.email, email: user.email, name: user.name } : null;
+        }
+
+        // 2) Wachtwoord-login tegen een bevestigd account.
         const email = String(credentials?.email ?? "").trim().toLowerCase();
         const password = String(credentials?.password ?? "");
-        const provided = String(credentials?.name ?? "").trim();
-        // DEMO-verificatie (geen gebruikersdatabase): geldig e-mailadres + min. 6 tekens.
-        // Inloggen én registreren lopen via deze provider; bij registratie wordt
-        // de opgegeven naam als weergavenaam gebruikt.
-        if (EMAIL_RE.test(email) && password.length >= 6) {
-          const fallback = email.split("@")[0].replace(/[._-]+/g, " ").trim();
-          return { id: email, email, name: provided || fallback || email };
-        }
-        return null;
+        if (!EMAIL_RE.test(email) || !password) return null;
+        const user = await verifyPassword(email, password);
+        return user ? { id: user.email, email: user.email, name: user.name } : null;
       },
     }),
   ],

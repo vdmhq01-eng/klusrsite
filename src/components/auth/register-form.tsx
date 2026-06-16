@@ -4,16 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-/** Account aanmaken (NextAuth Credentials — demo, geen database). */
+/** Account aanmaken — echte accounts met e-mailbevestiging. */
 export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,8 +25,8 @@ export function RegisterForm() {
     const password = String(form.get("password") ?? "");
     const confirm = String(form.get("confirm") ?? "");
 
-    if (password.length < 6) {
-      setError("Je wachtwoord moet minimaal 6 tekens zijn.");
+    if (password.length < 8) {
+      setError("Je wachtwoord moet minimaal 8 tekens zijn.");
       return;
     }
     if (password !== confirm) {
@@ -34,14 +35,52 @@ export function RegisterForm() {
     }
 
     setLoading(true);
-    const res = await signIn("credentials", { email, password, name, redirect: false });
-    setLoading(false);
-    if (!res || res.error) {
-      setError("Registreren lukte niet. Controleer je gegevens en probeer opnieuw.");
-      return;
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; verified?: boolean };
+      if (!res.ok) {
+        setError(data.error || "Registreren lukte niet. Probeer het opnieuw.");
+        setLoading(false);
+        return;
+      }
+      if (data.verified) {
+        // Geen e-mailverificatie geconfigureerd → meteen inloggen.
+        await signIn("credentials", { email, password, redirect: false });
+        router.push("/account");
+        router.refresh();
+      } else {
+        setSentTo(email);
+        setLoading(false);
+      }
+    } catch {
+      setError("Er ging iets mis. Probeer het opnieuw.");
+      setLoading(false);
     }
-    router.push("/account");
-    router.refresh();
+  }
+
+  if (sentTo) {
+    return (
+      <div className="mt-6 flex flex-col items-center gap-4 rounded-xl border border-border bg-secondary/40 p-6 text-center">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+          <MailCheck className="h-6 w-6" />
+        </span>
+        <div>
+          <h2 className="text-lg font-bold">Bevestig je e-mailadres</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We hebben een bevestigingslink gestuurd naar{" "}
+            <span className="font-semibold text-foreground">{sentTo}</span>. Klik op de link om je
+            account te activeren; daarna kun je inloggen.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/inloggen">Naar inloggen</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -56,11 +95,11 @@ export function RegisterForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Wachtwoord</Label>
-        <Input id="password" name="password" type="password" autoComplete="new-password" required minLength={6} placeholder="Minimaal 6 tekens" />
+        <Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} placeholder="Minimaal 8 tekens" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="confirm">Herhaal wachtwoord</Label>
-        <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required minLength={6} placeholder="••••••••" />
+        <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required minLength={8} placeholder="••••••••" />
       </div>
 
       {error && (

@@ -184,6 +184,44 @@ function totalsRow(label: string, value: string, opts: { color?: string; strong?
   );
 }
 
+export function verificationEmail(
+  name: string,
+  url: string,
+): { subject: string; html: string; text: string } {
+  const hi = name ? `Hoi ${esc(name.split(" ")[0])},` : "Hoi,";
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Bevestig je e-mailadres</h1>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${hi} welkom bij KLUSR! Bevestig je e-mailadres om je account te activeren.</p>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Bevestig e-mailadres", url)}</td></tr></table>` +
+    `<p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:${C.muted};">Werkt de knop niet? Plak deze link in je browser:</p>` +
+    `<p style="margin:0 0 18px;font-size:13px;line-height:1.6;"><a href="${url}" style="color:${C.red};word-break:break-all;">${esc(url)}</a></p>` +
+    `<p style="margin:0;font-size:12px;color:${C.muted};">Deze link is 24 uur geldig. Heb je je niet aangemeld? Dan kun je deze e-mail negeren.</p>`;
+  return {
+    subject: "Bevestig je e-mailadres voor KLUSR",
+    html: layout({ title: "Bevestig je e-mailadres", preheader: "Activeer je KLUSR-account", content }),
+    text: `${hi} bevestig je e-mailadres om je KLUSR-account te activeren:\n${url}\n\nDeze link is 24 uur geldig.`,
+  };
+}
+
+export function magicLinkEmail(
+  name: string,
+  url: string,
+): { subject: string; html: string; text: string } {
+  const hi = name ? `Hoi ${esc(name.split(" ")[0])},` : "Hoi,";
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Je inloglink</h1>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${hi} klik op de knop om direct in te loggen bij KLUSR — geen wachtwoord nodig.</p>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Inloggen bij KLUSR", url)}</td></tr></table>` +
+    `<p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:${C.muted};">Werkt de knop niet? Plak deze link in je browser:</p>` +
+    `<p style="margin:0 0 18px;font-size:13px;line-height:1.6;"><a href="${url}" style="color:${C.red};word-break:break-all;">${esc(url)}</a></p>` +
+    `<p style="margin:0;font-size:12px;color:${C.muted};">Deze link is 30 minuten geldig en werkt één keer. Heb je geen inloglink aangevraagd? Negeer deze e-mail dan.</p>`;
+  return {
+    subject: "Je inloglink voor KLUSR",
+    html: layout({ title: "Je inloglink", preheader: "Log direct in bij KLUSR", content }),
+    text: `${hi} log in bij KLUSR via deze link (30 min geldig):\n${url}`,
+  };
+}
+
 export function orderConfirmationEmail(order: Order): { subject: string; html: string; text: string } {
   const c = order.customer;
   const trackUrl = `${SITE_URL}/bestelstatus`;
