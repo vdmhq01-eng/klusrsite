@@ -2,6 +2,7 @@ import { Hero } from "@/components/home/hero";
 import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
 import { VerfCategories } from "@/components/home/verf-categories";
 import { TrendingSection } from "@/components/home/trending-section";
+import { ForYouSection } from "@/components/home/for-you-section";
 import { CategoryTiles } from "@/components/home/category-tiles";
 import { KluspasBanner } from "@/components/home/kluspas-banner";
 import { InspirationSection } from "@/components/home/inspiration-section";
@@ -21,6 +22,9 @@ export default function HomePage() {
       <KlushulpFunnel />
 
       <VerfCategories />
+
+      {/* Persoonlijke aanbevelingen voor terugkerende klanten (verborgen voor nieuwe bezoekers) */}
+      <ForYouSection />
 
       <TrendingSection />
 
