@@ -5,7 +5,7 @@ const usps = [
   { icon: Sparkles, label: "Advies van ex-schilders" },
   { icon: ShieldCheck, label: "Professionele kwaliteit" },
   { icon: Hammer, label: "Alles voor jouw klus" },
-  { icon: Truck, label: "Voor 16:00 besteld, morgen in huis" },
+  { icon: Truck, label: "Voor 19:00 besteld, morgen in huis" },
 ];
 
 export function TopBar() {

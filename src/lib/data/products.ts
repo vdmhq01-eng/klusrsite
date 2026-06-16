@@ -73,7 +73,7 @@ function enrichDescription(p: Product): string {
     out.push("Deze verf mengen wij exact op de door jou gekozen kleur, klaar voor gebruik.");
   }
   out.push(
-    "Professionele kwaliteit, scherp geprijsd met je gratis KLUSRPAS en advies van ex-schilders. Voor 16:00 besteld morgen in huis, of gratis afhalen in een KLUSR-winkel.",
+    "Professionele kwaliteit, scherp geprijsd met je gratis KLUSRPAS en advies van ex-schilders. Voor 19:00 besteld morgen in huis, of gratis afhalen in een KLUSR-winkel.",
   );
   return out.join(" ");
 }

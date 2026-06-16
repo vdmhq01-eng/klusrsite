@@ -1,5 +1,6 @@
-import type { CartItem, Order } from "@/types";
+import type { CartItem, Order, Product } from "@/types";
 import { flagshipStore } from "@/lib/data/stores";
+import { products, getBestsellers } from "@/lib/data/products";
 
 /**
  * Gebrande KLUSR e-mailtemplates (HTML + platte tekst).
@@ -100,6 +101,83 @@ function footer(note?: string): string {
   );
 }
 
+/** Merken die we voeren (dynamisch uit de catalogus, met curated fallback). */
+const TOP_BRANDS: string[] = (() => {
+  try {
+    const counts = new Map<string, number>();
+    for (const p of products) {
+      const b = (p.brand || "").trim();
+      if (b) counts.set(b, (counts.get(b) || 0) + 1);
+    }
+    const top = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([b]) => b);
+    if (top.length) return top;
+  } catch {
+    /* val terug op curated lijst */
+  }
+  return ["Histor", "Flexa", "Sikkens", "Sigma", "Dulux", "Hermadix", "Rambo", "Wagner", "Bosch", "Makita"];
+})();
+
+function prettyBrand(b: string): string {
+  if (b && b === b.toUpperCase() && b.length > 2) return b.charAt(0) + b.slice(1).toLowerCase();
+  return b || "KLUSR";
+}
+
+function clampText(s: string, max: number): string {
+  const t = (s || "").trim();
+  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
+}
+
+function productTile(p: Product): string {
+  const url = `${SITE_URL}/product/${esc(p.slug)}`;
+  const first = p.images?.[0];
+  const img =
+    first && /^https?:\/\//.test(first)
+      ? `<img src="${esc(first)}" width="160" alt="" style="display:block;width:100%;max-width:170px;height:auto;border-radius:8px;border:1px solid ${C.border};background:#fff;">`
+      : `<div style="width:100%;height:0;padding-top:75%;border-radius:8px;border:1px solid ${C.border};background:${C.bg};"></div>`;
+  return (
+    `<td valign="top" width="33%" style="padding:6px;font-family:Arial,Helvetica,sans-serif;">` +
+    `<a href="${url}" style="text-decoration:none;color:${C.text};display:block;">` +
+    img +
+    `<div style="margin-top:8px;font-size:10px;letter-spacing:0.04em;color:${C.muted};text-transform:uppercase;font-weight:bold;">${esc(prettyBrand(p.brand))}</div>` +
+    `<div style="font-size:13px;line-height:1.35;color:${C.text};font-weight:bold;">${esc(clampText(p.title, 44))}</div>` +
+    `<div style="margin-top:4px;font-size:14px;color:${C.red};font-weight:bold;">${euro(p.kluspasPrice || p.price)}</div>` +
+    `</a></td>`
+  );
+}
+
+/**
+ * Promoblok met klustoppers + de merken die we verkopen. Wordt in ELKE mail
+ * getoond zodat er altijd een kans op aankoop is.
+ */
+function promoBlock(): string {
+  let items: Product[] = [];
+  try {
+    items = getBestsellers(6);
+    if (items.length < 3) items = items.concat(products.filter((p) => !items.includes(p)));
+  } catch {
+    /* geen producten beschikbaar */
+  }
+  const tiles = items.slice(0, 3).map(productTile).join("");
+  if (!tiles) return "";
+  const brands = TOP_BRANDS.map((b) => esc(prettyBrand(b))).join(" &middot; ");
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">` +
+    `<tr><td style="border-top:1px solid ${C.border};padding-top:22px;font-family:Arial,Helvetica,sans-serif;">` +
+    `<p style="margin:0 0 2px;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.05em;color:${C.red};">Onze klustoppers</p>` +
+    `<p style="margin:0 0 14px;font-size:18px;font-weight:900;color:${C.text};">Maak je klus compleet</p>` +
+    `</td></tr>` +
+    `<tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${tiles}</tr></table></td></tr>` +
+    `<tr><td style="padding:16px 0 6px;font-size:12px;line-height:1.6;color:${C.muted};font-family:Arial,Helvetica,sans-serif;">` +
+    `<strong style="color:${C.text};">De merken die we verkopen:</strong> ${brands} en meer.` +
+    `</td></tr>` +
+    `<tr><td style="padding:10px 0 2px;">${button("Shop het hele assortiment", SITE_URL)}</td></tr>` +
+    `</table>`
+  );
+}
+
 interface LayoutOpts {
   title: string;
   preheader: string;
@@ -108,6 +186,10 @@ interface LayoutOpts {
 }
 
 function layout({ title, preheader, content, footerNote }: LayoutOpts): string {
+  const promo = promoBlock();
+  const promoRow = promo
+    ? `<tr><td bgcolor="${C.card}" style="background:${C.card};padding:4px 30px 30px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};">${promo}</td></tr>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -129,6 +211,7 @@ function layout({ title, preheader, content, footerNote }: LayoutOpts): string {
     <tr><td bgcolor="${C.card}" style="background:${C.card};padding:34px 30px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;color:${C.text};">
       ${content}
     </td></tr>
+    ${promoRow}
     <tr><td bgcolor="${C.card}" style="background:${C.card};border:1px solid ${C.border};border-top:none;border-radius:0 0 12px 12px;padding:22px 30px;">
       ${footer(footerNote)}
     </td></tr>
@@ -305,12 +388,12 @@ export function abandonedCartEmail(input: {
     `<tr><td style="padding:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:${C.text};">Totaal</td>` +
     `<td align="right" style="padding:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:${C.red};">${euro(input.total)}</td></tr></table>` +
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Rond je bestelling af", cartUrl)}</td></tr></table>` +
-    `<p style="margin:0;font-size:13px;color:${C.muted};">Voor 16:00 besteld, morgen in huis. Met de gratis KLUSRPAS pak je bovendien altijd extra voordeel.</p>`;
+    `<p style="margin:0;font-size:13px;color:${C.muted};">Voor 19:00 besteld, morgen in huis. Met de gratis KLUSRPAS pak je bovendien altijd extra voordeel.</p>`;
   return {
     subject: "Je winkelwagen staat nog klaar bij KLUSR",
     html: layout({
       title: "Je winkelwagen wacht nog op je",
-      preheader: "Rond je bestelling af — voor 16:00 besteld, morgen in huis.",
+      preheader: "Rond je bestelling af — voor 19:00 besteld, morgen in huis.",
       content,
       footerNote: "Je ontvangt deze herinnering omdat je een bestelling bij KLUSR bent begonnen.",
     }),
@@ -354,7 +437,7 @@ export function orderConfirmationEmail(order: Order): { subject: string; html: s
     `<td valign="top" width="50%" style="padding:0 0 0 10px;font-size:13px;color:${C.text};line-height:1.6;">` +
     `<strong style="display:block;margin-bottom:4px;color:${C.muted};text-transform:uppercase;font-size:11px;letter-spacing:0.5px;">Bezorging</strong>` +
     (delivery ? `Verwacht: <strong>${esc(delivery)}</strong><br>` : "") +
-    `Voor 16:00 besteld, morgen in huis<br>` +
+    `Voor 19:00 besteld, morgen in huis<br>` +
     `Betaling: ${esc(paymentLabel(order.paymentMethod))}` +
     `</td>` +
     `</tr></table>`;
@@ -471,7 +554,7 @@ export function welcomeEmail({ firstName }: { firstName?: string }): {
         <strong>Wat je van ons krijgt:</strong><br>
         &#10003; Advies van ex-schilders &mdash; geen verkooppraatjes<br>
         &#10003; Professionele kwaliteit voor de eerlijkste prijs<br>
-        &#10003; Voor 16:00 besteld, morgen in huis
+        &#10003; Voor 19:00 besteld, morgen in huis
       </td></tr>
     </table>
 

@@ -82,7 +82,7 @@ export default function VoorwaardenPage() {
           heading: "6. Levering en uitvoering",
           body: (
             <p>
-              Voor 16:00 uur op werkdagen besteld, is je bestelling de volgende werkdag in huis
+              Voor 19:00 uur op werkdagen besteld, is je bestelling de volgende werkdag in huis
               (tenzij anders vermeld). Verzending is gratis vanaf € 50; daaronder rekenen we
               € 4,95 verzendkosten. Bestellingen kunnen ook gratis in een KLUSR-winkel worden
               afgehaald. Het risico van beschadiging en/of vermissing van producten gaat over op

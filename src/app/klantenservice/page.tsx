@@ -68,7 +68,7 @@ const contactCards = [
 ];
 
 const trustItems = [
-  { icon: Truck, label: "Voor 16:00 besteld, morgen in huis" },
+  { icon: Truck, label: "Voor 19:00 besteld, morgen in huis" },
   { icon: RotateCcw, label: "14 dagen gratis retour" },
   { icon: ShieldCheck, label: "Veilig betalen via Mollie" },
   { icon: Sparkles, label: "Advies van ex-schilders" },
@@ -79,7 +79,7 @@ const shippingFaqs = [
   {
     question: "Wanneer wordt mijn bestelling bezorgd?",
     answer:
-      "Bestel je op werkdagen vóór 16:00? Dan ligt je bestelling de volgende dag in huis. Je ontvangt een track & trace-code zodra je pakket onderweg is.",
+      "Bestel je op werkdagen vóór 19:00? Dan ligt je bestelling de volgende dag in huis. Je ontvangt een track & trace-code zodra je pakket onderweg is.",
   },
   {
     question: "Wat kost de verzending?",
@@ -194,7 +194,7 @@ const faqGroups = [
     title: "Verzending & retour",
     icon: Truck,
     intro:
-      "Gratis verzending vanaf € 50, voor 16:00 besteld is morgen in huis, en gratis retourneren in de winkel.",
+      "Gratis verzending vanaf € 50, voor 19:00 besteld is morgen in huis, en gratis retourneren in de winkel.",
     faqs: shippingFaqs,
   },
   {

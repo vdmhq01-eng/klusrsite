@@ -464,7 +464,7 @@ export function CheckoutForm({
                 onClick={() => setShippingMethod("standard")}
                 icon={Truck}
                 title="Bezorgen"
-                hint="Voor 16:00 besteld, morgen in huis"
+                hint="Voor 19:00 besteld, morgen in huis"
                 price={
                   shippingFor(summary.grossSubtotal) === 0
                     ? "Gratis"
