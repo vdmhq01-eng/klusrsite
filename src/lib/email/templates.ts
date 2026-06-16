@@ -1,0 +1,363 @@
+import type { CartItem, Order } from "@/types";
+import { flagshipStore } from "@/lib/data/stores";
+
+/**
+ * Gebrande KLUSR e-mailtemplates (HTML + platte tekst).
+ *
+ * Bewust table-based met inline styles: dat is wat e-mailclients (Gmail,
+ * Outlook, Apple Mail) betrouwbaar renderen. De huisstijl volgt de webshop —
+ * KLUS-woordmerk met de R in een rood tegeltje, zwarte header, rode CTA.
+ */
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+const CONTACT_EMAIL = process.env.EMAIL_REPLY_TO || "klantenservice@klus-r.nl";
+
+/** KLUSR huisstijlkleuren (gespiegeld vanuit tailwind.config.ts). */
+const C = {
+  red: "#C90000",
+  black: "#101010",
+  bg: "#F7F7F7",
+  card: "#FFFFFF",
+  border: "#E5E5E5",
+  green: "#16A34A",
+  text: "#101010",
+  muted: "#6B7280",
+};
+
+const euroFmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+const euro = (n: number) => euroFmt.format(n);
+
+function esc(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatDate(iso?: string): string {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("nl-NL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  } catch {
+    return "";
+  }
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  ideal: "iDEAL",
+  bancontact: "Bancontact",
+  creditcard: "Creditcard",
+  klarna: "Klarna — achteraf betalen",
+};
+
+function paymentLabel(method?: string): string {
+  if (!method) return "—";
+  return PAYMENT_LABELS[method] ?? method;
+}
+
+/** KLUS + R-tegel, voor op de zwarte header. */
+function wordmark(): string {
+  return (
+    `<span style="font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">KLUS</span>` +
+    `<span style="display:inline-block;background:${C.red};color:#ffffff;font-size:22px;font-weight:900;line-height:1;padding:5px 9px;border-radius:6px;margin-left:3px;font-family:Arial,Helvetica,sans-serif;">R</span>`
+  );
+}
+
+function button(label: string, url: string): string {
+  return (
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>` +
+    `<td align="center" bgcolor="${C.red}" style="border-radius:8px;">` +
+    `<a href="${url}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">${esc(label)}</a>` +
+    `</td></tr></table>`
+  );
+}
+
+function footer(note?: string): string {
+  const tel = flagshipStore.phone.replace(/[\s-]/g, "");
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">` +
+    `<tr><td style="padding-bottom:14px;border-bottom:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;">` +
+    `<span style="font-size:13px;color:${C.muted};line-height:1.7;">` +
+    `<strong style="color:${C.text};">KLUSR B.V.</strong><br>` +
+    `${esc(flagshipStore.address)}, ${esc(flagshipStore.postalCode)} ${esc(flagshipStore.city)}<br>` +
+    `<a href="tel:${tel}" style="color:${C.muted};text-decoration:none;">${esc(flagshipStore.phone)}</a> &middot; ` +
+    `<a href="mailto:${esc(CONTACT_EMAIL)}" style="color:${C.muted};text-decoration:none;">${esc(CONTACT_EMAIL)}</a> &middot; ` +
+    `<a href="${SITE_URL}" style="color:${C.red};text-decoration:none;font-weight:bold;">klus-r.nl</a>` +
+    `</span></td></tr>` +
+    `<tr><td style="padding-top:14px;font-family:Arial,Helvetica,sans-serif;">` +
+    `<span style="font-size:11px;color:${C.muted};line-height:1.7;">` +
+    (note ? `${esc(note)}<br>` : "") +
+    `&copy; ${new Date().getFullYear()} KLUSR B.V. — Alle prijzen incl. btw. ` +
+    `<a href="${SITE_URL}/voorwaarden" style="color:${C.muted};">Voorwaarden</a> &middot; ` +
+    `<a href="${SITE_URL}/privacy" style="color:${C.muted};">Privacy</a>` +
+    `</span></td></tr></table>`
+  );
+}
+
+interface LayoutOpts {
+  title: string;
+  preheader: string;
+  content: string;
+  footerNote?: string;
+}
+
+function layout({ title, preheader, content, footerNote }: LayoutOpts): string {
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<title>${esc(title)}</title>
+</head>
+<body style="margin:0;padding:0;background:${C.bg};">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${esc(preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.bg};">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
+    <tr><td align="center" bgcolor="${C.black}" style="background:${C.black};border-radius:12px 12px 0 0;padding:24px;">
+      ${wordmark()}
+    </td></tr>
+    <tr><td bgcolor="${C.card}" style="background:${C.card};padding:34px 30px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;color:${C.text};">
+      ${content}
+    </td></tr>
+    <tr><td bgcolor="${C.card}" style="background:${C.card};border:1px solid ${C.border};border-top:none;border-radius:0 0 12px 12px;padding:22px 30px;">
+      ${footer(footerNote)}
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+// --- Order confirmation -----------------------------------------------------
+
+function itemRow(item: CartItem): string {
+  const img =
+    item.image && /^https?:\/\//.test(item.image)
+      ? `<img src="${esc(item.image)}" width="56" height="56" alt="" style="display:block;border-radius:8px;border:1px solid ${C.border};background:#fff;">`
+      : `<div style="width:56px;height:56px;border-radius:8px;border:1px solid ${C.border};background:${C.bg};"></div>`;
+
+  const variant =
+    item.variantLabel && item.variantLabel.toLowerCase() !== "standaard"
+      ? `<br><span style="color:${C.muted};font-size:12px;">${esc(item.variantLabel)}</span>`
+      : "";
+
+  const color = item.selectedColor
+    ? `<br><span style="color:${C.muted};font-size:12px;">Kleur: ${esc(item.selectedColor.name)}${
+        item.selectedColor.code ? ` (${esc(item.selectedColor.code)})` : ""
+      }</span>`
+    : "";
+
+  return (
+    `<tr>` +
+    `<td valign="top" style="padding:12px 0;border-bottom:1px solid ${C.border};width:56px;">${img}</td>` +
+    `<td valign="top" style="padding:12px 14px;border-bottom:1px solid ${C.border};font-size:14px;color:${C.text};line-height:1.4;">` +
+    `<strong>${esc(item.title)}</strong>${variant}${color}` +
+    `<br><span style="color:${C.muted};font-size:12px;">${item.quantity} &times; ${euro(item.price)}</span>` +
+    `</td>` +
+    `<td valign="top" align="right" style="padding:12px 0;border-bottom:1px solid ${C.border};font-size:14px;font-weight:bold;white-space:nowrap;">${euro(
+      item.price * item.quantity,
+    )}</td>` +
+    `</tr>`
+  );
+}
+
+function totalsRow(label: string, value: string, opts: { color?: string; strong?: boolean; big?: boolean } = {}): string {
+  const color = opts.color ?? C.text;
+  const weight = opts.strong ? "bold" : "normal";
+  const size = opts.big ? "17px" : "14px";
+  return (
+    `<tr>` +
+    `<td style="padding:5px 0;font-size:${size};color:${C.muted};">${esc(label)}</td>` +
+    `<td align="right" style="padding:5px 0;font-size:${size};font-weight:${weight};color:${color};white-space:nowrap;">${value}</td>` +
+    `</tr>`
+  );
+}
+
+export function orderConfirmationEmail(order: Order): { subject: string; html: string; text: string } {
+  const c = order.customer;
+  const trackUrl = `${SITE_URL}/bestelstatus`;
+  const delivery = formatDate(order.estimatedDelivery);
+
+  const itemsTable =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
+    order.items.map(itemRow).join("") +
+    `</table>`;
+
+  const totals =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">` +
+    totalsRow("Subtotaal", euro(order.subtotal)) +
+    (order.kluspasSavings > 0 ? totalsRow("KLUSRPAS-korting", `- ${euro(order.kluspasSavings)}`, { color: C.green }) : "") +
+    totalsRow(
+      "Verzending",
+      order.shipping > 0 ? euro(order.shipping) : "Gratis",
+      order.shipping > 0 ? {} : { color: C.green },
+    ) +
+    `<tr><td colspan="2" style="padding:8px 0 0;"><div style="border-top:2px solid ${C.black};"></div></td></tr>` +
+    totalsRow("Totaal", euro(order.total), { strong: true, big: true }) +
+    `</table>`;
+
+  const addressBlock =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">` +
+    `<tr>` +
+    `<td valign="top" width="50%" style="padding:0 10px 0 0;font-size:13px;color:${C.text};line-height:1.6;">` +
+    `<strong style="display:block;margin-bottom:4px;color:${C.muted};text-transform:uppercase;font-size:11px;letter-spacing:0.5px;">Bezorgadres</strong>` +
+    `${esc(c.firstName)} ${esc(c.lastName)}<br>${esc(c.street)}<br>${esc(c.postalCode)} ${esc(c.city)}` +
+    `</td>` +
+    `<td valign="top" width="50%" style="padding:0 0 0 10px;font-size:13px;color:${C.text};line-height:1.6;">` +
+    `<strong style="display:block;margin-bottom:4px;color:${C.muted};text-transform:uppercase;font-size:11px;letter-spacing:0.5px;">Bezorging</strong>` +
+    (delivery ? `Verwacht: <strong>${esc(delivery)}</strong><br>` : "") +
+    `Voor 16:00 besteld, morgen in huis<br>` +
+    `Betaling: ${esc(paymentLabel(order.paymentMethod))}` +
+    `</td>` +
+    `</tr></table>`;
+
+  const content = `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">
+      <tr>
+        <td valign="middle" style="width:44px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:${C.green};color:#ffffff;text-align:center;line-height:40px;font-size:22px;font-weight:bold;">&#10003;</div>
+        </td>
+        <td valign="middle" style="padding-left:12px;">
+          <h1 style="margin:0;font-size:22px;color:${C.text};font-family:Arial,Helvetica,sans-serif;">Bedankt voor je bestelling!</h1>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">
+      Hoi ${esc(c.firstName)}, we hebben je bestelling ontvangen en gaan er direct mee aan de slag.
+      Je ontvangt een bericht zodra je pakket onderweg is.
+    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;background:${C.bg};border-radius:10px;">
+      <tr><td style="padding:14px 18px;font-size:14px;color:${C.text};">
+        <span style="color:${C.muted};">Bestelnummer</span><br>
+        <strong style="font-size:20px;letter-spacing:0.5px;">${esc(order.reference)}</strong>
+      </td></tr>
+    </table>
+
+    <h2 style="margin:0 0 4px;font-size:15px;color:${C.text};">Je bestelling</h2>
+    ${itemsTable}
+    ${totals}
+
+    <div style="height:24px;"></div>
+    ${addressBlock}
+
+    <div style="height:28px;"></div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+      ${button("Volg je bestelling", trackUrl)}
+    </td></tr></table>
+
+    <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:${C.muted};text-align:center;">
+      Vragen over je bestelling? Mail naar
+      <a href="mailto:${esc(CONTACT_EMAIL)}" style="color:${C.red};text-decoration:none;">${esc(CONTACT_EMAIL)}</a>
+      of bel ${esc(flagshipStore.phone)}.
+    </p>
+  `;
+
+  const text = orderConfirmationText(order);
+
+  return {
+    subject: `Bestelbevestiging ${order.reference} — KLUSR`,
+    html: layout({
+      title: `Bestelbevestiging ${order.reference}`,
+      preheader: `Bedankt ${c.firstName}! We hebben je bestelling ${order.reference} ontvangen (${euro(order.total)}).`,
+      content,
+    }),
+    text,
+  };
+}
+
+function orderConfirmationText(order: Order): string {
+  const c = order.customer;
+  const lines: string[] = [];
+  lines.push("Bedankt voor je bestelling bij KLUSR!");
+  lines.push("");
+  lines.push(`Hoi ${c.firstName}, we hebben je bestelling ontvangen.`);
+  lines.push(`Bestelnummer: ${order.reference}`);
+  lines.push("");
+  lines.push("Je bestelling:");
+  for (const i of order.items) {
+    const extra = i.selectedColor ? ` (${i.selectedColor.name})` : "";
+    lines.push(`  - ${i.quantity}x ${i.title}${extra} — ${euro(i.price * i.quantity)}`);
+  }
+  lines.push("");
+  lines.push(`Subtotaal:        ${euro(order.subtotal)}`);
+  if (order.kluspasSavings > 0) lines.push(`KLUSRPAS-korting: -${euro(order.kluspasSavings)}`);
+  lines.push(`Verzending:       ${order.shipping > 0 ? euro(order.shipping) : "Gratis"}`);
+  lines.push(`Totaal:           ${euro(order.total)}`);
+  lines.push("");
+  const delivery = formatDate(order.estimatedDelivery);
+  if (delivery) lines.push(`Verwachte bezorging: ${delivery}`);
+  lines.push(`Bezorgadres: ${c.firstName} ${c.lastName}, ${c.street}, ${c.postalCode} ${c.city}`);
+  lines.push("");
+  lines.push(`Volg je bestelling: ${SITE_URL}/bestelstatus`);
+  lines.push(`Vragen? ${CONTACT_EMAIL} of ${flagshipStore.phone}`);
+  lines.push("");
+  lines.push("KLUSR B.V. — De beste verf en alles wat je NÚ nodig hebt voor de klus.");
+  return lines.join("\n");
+}
+
+// --- Newsletter welcome -----------------------------------------------------
+
+export function welcomeEmail({ firstName }: { firstName?: string }): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const hi = firstName ? `Hoi ${esc(firstName)}, welkom` : "Welkom";
+
+  const content = `
+    <h1 style="margin:0 0 16px;font-size:23px;color:${C.text};font-family:Arial,Helvetica,sans-serif;">${hi} bij KLUSR!</h1>
+
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">
+      Top dat je erbij bent. Vanaf nu ben je als eerste op de hoogte van klustips van
+      onze ex-schilders, inspiratie en de scherpste <strong>KLUSRPAS</strong>-aanbiedingen.
+    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;background:${C.bg};border-radius:10px;">
+      <tr><td style="padding:18px 20px;font-size:14px;line-height:1.7;color:${C.text};">
+        <strong>Wat je van ons krijgt:</strong><br>
+        &#10003; Advies van ex-schilders &mdash; geen verkooppraatjes<br>
+        &#10003; Professionele kwaliteit voor de eerlijkste prijs<br>
+        &#10003; Voor 16:00 besteld, morgen in huis
+      </td></tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+      ${button("Ontdek het assortiment", SITE_URL)}
+    </td></tr></table>
+  `;
+
+  const text = [
+    `${firstName ? `Hoi ${firstName}, welkom` : "Welkom"} bij KLUSR!`,
+    "",
+    "Top dat je erbij bent. Vanaf nu ben je als eerste op de hoogte van klustips,",
+    "inspiratie en de scherpste KLUSRPAS-aanbiedingen.",
+    "",
+    `Ontdek het assortiment: ${SITE_URL}`,
+    "",
+    "KLUSR B.V.",
+  ].join("\n");
+
+  return {
+    subject: "Welkom bij KLUSR — klustips & KLUSRPAS-deals",
+    html: layout({
+      title: "Welkom bij KLUSR",
+      preheader: "Klustips van ex-schilders en de scherpste KLUSRPAS-aanbiedingen, als eerste in je inbox.",
+      content,
+      footerNote: "Je ontvangt deze e-mail omdat je je hebt ingeschreven voor de KLUSR-nieuwsbrief.",
+    }),
+    text,
+  };
+}

@@ -22,12 +22,11 @@ import { ProductCarousel } from "@/components/shared/product-carousel";
 import { SectionHeading } from "@/components/shared/section-heading";
 import {
   useCart,
-  cartSubtotal,
-  cartRegularSubtotal,
-  kluspasSavings,
-  shippingFor,
+  cartSummary,
+  displayLine,
   linePrice,
 } from "@/lib/store/cart";
+import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
@@ -44,6 +43,7 @@ export function CartView() {
     moveToCart,
   } = useCart();
   const mounted = useMounted();
+  const mode = usePricingMode((s) => s.mode);
 
   // Upsell + "vaak vergeten" come from the API so the catalogus isn't bundled.
   const [upsell, setUpsell] = useState<Product[]>([]);
@@ -70,11 +70,7 @@ export function CartView() {
     return <div className="container-klusr py-16 text-center text-muted-foreground">Laden…</div>;
   }
 
-  const subtotal = cartSubtotal(items, kluspasActive);
-  const regular = cartRegularSubtotal(items);
-  const savings = kluspasSavings(items);
-  const shipping = shippingFor(subtotal);
-  const total = subtotal + shipping;
+  const summary = cartSummary(items, mode, kluspasActive);
 
   if (items.length === 0) {
     return (
@@ -115,7 +111,7 @@ export function CartView() {
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         {/* Items */}
         <div>
-          <FreeShippingBar subtotal={subtotal} className="mb-4" />
+          <FreeShippingBar subtotal={summary.grossSubtotal} className="mb-4" />
 
           <ul className="divide-y divide-border rounded-xl border border-border bg-card">
             {items.map((item) => (
@@ -140,16 +136,19 @@ export function CartView() {
                         <ColorChip color={item.selectedColor} className="mt-1.5" />
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="font-black text-primary">
-                        {formatPrice(linePrice(item, kluspasActive) * item.quantity)}
-                      </p>
-                      {kluspasActive && item.price > item.kluspasPrice && (
-                        <p className="text-xs text-muted-foreground line-through">
-                          {formatPrice(item.price * item.quantity)}
-                        </p>
-                      )}
-                    </div>
+                    {(() => {
+                      const line = displayLine(item, mode, kluspasActive);
+                      return (
+                        <div className="text-right">
+                          <p className="font-black text-primary">{formatPrice(line.main)}</p>
+                          {line.reference && (
+                            <p className="text-xs text-muted-foreground line-through">
+                              {formatPrice(line.reference)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="mt-auto flex items-center gap-3 pt-3">
                     <QuantityStepper
@@ -200,34 +199,49 @@ export function CartView() {
             <h2 className="mb-4 text-lg font-bold">Overzicht</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotaal</dt>
-                <dd className="font-medium">{formatPrice(regular)}</dd>
+                <dt className="text-muted-foreground">
+                  Subtotaal{!summary.vatIncluded && " (excl. btw)"}
+                </dt>
+                <dd className="font-medium">{formatPrice(summary.subtotalRegular)}</dd>
               </div>
-              {kluspasActive && savings > 0 && (
+              {summary.savings > 0 && (
                 <div className="flex justify-between text-primary">
                   <dt className="inline-flex items-center gap-1 font-medium">
-                    <Sparkles className="h-3.5 w-3.5" /> KLUSRPAS-voordeel
+                    <Sparkles className="h-3.5 w-3.5" />{" "}
+                    {summary.vatIncluded ? "KLUSRPAS-voordeel" : "ProfPas-korting"}
                   </dt>
-                  <dd className="font-bold">-{formatPrice(savings)}</dd>
+                  <dd className="font-bold">-{formatPrice(summary.savings)}</dd>
                 </div>
               )}
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Verzendkosten</dt>
+                <dt className="text-muted-foreground">
+                  Verzendkosten{!summary.vatIncluded && " (excl. btw)"}
+                </dt>
                 <dd className="font-medium">
-                  {shipping === 0 ? (
+                  {summary.shipping === 0 ? (
                     <span className="text-klusr-stock">Gratis</span>
                   ) : (
-                    formatPrice(shipping)
+                    formatPrice(summary.shipping)
                   )}
                 </dd>
               </div>
+              {summary.vat !== undefined && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Btw (21%)</dt>
+                  <dd className="font-medium">{formatPrice(summary.vat)}</dd>
+                </div>
+              )}
             </dl>
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">Totaal</span>
-              <span className="text-2xl font-black">{formatPrice(total)}</span>
+              <span className="text-2xl font-black">{formatPrice(summary.total)}</span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {summary.vatIncluded
+                ? "Incl. btw"
+                : "Incl. btw · zakelijke prijzen excl. btw getoond"}
+            </p>
 
             <Button
               asChild
@@ -235,7 +249,7 @@ export function CartView() {
               className="mt-4 w-full"
               onClick={() =>
                 trackEvent("begin_checkout", {
-                  value: total,
+                  value: summary.total,
                   items: items.map((i) =>
                     toAnalyticsItem({
                       id: i.productId,

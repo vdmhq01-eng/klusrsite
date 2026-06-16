@@ -10,6 +10,7 @@ const serviceLinks = [
   { href: "/faq", label: "Veelgestelde vragen" },
   { href: "/bestelstatus", label: "Bestelstatus volgen" },
   { href: "/klantenservice#verzending", label: "Verzending & retour" },
+  { href: "/retourvoorwaarden", label: "Retourvoorwaarden" },
   { href: "/klantenservice#betalen", label: "Veilig betalen" },
   { href: "/klantenservice#garantie", label: "Garantie & service" },
 ];
@@ -17,6 +18,7 @@ const serviceLinks = [
 const aboutLinks = [
   { href: "/over-klusr", label: "Over KLUSR" },
   { href: "/kluspas", label: "KLUSRPAS" },
+  { href: "/zakelijk", label: "Zakelijk & ProfPas" },
   { href: "/mengverf", label: "Mengverf" },
   { href: "/advies", label: "Advies & inspiratie" },
   { href: "/klushulp", label: "Klushulp AI" },
@@ -104,6 +106,9 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link href="/voorwaarden" className="hover:text-white">
               Algemene voorwaarden
+            </Link>
+            <Link href="/retourvoorwaarden" className="hover:text-white">
+              Retourvoorwaarden
             </Link>
             <Link href="/privacy" className="hover:text-white">
               Privacy

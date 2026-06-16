@@ -9,6 +9,8 @@ import {
   GoogleTagManager,
   GoogleTagManagerNoScript,
 } from "@/components/analytics/gtm";
+import { ConsentDefault } from "@/components/analytics/consent-init";
+import { CookieConsent } from "@/components/analytics/cookie-consent";
 import { AuthProvider } from "@/components/auth/auth-provider";
 
 const inter = Inter({
@@ -18,6 +20,10 @@ const inter = Inter({
 });
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+
+// Google Search Console verificatie — plak de token uit de "HTML-tag"-methode
+// in deze env-variabele; dan rendert Next de <meta name="google-site-verification">.
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
@@ -72,7 +78,20 @@ export const metadata: Metadata = {
     description:
       "Professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer. Advies van ex-schilders.",
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
 };
 
 export const viewport: Viewport = {
@@ -89,6 +108,7 @@ export default function RootLayout({
   return (
     <html lang="nl" className={inter.variable}>
       <head>
+        <ConsentDefault />
         <GoogleTagManager />
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans">
@@ -110,6 +130,7 @@ export default function RootLayout({
           <MobileBottomNav />
           <GlobalOverlays />
         </AuthProvider>
+        <CookieConsent />
       </body>
     </html>
   );

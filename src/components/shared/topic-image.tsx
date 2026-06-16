@@ -1,39 +1,35 @@
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { BrandedVisual } from "./branded-visual";
+import { TopicImagePhoto } from "./topic-image-photo";
 import { topicImageUrl } from "@/lib/topic-images";
 
 /**
- * Klus-relevante afbeelding per categorie/onderwerp (keyword-foto) met een
- * on-brand KLUSR-gradient eronder als fallback — zo past het beeld bij het
- * onderwerp én is het nooit leeg als de fotodienst niet laadt. Bewust een
- * gewone <img> (geen next/image) zodat externe placeholders zonder extra
- * config en met nette fallback werken.
+ * Klus-relevante afbeelding per categorie/onderwerp met een on-brand KLUSR-
+ * gradient (+ optioneel categorie-icoon) eronder als fallback. De foto-laag is
+ * een aparte client-component die zichzelf verbergt als het laden mislukt, dus
+ * de tegel is nooit leeg of kapot. Server-component, zodat het icoon (een
+ * functie-component) hier veilig aan BrandedVisual gegeven kan worden.
  */
 export function TopicImage({
   keywords,
   seed,
   icon,
   className,
+  src,
 }: {
-  keywords: string;
+  keywords?: string;
   seed: string;
   icon?: LucideIcon;
   className?: string;
+  /** Expliciete foto-URL (bv. een gegenereerd sfeerbeeld in /generated). Valt
+   * terug op een keyword-foto en daarna op de gradient. */
+  src?: string;
 }) {
+  const photoSrc = src ?? (keywords ? topicImageUrl(keywords, seed) : undefined);
   return (
     <>
       <BrandedVisual seed={seed} icon={icon} />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={topicImageUrl(keywords, seed)}
-        alt=""
-        loading="lazy"
-        className={cn(
-          "absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
-          className,
-        )}
-      />
+      <TopicImagePhoto src={photoSrc} className={className} />
     </>
   );
 }

@@ -35,6 +35,8 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 | **Claude AI** (`@anthropic-ai/sdk`) | Productadvies, content‑generatie, klushulp‑chat | Heuristische fallback‑antwoorden |
 | **Mollie** (`@mollie/api-client`) | Betalingen (iDEAL, Bancontact, Creditcard, Klarna) | Gesimuleerde betaling → bedanktpagina |
 | **Mailchimp** (`@mailchimp/mailchimp_marketing`) | Nieuwsbrief, abandoned cart | No‑op (logt naar console) |
+| **Resend** (REST API) | Transactionele e‑mail: bestelbevestiging + nieuwsbrief‑welkomstmail (gebrande KLUSR‑template) | No‑op (logt naar console) |
+| **fal.ai** (FLUX, REST) | Sfeerbeelden (hero, categorie‑tegels, winkel) → `public/generated/` in de build | Branded gradient + categorie‑icoon als fallback |
 | **Google Tag Manager** | E‑commerce tracking | dataLayer werkt lokaal voor debugging |
 
 > De webshop draait **volledig zonder secrets** in demo‑modus, zodat je direct kunt ontwikkelen.
@@ -136,6 +138,19 @@ GA4‑e‑commerce events naar de GTM `dataLayer` (`view_item`, `add_to_cart`,
 redirect naar Mollie (of bedanktpagina in demo) → `POST /api/checkout/webhook`
 verwerkt de status. Orders worden in‑memory bewaard (vervang door een database
 voor productie).
+
+### SEO, indexering & feeds
+- **Indexeerbaar**: `app/robots.ts` (sitemap + `host`), `app/sitemap.ts` (home,
+  categorieën, ~alle producten, blog, winkels, klushulp) en `robots: index/follow`
+  + `googleBot` snippet‑directives in de root‑metadata. Canonicals staan per
+  template (product/categorie/legal).
+- **Google Search Console**: zet `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (token uit
+  de HTML‑tag‑methode) → Next rendert de verificatie‑meta. Dien daarna
+  `/sitemap.xml` in.
+- **Google Merchant Center**: `/google-merchant.xml` is een RSS‑productfeed
+  (g:‑namespace) uit de live catalogus — één item per variant, met de
+  **KLUSRPAS‑prijs** (ledenprijs). Gebruik 'm als geplande ophaal‑URL in Merchant
+  Center. Tip: voeg later GTIN's toe voor betere matching.
 
 ### AI‑governance
 AI mag **alleen suggesties** doen. Gevoelige velden (prijs, voorraad,

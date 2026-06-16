@@ -83,6 +83,24 @@ export function updateOrderStatus(orderId: string, status: OrderStatus): Order |
   return order;
 }
 
+/**
+ * Claim het versturen van de bestelbevestiging. Geeft exact één keer per order
+ * `true` terug (synchroon check-and-set, dus geen dubbele mails bij meerdere
+ * webhook-calls). Onbekende/seeded orders leveren `false`.
+ */
+export function claimConfirmationEmail(orderId: string): boolean {
+  const order = orders.get(orderId);
+  if (!order || order.confirmationSentAt) return false;
+  order.confirmationSentAt = new Date().toISOString();
+  return true;
+}
+
+/** Geef de claim weer vrij (bv. na een mislukte verzending) zodat een retry mag. */
+export function releaseConfirmationEmail(orderId: string): void {
+  const order = orders.get(orderId);
+  if (order) order.confirmationSentAt = undefined;
+}
+
 export function markChannable(
   orderId: string,
   status: NonNullable<Order["channableStatus"]>,

@@ -1,4 +1,9 @@
-import { formatPrice, discountPercent, cn } from "@/lib/utils";
+"use client";
+
+import { formatPrice, cn } from "@/lib/utils";
+import { usePricingMode } from "@/lib/store/pricing-mode";
+import { useMounted } from "@/lib/hooks/use-mounted";
+import { priceView } from "@/lib/pricing";
 
 interface PriceProps {
   price: number;
@@ -11,7 +16,9 @@ interface PriceProps {
 }
 
 /**
- * KLUSR price block: struck adviesprijs + prominent red KLUSRPAS-prijs.
+ * KLUSR price block. Modusbewust: particulier toont de KLUSRPAS-prijs incl. btw
+ * met de normale prijs doorgestreept; zakelijk toont de ProfPas-prijs excl. btw.
+ * Tot hydratie tonen we particulier (voorkomt hydration-mismatch).
  */
 export function Price({
   price,
@@ -21,10 +28,12 @@ export function Price({
   className,
   from,
 }: PriceProps) {
-  const hasKLUSRPAS = kluspasPrice !== undefined && kluspasPrice < price;
-  const reference = compareAtPrice && compareAtPrice > price ? compareAtPrice : price;
-  const finalPrice = hasKLUSRPAS ? kluspasPrice! : price;
-  const showStrike = reference > finalPrice;
+  const mode = usePricingMode((s) => s.mode);
+  const mounted = useMounted();
+  const view = priceView(
+    { price, kluspasPrice, compareAtPrice },
+    mounted ? mode : "particulier",
+  );
 
   const mainSize = {
     sm: "text-base",
@@ -34,10 +43,10 @@ export function Price({
 
   return (
     <div className={cn("flex flex-col gap-0.5", className)}>
-      {showStrike && (
+      {view.reference && (
         <span className="text-xs text-muted-foreground">
-          Adviesprijs{" "}
-          <span className="line-through">{formatPrice(reference)}</span>
+          {view.referenceLabel}{" "}
+          <span className="line-through">{formatPrice(view.reference)}</span>
         </span>
       )}
       <div className="flex items-baseline gap-1.5">
@@ -45,18 +54,21 @@ export function Price({
           <span className="text-xs font-medium text-muted-foreground">vanaf</span>
         )}
         <span className={cn("font-extrabold leading-none text-primary", mainSize)}>
-          {formatPrice(finalPrice)}
+          {formatPrice(view.amount)}
         </span>
-        {hasKLUSRPAS && (
+        {view.badge && (
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary">
-            KLUSRPAS
+            {view.badge}
           </span>
         )}
+        <span className="text-[10px] font-medium text-muted-foreground">
+          {view.vatSuffix}
+        </span>
       </div>
-      {showStrike && (
+      {view.savings !== undefined && view.savings > 0 && (
         <span className="text-[11px] font-semibold text-klusr-stock">
-          Je bespaart {formatPrice(reference - finalPrice)} (
-          {discountPercent(reference, finalPrice)}%)
+          Je bespaart {formatPrice(view.savings)}
+          {view.savingsPct ? ` (${view.savingsPct}%)` : ""}
         </span>
       )}
     </div>

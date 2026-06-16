@@ -17,10 +17,10 @@ import { FreeShippingBar } from "./free-shipping-bar";
 import { ColorChip } from "./color-chip";
 import {
   useCart,
-  cartSubtotal,
-  kluspasSavings,
-  linePrice,
+  cartSummary,
+  displayLine,
 } from "@/lib/store/cart";
+import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
@@ -32,9 +32,15 @@ export function CartDrawer() {
   const setCartOpen = useUI((s) => s.setCartOpen);
   const { items, kluspasActive, updateQuantity, removeItem, addItem } = useCart();
   const mounted = useMounted();
+  const mode = usePricingMode((s) => s.mode);
 
-  const subtotal = mounted ? cartSubtotal(items, kluspasActive) : 0;
-  const savings = mounted ? kluspasSavings(items) : 0;
+  const summary = cartSummary(items, mode, kluspasActive);
+  const subtotal = mounted
+    ? summary.vatIncluded
+      ? summary.grossSubtotal
+      : summary.subtotalRegular - summary.savings
+    : 0;
+  const savings = mounted ? summary.savings : 0;
 
   // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
   // drawer opens, so the catalogus stays out of the global bundle.
@@ -119,7 +125,7 @@ export function CartDrawer() {
                           onChange={(q) => updateQuantity(item.key, q)}
                         />
                         <span className="font-bold text-primary">
-                          {formatPrice(linePrice(item, kluspasActive) * item.quantity)}
+                          {formatPrice(displayLine(item, mode, kluspasActive).main)}
                         </span>
                       </div>
                     </div>
@@ -162,17 +168,19 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border p-4">
-              {savings > 0 && kluspasActive && (
+              {savings > 0 && (
                 <div className="mb-2 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
                   <span className="inline-flex items-center gap-1.5 font-medium text-primary">
                     <Sparkles className="h-4 w-4" />
-                    KLUSRPAS-voordeel
+                    {summary.vatIncluded ? "KLUSRPAS-voordeel" : "ProfPas-korting"}
                   </span>
                   <span className="font-bold text-primary">-{formatPrice(savings)}</span>
                 </div>
               )}
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Subtotaal</span>
+                <span className="text-sm text-muted-foreground">
+                  Subtotaal{!summary.vatIncluded && " (excl. btw)"}
+                </span>
                 <span className="text-lg font-extrabold">{formatPrice(subtotal)}</span>
               </div>
               <Button

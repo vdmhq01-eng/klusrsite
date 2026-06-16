@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPaymentStatus, mapMollieStatus } from "@/lib/payments";
 import { getOrder, getOrderByMollieId, updateOrderStatus } from "@/lib/store/orders";
-import { fulfillPaidOrder } from "@/lib/order-fulfillment";
+import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
 
 export const runtime = "nodejs";
 
@@ -40,9 +40,12 @@ export async function POST(req: Request) {
     if (order) {
       const mapped = mapMollieStatus(status.status);
       updateOrderStatus(order.id, mapped);
-      // Once paid, push the order to Channable → Tilroy for fulfilment.
+      // Once paid, push the order to Channable → Tilroy and confirm by e-mail.
       if (mapped === "paid" || mapped === "authorized") {
-        await fulfillPaidOrder({ ...order, paymentStatus: mapped });
+        const paidOrder = { ...order, paymentStatus: mapped };
+        await fulfillPaidOrder(paidOrder);
+        // Send the branded confirmation once (claim guards against retries).
+        await sendOrderConfirmationEmail(paidOrder);
       }
     }
 

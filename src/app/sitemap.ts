@@ -28,6 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/mengverf", { priority: 0.9 }),
     entry("/kleurkiezer", { priority: 0.9 }),
     entry("/kluspas", { priority: 0.7 }),
+    entry("/zakelijk", { priority: 0.7 }),
     entry("/advies", { priority: 0.7 }),
     entry("/klushulp", { priority: 0.6 }),
     entry("/winkels", { priority: 0.6 }),
@@ -36,6 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/klantenservice", { priority: 0.5 }),
     entry("/faq", { priority: 0.5 }),
     entry("/voorwaarden", { priority: 0.3, changeFrequency: "yearly" }),
+    entry("/retourvoorwaarden", { priority: 0.3, changeFrequency: "yearly" }),
     entry("/privacy", { priority: 0.3, changeFrequency: "yearly" }),
     entry("/cookiebeleid", { priority: 0.3, changeFrequency: "yearly" }),
   ];

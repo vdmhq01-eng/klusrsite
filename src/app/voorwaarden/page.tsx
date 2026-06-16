@@ -29,7 +29,7 @@ export default function VoorwaardenPage() {
                 {COMPANY.phone}
               </li>
               <li>
-                KvK: {COMPANY.kvk} · Btw: {COMPANY.btw}
+                KvK: {COMPANY.kvk} · Btw: {COMPANY.btw} · IBAN: {COMPANY.iban}
               </li>
             </ul>
           ),
@@ -164,18 +164,52 @@ export default function VoorwaardenPage() {
           ),
         },
         {
-          heading: "12. KLUSRPAS",
+          heading: "12. KLUSRPAS en ProfPas",
           body: (
             <p>
               De KLUSRPAS is gratis en geeft recht op de KLUSRPAS-prijs en op exclusieve acties.
-              Aan het gebruik van de KLUSRPAS kunnen aanvullende voorwaarden worden verbonden.
-              KLUSR mag het programma wijzigen of beëindigen; bestaande rechten blijven daarbij
-              gerespecteerd voor zover wettelijk vereist.
+              Voor zakelijke klanten is er de ProfPas: 10% korting op de hele collectie, met
+              prijzen exclusief btw. Aan het gebruik van een pas kunnen aanvullende voorwaarden
+              worden verbonden. KLUSR mag een programma wijzigen of beëindigen; bestaande rechten
+              blijven daarbij gerespecteerd voor zover wettelijk vereist.
             </p>
           ),
         },
         {
-          heading: "13. Aansprakelijkheid",
+          heading: "13. Eigendomsvoorbehoud",
+          body: (
+            <p>
+              Alle geleverde producten blijven eigendom van KLUSR totdat je de volledige koopprijs,
+              inclusief eventuele kosten, hebt voldaan. Tot dat moment mag je de producten niet
+              bezwaren, doorverkopen of aan derden overdragen.
+            </p>
+          ),
+        },
+        {
+          heading: "14. Overmacht",
+          body: (
+            <p>
+              Bij overmacht — omstandigheden buiten onze redelijke controle, zoals storingen bij
+              leveranciers of bezorgdiensten, brand of extreem weer — mag KLUSR de uitvoering
+              opschorten. Duurt de overmacht langer dan 30 dagen, dan mogen beide partijen de
+              overeenkomst ontbinden; reeds betaalde bedragen voor niet-geleverde producten worden
+              dan terugbetaald.
+            </p>
+          ),
+        },
+        {
+          heading: "15. Intellectueel eigendom",
+          body: (
+            <p>
+              Alle inhoud op deze website — teksten, foto&apos;s, het KLUSR-logo en de vormgeving —
+              is eigendom van KLUSR of haar licentiegevers en auteursrechtelijk beschermd.
+              Overnemen of hergebruiken zonder voorafgaande schriftelijke toestemming is niet
+              toegestaan.
+            </p>
+          ),
+        },
+        {
+          heading: "16. Aansprakelijkheid",
           body: (
             <p>
               De aansprakelijkheid van KLUSR is beperkt tot hetgeen in deze voorwaarden is
@@ -186,7 +220,7 @@ export default function VoorwaardenPage() {
           ),
         },
         {
-          heading: "14. Toepasselijk recht",
+          heading: "17. Toepasselijk recht",
           body: (
             <p>
               Op overeenkomsten tussen KLUSR en de klant is uitsluitend Nederlands recht van

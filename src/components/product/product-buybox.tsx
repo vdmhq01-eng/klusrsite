@@ -28,7 +28,9 @@ import { useMounted } from "@/lib/hooks/use-mounted";
 import { baseStockByStore, paintBases } from "@/lib/paint-bases";
 import { isLightColor } from "@/lib/data/colors";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
-import { formatPrice, discountPercent, cn } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
+import { usePricingMode } from "@/lib/store/pricing-mode";
+import { priceView } from "@/lib/pricing";
 
 const usps = [
   { icon: Truck, label: "Gratis verzending vanaf €50" },
@@ -65,8 +67,16 @@ export function ProductBuybox({
       ? baseStockByStore(variant.stockByStore, color.base.id)
       : variant.stockByStore;
 
-  const reference = (variant.compareAtPrice ?? variant.price) + surcharge;
-  const showStrike = reference > effectiveKLUSRPAS;
+  const mode = usePricingMode((s) => s.mode);
+  const priceInfo = priceView(
+    {
+      price: effectivePrice,
+      kluspasPrice: effectiveKLUSRPAS,
+      compareAtPrice:
+        variant.compareAtPrice !== undefined ? variant.compareAtPrice + surcharge : undefined,
+    },
+    mounted ? mode : "particulier",
+  );
 
   // "Voordeliger per liter" upsell — compare cheapest €/L variant.
   const perLiter = useMemo(() => {
@@ -152,23 +162,29 @@ export function ProductBuybox({
 
       {/* Price */}
       <div>
-        {showStrike && (
+        {priceInfo.reference && (
           <p className="text-sm text-muted-foreground">
-            Adviesprijs <span className="line-through">{formatPrice(reference)}</span>
+            {priceInfo.referenceLabel}{" "}
+            <span className="line-through">{formatPrice(priceInfo.reference)}</span>
           </p>
         )}
         <div className="flex items-end gap-3">
           <span className="text-4xl font-black leading-none text-primary">
-            {formatPrice(effectiveKLUSRPAS)}
+            {formatPrice(priceInfo.amount)}
           </span>
-          <span className="mb-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase text-primary">
-            KLUSRPAS-prijs
+          {priceInfo.badge && (
+            <span className="mb-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase text-primary">
+              {priceInfo.badge === "ProfPas" ? "ProfPas-prijs" : "KLUSRPAS-prijs"}
+            </span>
+          )}
+          <span className="mb-1.5 text-xs font-medium text-muted-foreground">
+            {priceInfo.vatSuffix}
           </span>
         </div>
-        {showStrike && (
+        {priceInfo.savings !== undefined && priceInfo.savings > 0 && (
           <p className="mt-1 text-sm font-semibold text-klusr-stock">
-            Je bespaart {formatPrice(reference - effectiveKLUSRPAS)} (
-            {discountPercent(reference, effectiveKLUSRPAS)}%)
+            Je bespaart {formatPrice(priceInfo.savings)}
+            {priceInfo.savingsPct ? ` (${priceInfo.savingsPct}%)` : ""}
           </p>
         )}
         {surcharge > 0 && (
@@ -374,7 +390,7 @@ export function ProductBuybox({
 
       {/* Mobile sticky add-to-cart */}
       <MobileStickyBar
-        price={effectiveKLUSRPAS}
+        price={priceInfo.amount}
         onAdd={handleAdd}
         label={
           color?.base ? `${variant.label} · ${paintBases[color.base.id].short}` : variant.label

@@ -1,14 +1,15 @@
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 
-/** Bedrijfsgegevens — vul KvK/btw aan met de echte nummers vóór livegang. */
+/** Bedrijfsgegevens — KLUSR B.V. */
 export const COMPANY = {
   legalName: "KLUSR B.V.",
   tradeName: "KLUSR",
   email: "klantenservice@klus-r.nl",
-  phone: "0548 - 12 34 56",
-  address: "Grotestraat 1, 7442 BC Nijverdal",
-  kvk: "[KvK-nummer]",
-  btw: "[btw-nummer, NL……B01]",
+  phone: "+31 85 273 8338",
+  address: "Van den Bergsweg 3, 7442 CK Nijverdal",
+  kvk: "70367922",
+  btw: "NL855528618B01",
+  iban: "NL41INGB0105014877",
 };
 
 export interface LegalSection {

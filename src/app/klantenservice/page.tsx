@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  BadgeCheck,
   CreditCard,
   Mail,
   MapPin,
   MessageCircle,
+  Palette,
   Phone,
+  RotateCcw,
   ShieldCheck,
   Sparkles,
   Store,
@@ -44,8 +47,8 @@ const contactCards = [
     icon: Mail,
     title: "Mail ons",
     description: "Reactie binnen 1 werkdag",
-    actionLabel: "klantenservice@klusr.nl",
-    href: "mailto:klantenservice@klusr.nl",
+    actionLabel: "klantenservice@klus-r.nl",
+    href: "mailto:klantenservice@klus-r.nl",
   },
   {
     icon: Store,
@@ -61,6 +64,14 @@ const contactCards = [
     actionLabel: "Stel je vraag",
     href: "/klushulp",
   },
+];
+
+const trustItems = [
+  { icon: Truck, label: "Voor 16:00 besteld, morgen in huis" },
+  { icon: RotateCcw, label: "14 dagen gratis retour" },
+  { icon: ShieldCheck, label: "Veilig betalen via Mollie" },
+  { icon: Sparkles, label: "Advies van ex-schilders" },
+  { icon: BadgeCheck, label: "Wettelijke garantie op alles" },
 ];
 
 const shippingFaqs = [
@@ -117,6 +128,47 @@ const warrantyFaqs = [
   },
 ];
 
+const mengverfFaqs = [
+  {
+    question: "Kan ik op kleur gemengde verf retourneren?",
+    answer:
+      "Op kleur gemengde verf mengen we speciaal voor jou op maat. Daarom is deze — net als andere op maat gemaakte producten — wettelijk uitgesloten van het herroepingsrecht en kunnen we mengverf niet terugnemen. Is er onverhoopt iets mis met de kleur of het product? Neem dan contact op, dan lossen we het samen kosteloos op.",
+  },
+  {
+    question: "Hoe nauwkeurig is de kleurmatch?",
+    answer:
+      "We mengen op basis van professionele kleurcodes (o.a. RAL, Gamma en AkzoNobel) voor een exacte match. Twijfel je over een kleur? Vraag in de winkel een proefstaal of bestel eerst een kleurtester voordat je de hele hoeveelheid laat mengen.",
+  },
+  {
+    question: "Hoeveel verf heb ik nodig?",
+    answer:
+      "Reken globaal op 1 liter per 8–10 m² per laag. Op de productpagina en via onze AI-klushulp rekenen we het exact voor je uit, zodat je niet te veel of te weinig bestelt.",
+  },
+  {
+    question: "Kan ik verf ook in de winkel laten mengen?",
+    answer:
+      "Zeker. Onze kleurspecialisten mengen je verf vakkundig terwijl je wacht. Kom langs in een KLUSR-winkel met je kleurkeuze, of kies je kleur alvast online.",
+  },
+];
+
+const kluspasFaqs = [
+  {
+    question: "Wat is de KLUSRPAS en wat kost het?",
+    answer:
+      "De KLUSRPAS is helemaal gratis en geeft je direct de scherpere KLUSRPAS-prijs op de hele collectie, plus exclusieve acties. Je activeert 'm bij het aanmaken van een account.",
+  },
+  {
+    question: "Ik bestel zakelijk — kan dat ook?",
+    answer:
+      "Ja. Voor zzp'ers, schilders en bedrijven hebben we de KLUSR ProfPas: 10% korting op de hele collectie en prijzen excl. btw, op factuur. Gratis registreren kan via de zakelijk-pagina.",
+  },
+  {
+    question: "Krijg ik een factuur met btw?",
+    answer:
+      "Ja, bij elke bestelling ontvang je een nette factuur met btw gespecificeerd. Zakelijke klanten zien de prijzen excl. btw en betalen op factuur.",
+  },
+];
+
 const generalFaqs = [
   {
     question: "Hoe plaats ik een bestelling?",
@@ -160,6 +212,22 @@ const faqGroups = [
       "Wettelijke garantie op alles, plus persoonlijke service van onze ex-schilders.",
     faqs: warrantyFaqs,
   },
+  {
+    id: "mengverf",
+    title: "Mengverf & kleuradvies",
+    icon: Palette,
+    intro:
+      "Elke kleur op maat gemengd met een exacte kleurmatch. Let op: op kleur gemengde verf is maatwerk en kan niet retour.",
+    faqs: mengverfFaqs,
+  },
+  {
+    id: "kluspas",
+    title: "KLUSRPAS & zakelijk",
+    icon: BadgeCheck,
+    intro:
+      "Gratis KLUSRPAS-voordeel voor particulieren, en de ProfPas met 10% korting (excl. btw) voor zakelijke klanten.",
+    faqs: kluspasFaqs,
+  },
 ];
 
 export default function KlantenservicePage() {
@@ -177,6 +245,21 @@ export default function KlantenservicePage() {
           Vind hieronder snel antwoord op de meestgestelde vragen, of neem
           direct contact met ons op. Onze klussers staan voor je klaar.
         </p>
+      </section>
+
+      {/* Trust strip */}
+      <section className="container-klusr">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {trustItems.map(({ icon: Icon, label }) => (
+            <li
+              key={label}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm font-medium shadow-card"
+            >
+              <Icon className="h-5 w-5 shrink-0 text-primary" />
+              {label}
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Quick contact cards */}
@@ -252,6 +335,31 @@ export default function KlantenservicePage() {
         </div>
       </section>
 
+      {/* Niet goed = geld terug */}
+      <section className="container-klusr">
+        <div className="rounded-2xl bg-klusr-black p-6 text-white sm:p-10">
+          <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+            Niet goed? Geld terug.
+          </h2>
+          <p className="mt-2 max-w-2xl text-white/80">
+            We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd,
+            gratis retour (ook in de winkel) en wettelijke garantie op alles. Op kleur gemengde
+            verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het
+            altijd kosteloos op.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              <Link href="/retourvoorwaarden">Lees de retourvoorwaarden</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Contact block */}
       <section className="container-klusr">
         <div className="grid gap-6 rounded-2xl border border-border bg-card p-6 shadow-card sm:p-10 lg:grid-cols-2">
@@ -266,7 +374,7 @@ export default function KlantenservicePage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <a href="mailto:klantenservice@klusr.nl">
+                <a href="mailto:klantenservice@klus-r.nl">
                   <Mail className="h-4 w-4" />
                   Mail de klantenservice
                 </a>

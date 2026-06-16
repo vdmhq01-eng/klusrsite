@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, Product, ProductVariant, SelectedColor } from "@/types";
+import { exVat, profGrossPrice } from "@/lib/pricing";
+import type { PricingMode } from "@/lib/store/pricing-mode";
 
 const FREE_SHIPPING_THRESHOLD = 50;
 const SHIPPING_COST = 4.95;
@@ -187,4 +189,94 @@ export function freeShippingProgress(subtotal: number): {
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const percent = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
   return { remaining, percent, reached: remaining === 0 };
+}
+
+/* ---- Modusbewuste weergave: Particulier (incl. btw) / Zakelijk (ProfPas, excl. btw) ---- */
+
+export interface LineDisplay {
+  /** Te tonen regelprijs in de huidige modus. */
+  main: number;
+  /** Doorgestreepte referentie (hoger), of undefined. */
+  reference?: number;
+}
+
+export function displayLine(
+  item: CartItem,
+  mode: PricingMode,
+  kluspasActive: boolean,
+): LineDisplay {
+  if (mode === "zakelijk") {
+    return {
+      main: exVat(profGrossPrice(item.price)) * item.quantity,
+      reference: exVat(item.price) * item.quantity,
+    };
+  }
+  return {
+    main: linePrice(item, kluspasActive) * item.quantity,
+    reference:
+      kluspasActive && item.price > item.kluspasPrice
+        ? item.price * item.quantity
+        : undefined,
+  };
+}
+
+export interface CartSummary {
+  /** Of de getoonde bedragen incl. btw zijn (particulier) of excl. (zakelijk). */
+  vatIncluded: boolean;
+  /** Subtotaal vóór pas-korting, in de getoonde btw-basis. */
+  subtotalRegular: number;
+  /** Korting (KLUSRPAS of ProfPas), positief bedrag. */
+  savings: number;
+  /** Verzendkosten in de getoonde btw-basis. */
+  shipping: number;
+  /** Btw-bedrag (alleen zakelijk; particulier = undefined). */
+  vat?: number;
+  /** Eindtotaal dat afgerekend wordt — altijd incl. btw. */
+  total: number;
+  /** Brutobedragen (incl. btw) voor de daadwerkelijke betaling/order. */
+  grossSubtotal: number;
+  grossShipping: number;
+  grossTotal: number;
+}
+
+export function cartSummary(
+  items: CartItem[],
+  mode: PricingMode,
+  kluspasActive: boolean,
+  shippingOverride?: number,
+): CartSummary {
+  if (mode === "zakelijk") {
+    const grossSubtotal = items.reduce((s, i) => s + profGrossPrice(i.price) * i.quantity, 0);
+    const grossShipping = shippingOverride ?? shippingFor(grossSubtotal);
+    const grossTotal = grossSubtotal + grossShipping;
+    const regularEx = items.reduce((s, i) => s + exVat(i.price) * i.quantity, 0);
+    const subtotalEx = exVat(grossSubtotal);
+    const shippingEx = exVat(grossShipping);
+    return {
+      vatIncluded: false,
+      subtotalRegular: regularEx,
+      savings: regularEx - subtotalEx,
+      shipping: shippingEx,
+      vat: grossTotal - (subtotalEx + shippingEx),
+      total: grossTotal,
+      grossSubtotal,
+      grossShipping,
+      grossTotal,
+    };
+  }
+
+  const grossSubtotal = cartSubtotal(items, kluspasActive);
+  const grossShipping = shippingOverride ?? shippingFor(grossSubtotal);
+  const grossTotal = grossSubtotal + grossShipping;
+  return {
+    vatIncluded: true,
+    subtotalRegular: cartRegularSubtotal(items),
+    savings: kluspasActive ? kluspasSavings(items) : 0,
+    shipping: grossShipping,
+    vat: undefined,
+    total: grossTotal,
+    grossSubtotal,
+    grossShipping,
+    grossTotal,
+  };
 }
