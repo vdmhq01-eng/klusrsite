@@ -5,7 +5,7 @@ import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/tracking";
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-TQSG438L";
 
 /**
  * Injects the Google Tag Manager script. No-op when NEXT_PUBLIC_GTM_ID is unset

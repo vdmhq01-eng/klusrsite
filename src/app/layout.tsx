@@ -9,6 +9,8 @@ import {
   GoogleTagManager,
   GoogleTagManagerNoScript,
 } from "@/components/analytics/gtm";
+import { ConsentDefault } from "@/components/analytics/consent-init";
+import { CookieConsent } from "@/components/analytics/cookie-consent";
 import { AuthProvider } from "@/components/auth/auth-provider";
 
 const inter = Inter({
@@ -106,6 +108,7 @@ export default function RootLayout({
   return (
     <html lang="nl" className={inter.variable}>
       <head>
+        <ConsentDefault />
         <GoogleTagManager />
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans">
@@ -127,6 +130,7 @@ export default function RootLayout({
           <MobileBottomNav />
           <GlobalOverlays />
         </AuthProvider>
+        <CookieConsent />
       </body>
     </html>
   );
