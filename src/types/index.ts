@@ -207,6 +207,8 @@ export interface Order {
   /** Fulfilment via Channable → Tilroy. */
   channableStatus?: "pending" | "sent" | "failed" | "demo";
   channableOrderId?: string;
+  /** Tijdstip waarop de bestelbevestiging is verstuurd (voorkomt dubbele mails). */
+  confirmationSentAt?: string;
 }
 
 export interface KlushulpTask {

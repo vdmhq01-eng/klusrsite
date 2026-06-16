@@ -35,6 +35,7 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 | **Claude AI** (`@anthropic-ai/sdk`) | Productadvies, content‑generatie, klushulp‑chat | Heuristische fallback‑antwoorden |
 | **Mollie** (`@mollie/api-client`) | Betalingen (iDEAL, Bancontact, Creditcard, Klarna) | Gesimuleerde betaling → bedanktpagina |
 | **Mailchimp** (`@mailchimp/mailchimp_marketing`) | Nieuwsbrief, abandoned cart | No‑op (logt naar console) |
+| **Resend** (REST API) | Transactionele e‑mail: bestelbevestiging + nieuwsbrief‑welkomstmail (gebrande KLUSR‑template) | No‑op (logt naar console) |
 | **Google Tag Manager** | E‑commerce tracking | dataLayer werkt lokaal voor debugging |
 
 > De webshop draait **volledig zonder secrets** in demo‑modus, zodat je direct kunt ontwikkelen.

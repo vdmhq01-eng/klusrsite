@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { subscribe } from "@/lib/mailchimp";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
+
+    // Branded welkomstmail (Resend; no-op zonder API-key).
+    void sendWelcomeEmail({ email, firstName }).catch(() => {});
 
     return NextResponse.json({
       ok: true,
