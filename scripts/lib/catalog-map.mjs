@@ -772,15 +772,22 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const desc = stripHtml(lead.description).slice(0, 700);
     const hasDesc = desc.length > 120;
     const subCategory = subOverride ?? subCategoryFor(category, title, lead.productType);
-    const displayTitle =
+    // Rijke productattributen uit de feature-feed (per lead-SKU).
+    const feat = (featuresById && featuresById.get(String(lead.id))) || {};
+    let displayTitle =
       tidyDisplayTitle(
         category === "verf"
           ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
           : dedupeWords(cleanProductTitle(dropBrandEcho(lead.title, lead.brand))) || title,
       ) || title;
-
-    // Rijke productattributen uit de feature-feed (per lead-SKU).
-    const feat = (featuresById && featuresById.get(String(lead.id))) || {};
+    if (category === "verf") {
+      // Trailing "Ral"/"Ral 9001"-ruis weg en glansgraad toevoegen als die mist.
+      displayTitle = displayTitle.replace(/\s+ral(\s+\d{3,4})?\s*$/i, "").trim();
+      const glans = featVal(feat, "glansgraad") || paintGlansOf(lead.title);
+      if (glans && !displayTitle.toLowerCase().includes(glans.toLowerCase())) {
+        displayTitle = `${displayTitle} ${cap(glans)}`.trim();
+      }
+    }
     const sizeLabels = (
       colorVariant
         ? [
