@@ -19,6 +19,10 @@ const inter = Inter({
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
+// Google Search Console verificatie — plak de token uit de "HTML-tag"-methode
+// in deze env-variabele; dan rendert Next de <meta name="google-site-verification">.
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Store",
@@ -72,7 +76,20 @@ export const metadata: Metadata = {
     description:
       "Professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer. Advies van ex-schilders.",
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
 };
 
 export const viewport: Viewport = {
