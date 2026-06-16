@@ -14,12 +14,17 @@ import { ProductBuybox } from "@/components/product/product-buybox";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
 import { AiProductAdvice } from "@/components/product/ai-product-advice";
+import { PublishedContent } from "@/components/product/published-content";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { ViewItemTracker } from "@/components/analytics/view-item-tracker";
 import { ProductCarousel } from "@/components/shared/product-carousel";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { getProductContent } from "@/lib/store/product-content";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+
+// ISR: ververs periodiek zodat gepubliceerde AI-content (uit KV) zichtbaar wordt.
+export const revalidate = 600;
 
 // Prerender a representative subset at build time; the remaining product pages
 // render on demand (dynamicParams defaults to true). Keeps builds fast with the
@@ -55,10 +60,11 @@ export async function generateMetadata({
   };
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
+export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = getProduct(params.slug);
   if (!product) notFound();
 
+  const publishedContent = await getProductContent(product.id);
   const glansVariants = getGlansVariants(product);
   const category = getCategory(product.category);
   const companions = getFrequentlyBoughtTogether(product);
@@ -137,6 +143,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       <div className="mt-10">
         <ProductTabs product={product} />
       </div>
+
+      {/* Gepubliceerde AI-content (admin) */}
+      {publishedContent && (
+        <div className="mt-10">
+          <PublishedContent content={publishedContent} />
+        </div>
+      )}
 
       {/* Vaak samen gekocht */}
       {companions.length > 0 && (
