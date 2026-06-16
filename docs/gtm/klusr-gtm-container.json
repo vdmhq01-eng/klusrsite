@@ -1,6 +1,6 @@
 {
   "exportFormatVersion": 2,
-  "exportTime": "2026-06-16T12:17:52.003Z",
+  "exportTime": "2026-06-16T12:22:25.581Z",
   "containerVersion": {
     "path": "accounts/0/containers/0/versions/0",
     "accountId": "0",
@@ -613,7 +613,7 @@
         "fingerprint": "0"
       },
       {
-        "name": "Google Ads — Conversie: purchase (LABEL INVULLEN)",
+        "name": "Google Ads — Conversie purchase (label invullen)",
         "type": "awct",
         "parameter": [
           {
