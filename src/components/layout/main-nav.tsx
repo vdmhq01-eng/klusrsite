@@ -84,17 +84,25 @@ export function MainNav() {
                 </Link>
               </>
             ) : (
-              <div className="grid grid-cols-2 gap-x-8 gap-y-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {activeSubs.slice(0, 15).map((sub) => (
-                  <Link
-                    key={sub.slug}
-                    href={`/categorie/${active.slug}/${sub.slug}`}
-                    className="block rounded px-1.5 py-1.5 text-sm text-foreground hover:bg-secondary hover:text-primary"
-                  >
-                    {sub.title}
-                  </Link>
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {activeSubs.slice(0, 15).map((sub) => (
+                    <Link
+                      key={sub.slug}
+                      href={`/categorie/${active.slug}/${sub.slug}`}
+                      className="block rounded px-1.5 py-1.5 text-sm text-foreground hover:bg-secondary hover:text-primary"
+                    >
+                      {sub.title}
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href={`/categorie/${active.slug}`}
+                  className="mt-4 inline-flex text-sm font-semibold text-primary hover:underline"
+                >
+                  Bekijk alle {active.title.toLowerCase()} →
+                </Link>
+              </>
             )}
           </div>
         </div>
