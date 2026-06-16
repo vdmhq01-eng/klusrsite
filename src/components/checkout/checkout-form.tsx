@@ -206,6 +206,13 @@ export function CheckoutForm({
     shippingMethod === "pickup" ? 0 : undefined,
   );
 
+  // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
+  const billieSurcharge =
+    paymentMethod === "billie"
+      ? Math.round((0.35 + summary.total * 0.0349) * 100) / 100
+      : 0;
+  const payableTotal = Math.round((summary.total + billieSurcharge) * 100) / 100;
+
   const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
   const selectedMethod = methods.find((m) => m.id === paymentMethod);
   // iDEAL met banklijst → eerst een bank kiezen voordat je kunt betalen.
@@ -281,7 +288,8 @@ export function CheckoutForm({
           items,
           subtotal: summary.grossSubtotal,
           shipping: summary.grossShipping,
-          total: summary.grossTotal,
+          total: payableTotal,
+          surcharge: billieSurcharge,
           kluspasSavings: summary.savings,
           method: paymentMethod,
           ...(issuer && paymentMethod === "ideal" ? { issuer } : {}),
@@ -492,11 +500,17 @@ export function CheckoutForm({
                   <dd>{formatPrice(summary.vat)}</dd>
                 </div>
               )}
+              {billieSurcharge > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Billie-toeslag</dt>
+                  <dd>{formatPrice(billieSurcharge)}</dd>
+                </div>
+              )}
             </dl>
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">Totaal</span>
-              <span className="text-2xl font-black">{formatPrice(summary.total)}</span>
+              <span className="text-2xl font-black">{formatPrice(payableTotal)}</span>
             </div>
             {!summary.vatIncluded && (
               <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
@@ -539,7 +553,7 @@ export function CheckoutForm({
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  Betaal {formatPrice(summary.total)}
+                  Betaal {formatPrice(payableTotal)}
                 </>
               )}
             </Button>

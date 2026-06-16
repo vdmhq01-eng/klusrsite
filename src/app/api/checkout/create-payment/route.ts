@@ -46,6 +46,7 @@ const bodySchema = z.object({
   subtotal: z.number(),
   shipping: z.number(),
   total: z.number(),
+  surcharge: z.number().optional(),
   kluspasSavings: z.number(),
   method: z.string().optional(),
   issuer: z.string().optional(),
@@ -124,7 +125,8 @@ export async function POST(req: Request) {
         };
       });
       const sumItems = all.reduce((s, l) => s + Number(l.totalAmount.value), 0);
-      const ship = r2(data.total - sumItems);
+      const surcharge = r2(data.surcharge || 0);
+      const ship = r2(data.total - sumItems - surcharge);
       if (ship > 0) {
         all.push({
           type: "shipping_fee",
@@ -134,6 +136,17 @@ export async function POST(req: Request) {
           totalAmount: { currency: "EUR", value: ship.toFixed(2) },
           vatRate: "21.00",
           vatAmount: { currency: "EUR", value: vat(ship).toFixed(2) },
+        });
+      }
+      if (surcharge > 0) {
+        all.push({
+          type: "surcharge",
+          description: "Betaaltoeslag (Billie)",
+          quantity: 1,
+          unitPrice: { currency: "EUR", value: surcharge.toFixed(2) },
+          totalAmount: { currency: "EUR", value: surcharge.toFixed(2) },
+          vatRate: "0.00",
+          vatAmount: { currency: "EUR", value: "0.00" },
         });
       }
       const linesSum = r2(all.reduce((s, l) => s + Number(l.totalAmount.value), 0));
