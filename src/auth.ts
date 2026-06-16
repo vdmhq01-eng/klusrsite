@@ -35,14 +35,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "E-mailadres", type: "email" },
         password: { label: "Wachtwoord", type: "password" },
+        name: { label: "Naam", type: "text" },
       },
       authorize(credentials) {
         const email = String(credentials?.email ?? "").trim().toLowerCase();
         const password = String(credentials?.password ?? "");
+        const provided = String(credentials?.name ?? "").trim();
         // DEMO-verificatie (geen gebruikersdatabase): geldig e-mailadres + min. 6 tekens.
+        // Inloggen én registreren lopen via deze provider; bij registratie wordt
+        // de opgegeven naam als weergavenaam gebruikt.
         if (EMAIL_RE.test(email) && password.length >= 6) {
-          const name = email.split("@")[0].replace(/[._-]+/g, " ").trim();
-          return { id: email, email, name: name || email };
+          const fallback = email.split("@")[0].replace(/[._-]+/g, " ").trim();
+          return { id: email, email, name: provided || fallback || email };
         }
         return null;
       },

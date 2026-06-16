@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
@@ -64,8 +65,11 @@ export function LoginForm() {
         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Inloggen"}
       </Button>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Nog geen account? Vul je gegevens in — we maken er direct een aan.
+      <p className="text-center text-sm text-muted-foreground">
+        Nog geen account?{" "}
+        <Link href="/registreren" className="font-semibold text-primary hover:underline">
+          Account aanmaken
+        </Link>
       </p>
     </form>
   );
