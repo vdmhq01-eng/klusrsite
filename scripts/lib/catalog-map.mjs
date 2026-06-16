@@ -86,7 +86,7 @@ function mapCategory(productType = "") {
   return "gereedschap";
 }
 
-function mapVerfSub(title, productType) {
+export function mapVerfSub(title, productType) {
   const t = `${title || ""} ${productType || ""}`.toLowerCase();
   const has = (...words) => words.some((w) => t.includes(w));
 
