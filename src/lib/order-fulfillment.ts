@@ -6,6 +6,7 @@ import {
   releaseConfirmationEmail,
 } from "@/lib/store/orders";
 import { sendOrderConfirmation } from "@/lib/email";
+import { addContact, AUDIENCES } from "@/lib/email/audiences";
 import { clearPendingCart } from "@/lib/store/pending-cart";
 import { logEvent } from "@/lib/store/analytics";
 
@@ -40,6 +41,23 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
 
   // Conversie registreren — precies één keer per order (na de mail-claim).
   void logEvent("conversion", { value: order.total, reference: order.reference }).catch(() => {});
+
+  // Koper als contact in de Resend-audiences zetten (klanten + zakelijk).
+  const c = order.customer;
+  void addContact({
+    audience: AUDIENCES.CUSTOMERS,
+    email: c.email,
+    firstName: c.firstName,
+    lastName: c.lastName,
+  }).catch(() => {});
+  if (c.company) {
+    void addContact({
+      audience: AUDIENCES.BUSINESS,
+      email: c.email,
+      firstName: c.firstName,
+      lastName: c.lastName,
+    }).catch(() => {});
+  }
 
   const result = await sendOrderConfirmation(order);
   if (!result.ok && !result.demo) {
