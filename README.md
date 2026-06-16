@@ -147,8 +147,8 @@ voor productie).
   de HTML‑tag‑methode) → Next rendert de verificatie‑meta. Dien daarna
   `/sitemap.xml` in.
 - **Google Merchant Center**: `/google-merchant.xml` is een RSS‑productfeed
-  (g:‑namespace) uit de live catalogus — één item per variant, reguliere prijs
-  (geen KLUSRPAS‑ledenprijs). Gebruik 'm als geplande ophaal‑URL in Merchant
+  (g:‑namespace) uit de live catalogus — één item per variant, met de
+  **KLUSRPAS‑prijs** (ledenprijs). Gebruik 'm als geplande ophaal‑URL in Merchant
   Center. Tip: voeg later GTIN's toe voor betere matching.
 
 ### AI‑governance

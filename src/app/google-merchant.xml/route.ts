@@ -7,8 +7,8 @@ import type { Product, ProductVariant } from "@/types";
  * Bereikbaar op /google-merchant.xml en statisch gegenereerd bij de build, dus
  * je kunt 'm direct als geplande ophaal-URL in Merchant Center zetten.
  *
- * Prijs = de reguliere `price` (niet de KLUSRPAS-ledenprijs) — Merchant Center
- * vereist de prijs die iedere bezoeker betaalt. Eén item per koopbare variant,
+ * Prijs = de KLUSRPAS-prijs (`kluspasPrice`) — bewust de ledenprijs, zoals we
+ * naar Google Merchant willen communiceren. Eén item per koopbare variant,
  * variantgroepen via item_group_id.
  */
 
@@ -68,7 +68,9 @@ function buildItems(): string {
     const multi = p.variants.length > 1;
 
     for (const v of p.variants) {
-      if (!(v.price > 0)) continue;
+      // KLUSRPAS-prijs naar Merchant; val terug op de reguliere prijs als die ontbreekt.
+      const feedPrice = v.kluspasPrice > 0 ? v.kluspasPrice : v.price;
+      if (!(feedPrice > 0)) continue;
       const id = multi ? `${p.id}-${v.id}` : p.id;
       const title = clean(multi ? `${p.title} ${v.label}` : p.title).slice(0, 150);
       const inStock = variantStock(v) > 0;
@@ -81,7 +83,7 @@ function buildItems(): string {
         `<g:link>${xml(link)}</g:link>`,
         `<g:image_link>${xml(image)}</g:image_link>`,
         `<g:availability>${inStock ? "in_stock" : "out_of_stock"}</g:availability>`,
-        `<g:price>${v.price.toFixed(2)} EUR</g:price>`,
+        `<g:price>${feedPrice.toFixed(2)} EUR</g:price>`,
         brand ? `<g:brand>${xml(brand)}</g:brand>` : "",
         `<g:condition>new</g:condition>`,
         `<g:identifier_exists>no</g:identifier_exists>`,
