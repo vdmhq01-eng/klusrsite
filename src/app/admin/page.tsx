@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { LayoutDashboard, ShieldAlert } from "lucide-react";
-import { AiContentManager } from "@/components/admin/ai-content-manager";
-import { OrdersPanel } from "@/components/admin/orders-panel";
-import { ChannableTestOrder } from "@/components/admin/channable-test-order";
+import { AdminDashboard } from "@/components/admin/admin-dashboard";
 
 export const metadata: Metadata = {
-  title: "AI Contentbeheer",
-  description: "Beheer AI-gegenereerde productcontent voor de KLUSR webshop.",
+  title: "KLUSR Beheer",
+  description: "Beheer orders, klanten, rapportages, AI-content en koppelingen voor de KLUSR webshop.",
   robots: { index: false, follow: false },
 };
 
@@ -21,11 +19,9 @@ export default function AdminPage() {
               <LayoutDashboard className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-                AI Contentbeheer
-              </h1>
+              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">KLUSR Beheer</h1>
               <p className="text-sm text-muted-foreground">
-                Genereer en beoordeel AI-suggesties voor productcontent.
+                Orders, klanten, rapportages, AI-content en koppelingen.
               </p>
             </div>
           </div>
@@ -35,19 +31,8 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Manager */}
-        <div className="mt-8">
-          <AiContentManager />
-        </div>
-
-        {/* Orders + PostNL-verzendlabels */}
-        <div className="mt-8">
-          <OrdersPanel />
-        </div>
-
-        {/* Channable koppeling — testorder versturen */}
-        <div className="mt-8">
-          <ChannableTestOrder />
+        <div className="mt-6">
+          <AdminDashboard />
         </div>
       </div>
     </div>
