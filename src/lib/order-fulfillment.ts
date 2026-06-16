@@ -17,11 +17,11 @@ export async function fulfillPaidOrder(order: Order): Promise<void> {
 
   const result = await pushChannableOrder(order);
   if (result.demo) {
-    markChannable(order.id, "demo");
+    await markChannable(order.id, "demo");
   } else if (result.ok) {
-    markChannable(order.id, "sent", result.channableOrderId);
+    await markChannable(order.id, "sent", result.channableOrderId);
   } else {
-    markChannable(order.id, "failed");
+    await markChannable(order.id, "failed");
   }
 }
 
@@ -31,10 +31,10 @@ export async function fulfillPaidOrder(order: Order): Promise<void> {
  * een echte verzendfout geven we de claim vrij zodat een retry alsnog mag.
  */
 export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
-  if (!claimConfirmationEmail(order.id)) return;
+  if (!(await claimConfirmationEmail(order.id))) return;
 
   const result = await sendOrderConfirmation(order);
   if (!result.ok && !result.demo) {
-    releaseConfirmationEmail(order.id);
+    await releaseConfirmationEmail(order.id);
   }
 }

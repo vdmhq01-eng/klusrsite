@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ThankYouPage({
+export default async function ThankYouPage({
   searchParams,
 }: {
   searchParams: { order?: string; demo?: string };
 }) {
-  const order = searchParams.order ? getOrder(searchParams.order) : undefined;
+  const order = searchParams.order ? await getOrder(searchParams.order) : undefined;
 
   return (
     <div className="container-klusr py-10">

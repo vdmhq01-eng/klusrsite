@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     const { orderId } = (await req.json().catch(() => ({}))) as { orderId?: string };
-    const order = orderId ? getOrder(orderId) : undefined;
+    const order = orderId ? await getOrder(orderId) : undefined;
     if (!order) {
       return NextResponse.json(
         { ok: false, configured: isPostNLConfigured(), status: 404, message: "Order niet gevonden." },
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
     // Bij succes de order als verzonden markeren + verzendgegevens bewaren.
     if (result.ok && result.barcode) {
-      setShipped(order.id, {
+      await setShipped(order.id, {
         carrier: "postnl",
         barcode: result.barcode,
         trackTrace: result.trackTrace,

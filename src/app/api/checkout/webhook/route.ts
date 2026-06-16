@@ -35,11 +35,11 @@ export async function POST(req: Request) {
 
     // Prefer the orderId from Mollie metadata, fall back to the payment-id index.
     const order =
-      (status.orderId ? getOrder(status.orderId) : undefined) ??
-      getOrderByMollieId(paymentId);
+      (status.orderId ? await getOrder(status.orderId) : undefined) ??
+      (await getOrderByMollieId(paymentId));
     if (order) {
       const mapped = mapMollieStatus(status.status);
-      updateOrderStatus(order.id, mapped);
+      await updateOrderStatus(order.id, mapped);
       // Once paid, push the order to Channable → Tilroy and confirm by e-mail.
       if (mapped === "paid" || mapped === "authorized") {
         const paidOrder = { ...order, paymentStatus: mapped };

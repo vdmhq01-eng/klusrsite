@@ -8,13 +8,13 @@ import {
   ArrowRight,
   Check,
   CircleHelp,
+  Loader2,
   MapPin,
   Package,
   Search,
   Truck,
 } from "lucide-react";
 import type { Order } from "@/types";
-import { getOrderByReference } from "@/lib/store/orders";
 import { cn, formatDate, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,26 +45,32 @@ export function OrderTracker({ initialReference }: OrderTrackerProps) {
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function lookup(ref: string, mail: string) {
+  async function lookup(ref: string, mail: string) {
     setSearched(true);
-    const found = getOrderByReference(ref);
-    if (!found) {
-      setOrder(null);
-      setError(
-        "We konden geen bestelling vinden met dit bestelnummer. Controleer of het juist is overgenomen.",
-      );
-      return;
-    }
-    if (found.customer.email.toLowerCase() !== mail.trim().toLowerCase()) {
-      setOrder(null);
-      setError(
-        "Het e-mailadres hoort niet bij dit bestelnummer. Gebruik het adres waarmee je hebt besteld.",
-      );
-      return;
-    }
+    setLoading(true);
     setError(null);
-    setOrder(found);
+    try {
+      const res = await fetch(
+        `/api/order-status?ref=${encodeURIComponent(ref.trim())}&email=${encodeURIComponent(mail.trim())}`,
+        { cache: "no-store" },
+      );
+      const data = (await res.json()) as { found: boolean; order?: Order };
+      if (!data.found || !data.order) {
+        setOrder(null);
+        setError(
+          "We konden geen bestelling vinden bij dit bestelnummer en e-mailadres. Controleer of beide kloppen — gebruik het adres waarmee je hebt besteld.",
+        );
+        return;
+      }
+      setOrder(data.order);
+    } catch {
+      setOrder(null);
+      setError("Het ophalen van je bestelling is even niet gelukt. Probeer het zo opnieuw.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -117,11 +123,15 @@ export function OrderTracker({ initialReference }: OrderTrackerProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit">
-                <Search className="h-4 w-4" />
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
                 Volg bestelling
               </Button>
-              <Button type="button" variant="outline" onClick={handleDemo}>
+              <Button type="button" variant="outline" onClick={handleDemo} disabled={loading}>
                 Bekijk voorbeeld
               </Button>
             </div>
@@ -134,7 +144,7 @@ export function OrderTracker({ initialReference }: OrderTrackerProps) {
             </p>
           )}
 
-          {searched && !order && !error && (
+          {searched && !loading && !order && !error && (
             <p className="mt-4 text-sm text-muted-foreground">
               Geen bestelling gevonden.
             </p>

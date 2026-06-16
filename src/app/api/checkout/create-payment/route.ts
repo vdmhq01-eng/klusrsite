@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     const data = parsed.data;
 
     // 1. Persist the order (status "open").
-    const order = createOrder({
+    const order = await createOrder({
       customer: data.customer,
       items: data.items,
       subtotal: data.subtotal,
@@ -96,12 +96,12 @@ export async function POST(req: Request) {
     });
 
     if (payment.molliePaymentId) {
-      setMolliePaymentId(order.id, payment.molliePaymentId);
+      await setMolliePaymentId(order.id, payment.molliePaymentId);
     }
 
     // In demo mode there is no webhook, so mark as paid and fulfil right away.
     if (payment.demo) {
-      updateOrderStatus(order.id, "paid");
+      await updateOrderStatus(order.id, "paid");
       const paidOrder = { ...order, paymentStatus: "paid" as const };
       // Push the paid order to Channable → Tilroy (demo-safe).
       void fulfillPaidOrder(paidOrder).catch(() => {});
