@@ -38,6 +38,9 @@ const bodySchema = z.object({
     postalCode: z.string().min(1),
     city: z.string().min(1),
     phone: z.string().optional(),
+    company: z.string().optional(),
+    cocNumber: z.string().optional(),
+    vatNumber: z.string().optional(),
   }),
   items: z.array(cartItemSchema).min(1),
   subtotal: z.number(),
@@ -85,8 +88,10 @@ export async function POST(req: Request) {
         }
       })();
 
-    // Factuuradres (= bezorgadres) — vereist voor Klarna e.d.
+    // Factuuradres (= bezorgadres) — vereist voor Klarna/Billie e.d.;
+    // organizationName (bedrijfsnaam) is verplicht voor Billie (B2B).
     const billingAddress = {
+      ...(data.customer.company ? { organizationName: data.customer.company } : {}),
       givenName: data.customer.firstName,
       familyName: data.customer.lastName,
       email: data.customer.email,

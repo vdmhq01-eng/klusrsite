@@ -192,6 +192,10 @@ export interface OrderCustomer {
   postalCode: string;
   city: string;
   phone?: string;
+  /** Zakelijke gegevens (alleen bij zakelijke bestellingen). */
+  company?: string;
+  cocNumber?: string;
+  vatNumber?: string;
 }
 
 export interface Order {

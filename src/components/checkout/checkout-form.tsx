@@ -44,6 +44,10 @@ const schema = z.object({
   street: z.string().min(2, "Vul je straatnaam in"),
   city: z.string().min(1, "Verplicht"),
   phone: z.string().optional(),
+  // Zakelijk (optioneel; alleen getoond/relevant in zakelijke modus).
+  companyName: z.string().optional(),
+  cocNumber: z.string().optional(),
+  vatNumber: z.string().optional(),
   terms: z.boolean().refine((v) => v === true, {
     message: "Ga akkoord met de algemene voorwaarden om te bestellen.",
   }),
@@ -104,6 +108,11 @@ export function CheckoutForm({
       active = false;
     };
   }, [items, mode, kluspasActive]);
+
+  // Billie is alleen zakelijk: deselecteer 'm als de klant naar particulier wisselt.
+  useEffect(() => {
+    if (mode !== "zakelijk" && paymentMethod === "billie") setPaymentMethod(null);
+  }, [mode, paymentMethod]);
 
   function selectMethod(id: string) {
     setPaymentMethod(id);
@@ -236,6 +245,13 @@ export function CheckoutForm({
       postalCode: values.postalCode,
       city: values.city,
       phone: values.phone,
+      ...(mode === "zakelijk" && values.companyName?.trim()
+        ? {
+            company: values.companyName.trim(),
+            cocNumber: values.cocNumber?.trim() || undefined,
+            vatNumber: values.vatNumber?.trim() || undefined,
+          }
+        : {}),
     };
 
     // Optioneel inschrijven voor de nieuwsbrief (demo-safe, fire-and-forget).
@@ -315,6 +331,21 @@ export function CheckoutForm({
             <Field label="E-mailadres" error={errors.email?.message}>
               <Input type="email" placeholder="jij@voorbeeld.nl" {...register("email")} />
             </Field>
+            {mode === "zakelijk" && (
+              <>
+                <Field label="Bedrijfsnaam" error={errors.companyName?.message}>
+                  <Input placeholder="Bedrijfsnaam B.V." {...register("companyName")} />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="KVK-nummer (optioneel)">
+                    <Input placeholder="12345678" {...register("cocNumber")} />
+                  </Field>
+                  <Field label="BTW-nummer (optioneel)">
+                    <Input placeholder="NL000000000B00" {...register("vatNumber")} />
+                  </Field>
+                </div>
+              </>
+            )}
           </Section>
 
           <Section title="Bezorgadres" step={2}>
@@ -373,7 +404,7 @@ export function CheckoutForm({
 
           <Section title="Betaalmethode" step={4}>
             <PaymentMethods
-              methods={methods}
+              methods={mode === "zakelijk" ? methods : methods.filter((m) => m.id !== "billie")}
               value={paymentMethod}
               onChange={selectMethod}
               issuer={issuer}
