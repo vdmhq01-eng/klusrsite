@@ -15,16 +15,21 @@ export function TopicImage({
   seed,
   icon,
   className,
+  src,
 }: {
-  keywords: string;
+  keywords?: string;
   seed: string;
   icon?: LucideIcon;
   className?: string;
+  /** Expliciete foto-URL (bv. een gegenereerd sfeerbeeld in /generated). Valt
+   * terug op een keyword-foto en daarna op de gradient. */
+  src?: string;
 }) {
+  const photoSrc = src ?? (keywords ? topicImageUrl(keywords, seed) : undefined);
   return (
     <>
       <BrandedVisual seed={seed} icon={icon} />
-      <TopicImagePhoto src={topicImageUrl(keywords, seed)} className={className} />
+      <TopicImagePhoto src={photoSrc} className={className} />
     </>
   );
 }

@@ -45,6 +45,7 @@ export function CategoryTiles() {
               seed={cat.slug}
               keywords={categoryKeywords(cat.slug)}
               icon={CATEGORY_ICONS[cat.slug]}
+              src={`/generated/categorie-${cat.slug}.jpg`}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-klusr-black/85 to-transparent" />
             <span className="relative p-3 text-sm font-bold text-white">{cat.title}</span>

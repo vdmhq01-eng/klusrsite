@@ -36,6 +36,7 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 | **Mollie** (`@mollie/api-client`) | Betalingen (iDEAL, Bancontact, Creditcard, Klarna) | Gesimuleerde betaling → bedanktpagina |
 | **Mailchimp** (`@mailchimp/mailchimp_marketing`) | Nieuwsbrief, abandoned cart | No‑op (logt naar console) |
 | **Resend** (REST API) | Transactionele e‑mail: bestelbevestiging + nieuwsbrief‑welkomstmail (gebrande KLUSR‑template) | No‑op (logt naar console) |
+| **fal.ai** (FLUX, REST) | Sfeerbeelden (hero, categorie‑tegels, winkel) → `public/generated/` in de build | Branded gradient + categorie‑icoon als fallback |
 | **Google Tag Manager** | E‑commerce tracking | dataLayer werkt lokaal voor debugging |
 
 > De webshop draait **volledig zonder secrets** in demo‑modus, zodat je direct kunt ontwikkelen.
