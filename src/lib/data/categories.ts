@@ -1,6 +1,86 @@
 import type { Category } from "@/types";
 
 /**
+ * Verf-taxonomie in 7 groepen → SEO-landingspagina's per type. Elke leaf is een
+ * eigen pagina (/categorie/verf/<slug>) met eigen tekst en gekoppelde producten.
+ * De groepen structureren het mega-menu; de flat-lijst voedt routing/filters.
+ */
+const verfSubGroups = [
+  {
+    title: "Lakken",
+    slug: "lakken",
+    subCategories: [
+      { title: "Binnenlak", slug: "binnenlak" },
+      { title: "Buitenlak", slug: "buitenlak" },
+      { title: "Deur- en kozijnlak", slug: "deur-kozijnlak" },
+      { title: "Meubellak", slug: "meubellak" },
+      { title: "Traplak", slug: "traplak" },
+    ],
+  },
+  {
+    title: "Muurverf",
+    slug: "muurverf",
+    subCategories: [
+      { title: "Binnenmuurverf", slug: "binnenmuurverf" },
+      { title: "Buitenmuurverf", slug: "buitenmuurverf" },
+      { title: "Plafondverf", slug: "plafondverf" },
+      { title: "Schrobvaste verf", slug: "schrobvaste-verf" },
+    ],
+  },
+  {
+    title: "Beits",
+    slug: "beits",
+    subCategories: [
+      { title: "Transparante beits", slug: "transparante-beits" },
+      { title: "Dekkende beits", slug: "dekkende-beits" },
+    ],
+  },
+  {
+    title: "Grondverf & primers",
+    slug: "grondverf-primers",
+    subCategories: [
+      { title: "Grondverf voor hout", slug: "grondverf-hout" },
+      { title: "Grondverf voor metaal", slug: "grondverf-metaal" },
+      { title: "Multiprimers", slug: "multiprimer" },
+      { title: "Hechtprimers", slug: "hechtprimer" },
+      { title: "Isolerende primers", slug: "isolerende-primer" },
+    ],
+  },
+  {
+    title: "Voorstrijk & grondering",
+    slug: "voorstrijk-grondering",
+    subCategories: [
+      { title: "Voorstrijk", slug: "voorstrijk" },
+      { title: "Diepgrond", slug: "diepgrond" },
+      { title: "Fixeergrond", slug: "fixeergrond" },
+    ],
+  },
+  {
+    title: "Beton- & vloerverf",
+    slug: "beton-vloerverf",
+    subCategories: [
+      { title: "Betonverf", slug: "betonverf" },
+      { title: "Vloerverf", slug: "vloerverf" },
+      { title: "Garageverf", slug: "garageverf" },
+      { title: "Trapverf", slug: "trapverf" },
+      { title: "2-componenten vloercoating", slug: "vloercoating-2k" },
+    ],
+  },
+  {
+    title: "Speciale verf",
+    slug: "speciale-verf",
+    subCategories: [
+      { title: "Radiatorverf", slug: "radiatorverf" },
+      { title: "Schoolbordverf", slug: "schoolbordverf" },
+      { title: "Magneetverf", slug: "magneetverf" },
+      { title: "Hittebestendige verf", slug: "hittebestendige-verf" },
+      { title: "Tegelverf", slug: "tegelverf" },
+      { title: "Spuitverf", slug: "spuitverf" },
+    ],
+  },
+];
+
+/**
  * Top-level navigation categories. "Verf" is dominant per KLUSR positioning.
  */
 export const categories: Category[] = [
@@ -16,15 +96,8 @@ export const categories: Category[] = [
     seoDescription:
       "Koop professionele verf bij KLUSR. Binnenverf, buitenverf, lak, beits en primer. Op kleur gemengd, voor 16:00 besteld morgen in huis.",
     paint: true,
-    subCategories: [
-      { title: "Binnenverf", slug: "binnenverf" },
-      { title: "Buitenverf", slug: "buitenverf" },
-      { title: "Lak", slug: "lak" },
-      { title: "Beits", slug: "beits" },
-      { title: "Primer & grondverf", slug: "primer" },
-      { title: "Kleurstalen", slug: "kleurstalen" },
-      { title: "Verf op kleur gemengd", slug: "verf-op-kleur" },
-    ],
+    subGroups: verfSubGroups,
+    subCategories: verfSubGroups.flatMap((g) => g.subCategories),
   },
   {
     id: "afbouw-fijnbouw",

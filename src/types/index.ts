@@ -95,6 +95,8 @@ export interface Category {
   seoTitle: string;
   seoDescription: string;
   subCategories?: { title: string; slug: string }[];
+  /** Optionele groepering van subcategorieën voor het mega-menu (SEO-structuur). */
+  subGroups?: { title: string; slug: string; subCategories: { title: string; slug: string }[] }[];
   /** Whether products in this category are paint (enables colour picker). */
   paint?: boolean;
 }

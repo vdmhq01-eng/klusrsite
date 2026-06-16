@@ -12,6 +12,7 @@ import {
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
+import { getVerfLeafContent } from "@/lib/data/verf-content";
 
 interface SubPageProps {
   params: { slug: string; sub: string };
@@ -56,6 +57,7 @@ export default function SubCategoryPage({ params }: SubPageProps) {
   const subProducts = getProductsBySubCategory(subCategory.slug);
   const usesFallback = subProducts.length === 0;
   const products = usesFallback ? getProductsByCategory(category.slug) : subProducts;
+  const seo = getVerfLeafContent(subCategory.slug);
 
   const breadcrumbItems = [
     { label: category.title, href: `/categorie/${category.slug}` },
@@ -82,8 +84,8 @@ export default function SubCategoryPage({ params }: SubPageProps) {
           {subCategory.title}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          {subCategory.title} van topmerken bij KLUSR — met deskundig advies en
-          voor 16:00 besteld morgen in huis.
+          {seo?.intro ??
+            `${subCategory.title} van topmerken bij KLUSR — met deskundig advies en voor 16:00 besteld morgen in huis.`}
         </p>
       </section>
 
@@ -115,6 +117,59 @@ export default function SubCategoryPage({ params }: SubPageProps) {
         products={products}
         listName={usesFallback ? category.title : subCategory.title}
       />
+
+      {/* SEO-landingscontent (alleen voor verf-leaves met content) */}
+      {seo && (
+        <section className="container-klusr">
+          <div className="mx-auto max-w-3xl border-t border-border pt-8">
+            <div className="flex flex-col gap-6">
+              {seo.sections.map((s) => (
+                <div key={s.heading}>
+                  <h2 className="text-lg font-bold tracking-tight sm:text-xl">{s.heading}</h2>
+                  {s.paragraphs.map((p, i) => (
+                    <p key={i} className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              ))}
+
+              {seo.faq.length > 0 && (
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight sm:text-xl">
+                    Veelgestelde vragen over {subCategory.title.toLowerCase()}
+                  </h2>
+                  <dl className="mt-3 flex flex-col gap-4">
+                    {seo.faq.map((f) => (
+                      <div key={f.q}>
+                        <dt className="text-sm font-semibold">{f.q}</dt>
+                        <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.a}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* FAQ structured data */}
+          <script
+            type="application/ld+json"
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: seo.faq.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }),
+            }}
+          />
+        </section>
+      )}
     </div>
   );
 }

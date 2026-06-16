@@ -87,21 +87,73 @@ function mapCategory(productType = "") {
 }
 
 function mapVerfSub(title, productType) {
-  const t = (title || "").toLowerCase();
-  if (/\bbeits\b/.test(t)) return "beits";
-  if (/\b(lijnolie|vloerolie|houtolie|teakolie|onderhoudsolie|hardwaxolie|olie)\b/.test(t))
-    return "houtolie";
-  if (/\b(primer|grondverf|grondlaag|voorstrijk|grond)\b/.test(t)) return "primer";
-  if (/\b(lak|trapverf|aqua|hoogglans|zijdeglans|zijdemat)\b/.test(t)) return "lak";
-  if (/\b(buiten|gevel|exterior)\b/.test(t)) return "buitenverf";
-  if (/\b(muur|latex|binnen|interior|saus)\b/.test(t)) return "binnenverf";
-  // Val terug op de diepere product_type-segmenten.
-  const deep = productType.split(">").slice(2).join(" ").toLowerCase();
-  if (deep.includes("beits")) return "beits";
-  if (deep.includes("primer") || deep.includes("grond")) return "primer";
-  if (deep.includes("lak")) return "lak";
-  if (deep.includes("buiten")) return "buitenverf";
-  return "binnenverf";
+  const t = `${title || ""} ${productType || ""}`.toLowerCase();
+  const has = (...words) => words.some((w) => t.includes(w));
+
+  // --- Speciale verf (zeer specifiek → eerst) ---
+  if (has("magneet")) return "magneetverf";
+  if (has("schoolbord", "krijtbord")) return "schoolbordverf";
+  if (has("radiator")) return "radiatorverf";
+  if (has("hittebestendig", "hittebest", "kachellak", "uitlaat")) return "hittebestendige-verf";
+  if (has("tegelverf", "tegellak") || (has("tegel") && has("verf"))) return "tegelverf";
+  if (has("spuitbus", "spuitverf", "spuitlak", "sprayverf", "spray", "aerosol")) return "spuitverf";
+
+  // --- Beton- & vloerverf ---
+  if (has("2-comp", "2 comp", "twee comp", "2k ", "epoxy", "vloercoating")) return "vloercoating-2k";
+  if (has("garage")) return "garageverf";
+  if (has("beton")) return "betonverf";
+
+  // --- Beits & olie ---
+  if (has("beits")) {
+    if (has("dekkend")) return "dekkende-beits";
+    return "transparante-beits";
+  }
+  if (has("houtolie", "teakolie", "hardwaxolie", "vloerolie", "onderhoudsolie", "lijnolie", "decking"))
+    return "transparante-beits";
+
+  // --- Voorstrijk & grondering (vóór primer/grond) ---
+  if (has("fixeer")) return "fixeergrond";
+  if (has("diepgrond", "diepprimer", "dieptegrond")) return "diepgrond";
+  if (has("voorstrijk")) return "voorstrijk";
+
+  // --- Grondverf & primers ---
+  if (has("primer", "grondverf", "grondlak", "grondlaag", "hechtgrond", "roestwerend", "grond ")) {
+    if (has("metaal", "metal", "roest", "ijzer", "staal", "zink")) return "grondverf-metaal";
+    if (has("isoleer", "isolerend", "vlekken", "nicotine", "anti-vlek", "aanslag")) return "isolerende-primer";
+    if (has("hecht")) return "hechtprimer";
+    if (has("hout", "mdf")) return "grondverf-hout";
+    return "multiprimer";
+  }
+
+  // --- Muurverf (vóór lak; "buiten" overlapt met lak) ---
+  if (has("plafond")) return "plafondverf";
+  if (has("muurverf", "muur", "latex", "sausverf", "saus", "wandverf", "muurlatex")) {
+    if (has("schrobvast", "reinigbaar", "afwasbaar", "wasbaar")) return "schrobvaste-verf";
+    if (has("buiten", "gevel", "exterior")) return "buitenmuurverf";
+    return "binnenmuurverf";
+  }
+  if (has("gevelverf", "gevel")) return "buitenmuurverf";
+  if (has("schrobvast", "reinigbaar")) return "schrobvaste-verf";
+
+  // --- Lakken ---
+  if (has("traplak")) return "traplak";
+  if (has("trapverf")) return "trapverf";
+  if (has("meubellak", "meubel")) return "meubellak";
+  if (has("deur", "kozijn")) return "deur-kozijnlak";
+  if (has("lak", "aqua", "hoogglans", "zijdeglans", "zijdemat", "halfmat", "grondlak", "watergedragen lak")) {
+    if (has("buiten", "exterior")) return "buitenlak";
+    return "binnenlak";
+  }
+
+  // --- Vloer/trap (na lak) ---
+  if (has("vloer")) return "vloerverf";
+  if (has("trap")) return "trapverf";
+
+  // --- Buiten/binnen fallback ---
+  const deep = (productType || "").split(">").slice(2).join(" ").toLowerCase();
+  if (deep.includes("lak")) return "binnenlak";
+  if (has("buiten", "gevel", "exterior")) return "buitenmuurverf";
+  return "binnenmuurverf";
 }
 
 // Onderhouds-/smeermiddelen die de feed soms onder verf zet — horen bij gereedschap.

@@ -194,8 +194,8 @@ export const articles: Article[] = [
       "Tip: veel grondverf kun je laten inkleuren richting je eindkleur. Schilder je donker, dan dekt je eindlaag dan sneller en bespaar je een laag.",
     ],
     relatedLinks: [
-      { label: "Primer & grondverf", href: "/categorie/verf/primer" },
-      { label: "Lak voor hout & metaal", href: "/categorie/verf/lak" },
+      { label: "Primer & grondverf", href: "/categorie/verf/multiprimer" },
+      { label: "Lak voor hout & metaal", href: "/categorie/verf/binnenlak" },
       { label: "Stappenplan: kozijn schilderen", href: "/klushulp/kozijn-schilderen" },
     ],
     faq: [
@@ -232,7 +232,7 @@ export const articles: Article[] = [
     ],
     relatedLinks: [
       { label: "Schimmelwerende muurverf", href: "/categorie/verf/binnenverf" },
-      { label: "Lak voor kozijnen", href: "/categorie/verf/lak" },
+      { label: "Lak voor kozijnen", href: "/categorie/verf/binnenlak" },
       { label: "Kleur kiezen", href: "/kleurkiezer" },
     ],
   },
@@ -256,7 +256,7 @@ export const articles: Article[] = [
     ],
     relatedLinks: [
       { label: "Buitenverf", href: "/categorie/verf/buitenverf" },
-      { label: "Beits & houtbescherming", href: "/categorie/verf/beits" },
+      { label: "Beits & houtbescherming", href: "/categorie/verf/transparante-beits" },
       { label: "Stappenplan: beitsen", href: "/klushulp/beitsen" },
     ],
   },
@@ -282,7 +282,7 @@ export const articles: Article[] = [
       "Stap 7 — Naverzorgen: Laat elke laag goed drogen en schuur licht tussen de lagen voor de strakste afwerking.",
     ],
     relatedLinks: [
-      { label: "Lakverf voor kozijnen", href: "/categorie/verf/lak" },
+      { label: "Lakverf voor kozijnen", href: "/categorie/verf/binnenlak" },
       { label: "Schildersgereedschap", href: "/categorie/gereedschap" },
       { label: "Stappenplan: kozijn schilderen", href: "/klushulp/kozijn-schilderen" },
     ],
@@ -333,7 +333,7 @@ export const articles: Article[] = [
     ],
     relatedLinks: [
       { label: "Schuurmateriaal", href: "/categorie/gereedschap" },
-      { label: "Lak & grondverf", href: "/categorie/verf/lak" },
+      { label: "Lak & grondverf", href: "/categorie/verf/binnenlak" },
     ],
     faq: [
       {
