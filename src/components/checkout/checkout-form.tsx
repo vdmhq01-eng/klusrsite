@@ -75,6 +75,7 @@ export function CheckoutForm({
   const { items, kluspasActive } = useCart();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
+  const setMode = usePricingMode((s) => s.setMode);
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
   // Geen voorgekozen methode — de klant kiest bewust zelf.
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -309,6 +310,25 @@ export function CheckoutForm({
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left: details */}
         <div className="space-y-6">
+          {/* Particulier of zakelijk bestellen */}
+          <div className="flex rounded-xl border border-border bg-secondary/40 p-1">
+            {(["particulier", "zakelijk"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  "flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                  mode === m
+                    ? "bg-card text-primary shadow-card"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m === "particulier" ? "Particulier" : "Zakelijk (excl. btw)"}
+              </button>
+            ))}
+          </div>
+
           <div className="rounded-xl border border-border bg-secondary/40 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2.5">
