@@ -25,7 +25,10 @@ import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import { baseStockByStore, paintBases } from "@/lib/paint-bases";
+import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
+
+/** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
+const WHITE_COLOR = { name: "100% wit", code: "RAL 9010", hex: "#FFFFFF", collection: "Wit" } as const;
 import { isLightColor } from "@/lib/data/colors";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
@@ -316,16 +319,33 @@ export function ProductBuybox({
             </span>
           </div>
 
-          <ColorPickerDialog
-            value={color}
-            onConfirm={setColor}
-            trigger={
-              <Button variant={color ? "outline" : "default"} className="w-full gap-2 sm:w-auto">
-                <Palette className="h-4 w-4" />
-                {color ? "Kleur wijzigen" : "Kies je kleur"}
-              </Button>
-            }
-          />
+          {(() => {
+            const isWhite =
+              color?.hex?.toUpperCase() === WHITE_COLOR.hex && color?.code === WHITE_COLOR.code;
+            return (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={isWhite ? "default" : "outline"}
+                  className="gap-2"
+                  onClick={() => setColor(withBase({ ...WHITE_COLOR }))}
+                >
+                  <span className="h-4 w-4 rounded-full border border-black/20 bg-white shadow-inner" />
+                  100% wit
+                </Button>
+                <ColorPickerDialog
+                  value={color}
+                  onConfirm={setColor}
+                  trigger={
+                    <Button variant="outline" className="gap-2">
+                      <Palette className="h-4 w-4" />
+                      {color && !isWhite ? "Kleur wijzigen" : "Kies je kleur"}
+                    </Button>
+                  }
+                />
+              </div>
+            );
+          })()}
 
           {color ? (
             <div className="overflow-hidden rounded-xl border border-border">
