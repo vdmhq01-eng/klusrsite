@@ -11,10 +11,14 @@ import type { Order } from "@/types";
  * voor de sandbox: https://api-sandbox.postnl.nl).
  */
 
-const API_KEY = process.env.POSTNL_API_KEY;
-const CUSTOMER_CODE = process.env.POSTNL_CUSTOMER_CODE;
-const CUSTOMER_NUMBER = process.env.POSTNL_CUSTOMER_NUMBER;
-const COLLECTION_LOCATION = process.env.POSTNL_COLLECTION_LOCATION || "000000";
+// Accepteer zowel de Engelse als de Nederlandse env-namen (zoals in Vercel gezet).
+const API_KEY = process.env.POSTNL_API_KEY || process.env.POSTNL_API;
+const CUSTOMER_CODE = process.env.POSTNL_CUSTOMER_CODE || process.env.POSTNL_KLANTCODE;
+const CUSTOMER_NUMBER = process.env.POSTNL_CUSTOMER_NUMBER || process.env.POSTNL_KLANTNUMMER;
+const COLLECTION_LOCATION =
+  process.env.POSTNL_COLLECTION_LOCATION || process.env.POSTNL_BLS || "000000";
+// Barcode-serie/range voor de Barcode-API (bv. "0000000-9999999").
+const BARCODE_SERIE = process.env.POSTNL_BARCODE_SERIE;
 const SENDER_NAME = process.env.POSTNL_SENDER_NAME || "KLUSR B.V.";
 const API_BASE = (process.env.POSTNL_API_BASE || "https://api.postnl.nl").replace(/\/$/, "");
 
@@ -54,10 +58,14 @@ function nowStamp(): string {
 
 async function generateBarcode(): Promise<string | null> {
   try {
-    const url =
-      `${API_BASE}/shipment/v1_1/barcode?CustomerCode=${encodeURIComponent(CUSTOMER_CODE!)}` +
-      `&CustomerNumber=${encodeURIComponent(CUSTOMER_NUMBER!)}&Type=3S`;
-    const res = await fetch(url, {
+    const params = new URLSearchParams({
+      CustomerCode: CUSTOMER_CODE!,
+      CustomerNumber: CUSTOMER_NUMBER!,
+      Type: "3S",
+      Range: CUSTOMER_CODE!,
+    });
+    if (BARCODE_SERIE) params.set("Serie", BARCODE_SERIE);
+    const res = await fetch(`${API_BASE}/shipment/v1_1/barcode?${params.toString()}`, {
       headers: { apikey: API_KEY!, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
     });
