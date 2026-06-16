@@ -20,6 +20,7 @@ const ARTICLE_KEYWORDS: Record<string, string> = {
   Gereedschap: "paintbrush,tools,workshop",
   Inspiratie: "interior,home,decor",
   Tuin: "fence,garden,wood",
+  Buiten: "house,facade,exterior",
   Elektra: "electrician,socket,wiring",
   Vloeren: "laminate,flooring,floor",
 };

@@ -42,6 +42,14 @@ const stappenplannen: Record<string, string[]> = {
     "Laat de laag volledig drogen volgens de aangegeven droogtijd.",
     "Breng een tweede dunne laag aan voor optimale bescherming en een mooie kleurdiepte.",
   ],
+  behangen: [
+    "Maak de muur schoon, vet- en stofvrij, verwijder oud behang en vul gaatjes en scheuren met muurvuller.",
+    "Schuur de wand glad en breng een voorstrijk- of primerlaag aan zodat de lijm goed hecht en gelijkmatig droogt.",
+    "Meet de muurhoogte op, tel een paar centimeter overlap boven en onder erbij en snijd de banen op maat — houd bij gedessineerd behang rekening met het rapport.",
+    "Breng behanglijm aan: op de muur bij vliesbehang, op de baan bij papierbehang (laat die dan kort inweken volgens de verpakking).",
+    "Hang de eerste baan loodrecht uit met een uitgepotlode lijn of waterpas en strijk hem met een behangkwast of -spatel glad van het midden naar de randen.",
+    "Sluit de naden stuitend aan, druk ze aan met een naadroller en duw luchtbellen naar buiten; werk hoeken, plinten en stopcontacten netjes af en laat alles tochtvrij drogen.",
+  ],
   "vloer-leggen": [
     "Laat het laminaat of PVC minimaal 48 uur acclimatiseren in de ruimte.",
     "Controleer of de ondervloer vlak, droog en schoon is en vlak deze zo nodig uit.",
@@ -83,6 +91,11 @@ const chatSuggestionsByTask: Record<string, string[]> = {
     "Transparante of dekkende beits — wat kies ik?",
     "Hoeveel lagen beits heb ik nodig?",
     "Kan ik beitsen bij vochtig weer?",
+  ],
+  behangen: [
+    "Vliesbehang of papierbehang — wat kies ik?",
+    "Hoeveel rollen behang heb ik nodig?",
+    "Hoe voorkom ik luchtbellen en open naden?",
   ],
   "vloer-leggen": [
     "Welke ondervloer past bij mijn situatie?",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LayoutDashboard, ShieldAlert } from "lucide-react";
 import { AiContentManager } from "@/components/admin/ai-content-manager";
+import { ChannableTestOrder } from "@/components/admin/channable-test-order";
 
 export const metadata: Metadata = {
   title: "AI Contentbeheer",
@@ -36,6 +37,11 @@ export default function AdminPage() {
         {/* Manager */}
         <div className="mt-8">
           <AiContentManager />
+        </div>
+
+        {/* Channable koppeling — testorder versturen */}
+        <div className="mt-8">
+          <ChannableTestOrder />
         </div>
       </div>
     </div>

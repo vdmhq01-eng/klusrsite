@@ -163,6 +163,10 @@ export interface Article {
   date: string;
   author: string;
   body: string[];
+  /** Interne links naar relevante producten/categorieën — SEO-interlinking + conversie. */
+  relatedLinks?: { label: string; href: string }[];
+  /** Veelgestelde vragen — rendert op de pagina én levert FAQPage structured data. */
+  faq?: { question: string; answer: string }[];
 }
 
 export type OrderStatus =

@@ -31,6 +31,14 @@ export const klushulpTasks: KlushulpTask[] = [
     relatedCategories: ["verf", "tuin"],
   },
   {
+    id: "behangen",
+    title: "Behangen",
+    slug: "behangen",
+    icon: "Layers",
+    description: "Strak behang aanbrengen — van voorstrijken tot naadloos afwerken.",
+    relatedCategories: ["afbouw-fijnbouw", "gereedschap", "verf"],
+  },
+  {
     id: "vloer-leggen",
     title: "Vloer leggen",
     slug: "vloer-leggen",

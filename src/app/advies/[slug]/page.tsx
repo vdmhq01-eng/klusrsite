@@ -3,7 +3,7 @@ import { TopicImage } from "@/components/shared/topic-image";
 import { articleKeywords } from "@/lib/topic-images";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Clock, User } from "lucide-react";
+import { ArrowRight, ChevronRight, Clock, User } from "lucide-react";
 import { articles, getArticle, getRelatedArticles } from "@/lib/data";
 import { ArticleCard } from "@/components/content/article-card";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
@@ -66,8 +66,27 @@ export default function ArticlePage({ params }: ArticlePageProps) {
     },
   };
 
+  const faqJsonLd =
+    article.faq && article.faq.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: article.faq.map((f) => ({
+            "@type": "Question",
+            name: f.question,
+            acceptedAnswer: { "@type": "Answer", text: f.answer },
+          })),
+        }
+      : null;
+
   return (
     <article className="py-8">
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -148,6 +167,48 @@ export default function ArticlePage({ params }: ArticlePageProps) {
             );
           })}
         </div>
+
+        {/* Interne links — direct naar de juiste producten/categorieën */}
+        {article.relatedLinks && article.relatedLinks.length > 0 && (
+          <aside className="mx-auto mt-10 max-w-2xl rounded-2xl border border-border bg-secondary/40 p-6">
+            <h2 className="text-lg font-extrabold tracking-tight">Direct aan de slag</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Alles wat je voor deze klus nodig hebt, vind je hier:
+            </p>
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {article.relatedLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="group flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {link.label}
+                    <ArrowRight className="h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+
+        {/* Veelgestelde vragen — rendert + FAQPage structured data */}
+        {article.faq && article.faq.length > 0 && (
+          <section className="mx-auto mt-12 max-w-2xl">
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+              Veelgestelde vragen
+            </h2>
+            <dl className="mt-5 divide-y divide-border border-y border-border">
+              {article.faq.map((f, i) => (
+                <div key={i} className="py-4">
+                  <dt className="font-bold text-foreground">{f.question}</dt>
+                  <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {f.answer}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
       </div>
 
       {/* Related articles */}

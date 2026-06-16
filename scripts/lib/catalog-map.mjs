@@ -62,6 +62,9 @@ function mapCategory(productType = "") {
   const segs = productType.split(">").map((s) => s.trim());
   const top = (segs[1] || segs[0] || "").toLowerCase();
   const full = productType.toLowerCase();
+  // Aanhangwagen-/auto-onderdelen (neuswielen, disselsloten, bagagespin) horen
+  // niet in een verf-/klusshop.
+  if (full.includes("aanhangw") || full.includes("neuswiel")) return null;
   if (top.includes("ijzerwaren")) return "ijzerwaren";
   if (top.startsWith("verf") && top.includes("benodigd")) return "gereedschap";
   if (top.startsWith("verf") || top.includes("beits")) return "verf";
@@ -119,17 +122,63 @@ function subCategoryFor(category, title, productType) {
 const cleanTitle = (t = "") => t.replace(/\s+/g, " ").trim();
 
 /**
+ * Verwijder feed-template-ruis uit titels: sterren-ratings ("5*") en alles na
+ * de eerste pipe ("… 5* | 20 | FSC Houten Steel 20" → "…"). De maat-/attribuut-
+ * tokens achter de pipe zitten al in de variant-labels.
+ */
+function stripTemplateNoise(title = "") {
+  let s = title.replace(/\s*\d\s*[\*★]/g, " ");
+  const pipe = s.indexOf("|");
+  if (pipe > 0) s = s.slice(0, pipe);
+  return s.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Collapse een leidende merk-echo: "DEN BRAVEN Den Braven Zwaluw" → "Den Braven
+ * Zwaluw", "St. marc St Marc Verfreiniger" → "St Marc Verfreiniger". Het merk
+ * staat al apart bij het product.
+ */
+function dropBrandEcho(title = "", brand = "") {
+  if (!brand || brand === "Onbekend") return title;
+  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const bn = norm(brand);
+  if (!bn) return title;
+  const words = title.split(/\s+/);
+  for (let k = Math.min(3, words.length - 1); k >= 1; k--) {
+    if (norm(words.slice(0, k).join("")) !== bn) continue;
+    for (let j = 1; j <= 3 && k + j <= words.length; j++) {
+      if (norm(words.slice(k, k + j).join("")) === bn) return words.slice(k).join(" ");
+    }
+  }
+  return title;
+}
+
+/**
  * Productnaam zonder maat-/aantal-tokens (case-behoudend), voor gegroepeerde
  * producten. Losse model-/voltage-nummers (bv. "18V-55") blijven staan.
  */
 function cleanProductTitle(title = "") {
   return cleanTitle(
-    title
-      .replace(/\b\d+([.,]\d+)?\s*[xX×]\s*\d+([.,]\d+)?(\/\d+)?\s*(mm|cm|m)?\b/gi, " ")
+    stripTemplateNoise(title)
+      .replace(/\b\d+([.,]\d+)?\s*(mm|cm|m)?\s*[xX×]\s*\d+([.,]\d+)?(\/\d+)?\s*(mm|cm|m)?\b/gi, " ")
       .replace(/Ø\s*\d+([.,]\d+)?\s*(mm|cm)?/gi, " ")
-      .replace(/\b\d+([.,]\d+)?\s*(ml|cl|l|liter|kg|gr|gram|mm|cm)\b/gi, " ")
+      .replace(/\b\d+([.,]\d+)?\s*(ml|cl|l|liter|kg|gr|gram|mm|cm|watt)\b/gi, " ")
       .replace(/\b\d+\s*-?\s*(delig|stuks?|stk?|pcs|pack)\b/gi, " "),
   );
+}
+
+/**
+ * Laatste cosmetische opschoning voor de getoonde titel (NIET voor de
+ * groepssleutel, zodat verschillende dessins/codes aparte producten blijven):
+ * verwijder losse maat-"x" en achterliggende artikelcodes.
+ */
+function tidyDisplayTitle(title = "") {
+  return title
+    .replace(/\s+[xX×]\s+/g, " ")
+    .replace(/\s+[xX×]\s*$/g, "")
+    .replace(/(\s+\b\d{2,6}(?:[-/]\d+)?\b)+\s*$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Finish-woorden waarna in verf-titels alleen nog kleur/code/basis volgt.
@@ -527,7 +576,7 @@ function groupKey(item) {
   // Niet-verf: groepeer op merk + schone (zichtbare) titel, zodat producten met
   // dezelfde titel en alleen een andere inhoud samenvallen tot één product —
   // ook als de feed ze onder een iets andere product_type plaatst.
-  const base = normTitleKey(dedupeWords(cleanProductTitle(item.title)));
+  const base = normTitleKey(dedupeWords(cleanProductTitle(dropBrandEcho(item.title, item.brand))));
   if (!base) return `${item.brand}|${item.groupId || item.id}`;
   return `${(item.brand || "?").toLowerCase()}|${base}`;
 }
@@ -649,9 +698,11 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const hasDesc = desc.length > 120;
     const subCategory = subOverride ?? subCategoryFor(category, title, lead.productType);
     const displayTitle =
-      category === "verf"
-        ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
-        : dedupeWords(cleanProductTitle(lead.title)) || title;
+      tidyDisplayTitle(
+        category === "verf"
+          ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
+          : dedupeWords(cleanProductTitle(dropBrandEcho(lead.title, lead.brand))) || title,
+      ) || title;
 
     // Rijke productattributen uit de feature-feed (per lead-SKU) + mengvlag (over
     // de hele groep, want die staat vaak alleen op de gekleurde basissen).

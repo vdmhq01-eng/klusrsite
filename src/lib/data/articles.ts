@@ -107,6 +107,270 @@ export const articles: Article[] = [
       "Leg altijd een geschikte ondervloer; die dempt geluid, egaliseert kleine oneffenheden en werkt vochtwerend.",
       "Leg de planken in de lengterichting van de lichtinval voor het mooiste beeld. Houd langs alle muren een dilatatievoeg van circa 10 mm aan, die je later wegwerkt met plinten.",
     ],
+    relatedLinks: [
+      { label: "Vloeren & ondervloer", href: "/categorie/vloeren-raam" },
+      { label: "Meetgereedschap", href: "/categorie/gereedschap" },
+    ],
+  },
+  {
+    id: "hoeveel-verf-nodig",
+    title: "Hoeveel verf heb ik nodig? Zo bereken je het per m²",
+    slug: "hoeveel-verf-nodig-berekenen",
+    excerpt:
+      "Te weinig verf betekent een extra rit, te veel is zonde van je geld. Met deze simpele rekenregel bepaal je precies hoeveel liter je nodig hebt.",
+    image: "https://picsum.photos/seed/klusr-art-rekenen/1200/675",
+    category: "Verven",
+    readingTime: 5,
+    date: "2026-06-10",
+    author: "Team KLUSR",
+    body: [
+      "De hoeveelheid verf die je nodig hebt hangt af van twee dingen: het aantal vierkante meters en het rendement van de verf. Het rendement staat altijd op het blik en ligt voor muurverf meestal tussen de 8 en 12 m² per liter per laag.",
+      "Stap 1 — Meet het oppervlak: Vermenigvuldig de lengte van elke muur met de hoogte en tel alles bij elkaar op. Voor een gemiddelde kamer van 4 bij 5 meter met een plafondhoogte van 2,6 meter kom je op zo'n 47 m² muur.",
+      "Stap 2 — Trek ramen en deuren af: Haal de oppervlakte van grote deuren en ramen eraf. Bij kleine ramen kun je dit overslaan — een beetje reserve is nooit verkeerd.",
+      "Stap 3 — Deel door het rendement: Deel de vierkante meters door het rendement. 47 m² gedeeld door 10 m² per liter is ongeveer 4,7 liter per laag.",
+      "Stap 4 — Reken twee lagen: Voor een egaal, dekkend resultaat reken je vrijwel altijd twee lagen. In dit voorbeeld heb je dus circa 9 à 10 liter nodig.",
+      "Houd rekening met de ondergrond. Een ruwe, zuigende of felgekleurde muur vraagt meer verf — soms een extra laag of een primer vooraf. Bij een sterk kleurverschil (bijvoorbeeld wit over donkerblauw) bespaart een grondlaag je verf én moeite.",
+      "Twijfel je nog? Vraag het in de winkel: onze ex-schilders rekenen het zo voor je uit en mengen je kleur direct op maat.",
+    ],
+    relatedLinks: [
+      { label: "Bekijk alle muurverf", href: "/categorie/verf/binnenverf" },
+      { label: "Verf op kleur laten mengen", href: "/mengverf" },
+      { label: "Stappenplan: muur verven", href: "/klushulp/muur-verven" },
+    ],
+    faq: [
+      {
+        question: "Hoeveel m² doe je met 1 liter muurverf?",
+        answer:
+          "Gemiddeld 8 tot 12 m² per liter per laag. Het exacte rendement staat op het blik en hangt af van de ondergrond en de kleur.",
+      },
+      {
+        question: "Hoeveel verf voor een gemiddelde kamer?",
+        answer:
+          "Voor een kamer van circa 20 m² vloeroppervlak reken je voor de muren in twee lagen ongeveer 9 à 10 liter muurverf.",
+      },
+    ],
+  },
+  {
+    id: "latex-muurverf-sausverf-verschil",
+    title: "Latex, muurverf of sausverf: wat is het verschil?",
+    slug: "latex-muurverf-sausverf-verschil",
+    excerpt:
+      "Latex, muurverf, sausverf, mat of zijdeglans — de schappen staan er vol mee. We leggen helder uit welke je wanneer kiest.",
+    image: "https://picsum.photos/seed/klusr-art-latex/1200/675",
+    category: "Verven",
+    readingTime: 5,
+    date: "2026-06-02",
+    author: "Team KLUSR",
+    body: [
+      "‘Latex' en ‘muurverf' worden vaak door elkaar gebruikt en bedoelen meestal hetzelfde: een watergedragen verf voor binnenmuren en plafonds. Het woord latex slaat op het bindmiddel, niet op rubber. Sausverf is een dunnere, goedkopere variant die je vooral op plafonds en in mindere afwerkingen gebruikt.",
+      "Het belangrijkste verschil zit in de glansgraad en de reinigbaarheid. Matte muurverf verbergt oneffenheden het best en geeft een rustige, krijtige uitstraling — ideaal voor woonkamers en slaapkamers.",
+      "Zijdeglans en zijdemat zijn beter afwasbaar en vlekbestendiger. Daarom kies je die voor keuken, hal, trappenhuis en kinderkamers, waar muren vaker te lijden hebben.",
+      "Voor vochtige ruimtes zoals de badkamer bestaat speciale schimmelwerende muurverf die bestand is tegen condens. Gebruik daar geen gewone matte muurverf — die neemt vocht op en laat sneller los.",
+      "Let ook op het bindmiddel onder de motorkap. Acrylaat (watergedragen) is geurarm, droogt snel en je reinigt je gereedschap met water. Voor zwaarbelaste oppervlakken bestaat er muurverf met extra schrobvastheid (klasse 1).",
+      "Kort samengevat: voor de meeste binnenmuren pak je een goede matte of zijdematte muurverf op acrylbasis. In vochtige of intensief gebruikte ruimtes kies je een afwasbare of schimmelwerende variant.",
+    ],
+    relatedLinks: [
+      { label: "Binnenverf & muurverf", href: "/categorie/verf/binnenverf" },
+      { label: "Alle verf", href: "/categorie/verf" },
+      { label: "Hulp bij kleur kiezen", href: "/kleurkiezer" },
+    ],
+  },
+  {
+    id: "primer-of-grondverf-nodig",
+    title: "Primer of grondverf: wanneer heb je het écht nodig?",
+    slug: "primer-of-grondverf-wanneer-nodig",
+    excerpt:
+      "Een grondlaag kost tijd, maar bespaart je vaak een hoop ellende. Zo weet je wanneer primer verstandig is — en wanneer je het overslaat.",
+    image: "https://picsum.photos/seed/klusr-art-primer/1200/675",
+    category: "Verven",
+    readingTime: 4,
+    date: "2026-05-26",
+    author: "Team KLUSR",
+    body: [
+      "Primer en grondverf doen hetzelfde werk: ze zorgen voor hechting en een gelijkmatige ondergrond, zodat je eindlaag mooi egaal dekt en lang blijft zitten. Het verschil zit vooral in de toepassing — voor hout, metaal of muren bestaan aparte primers.",
+      "Je hebt een grondlaag nodig op een nieuwe of kale ondergrond (kaal hout, gips, beton), op een sterk zuigende muur, bij een groot kleurverschil, en op gladde of moeilijk hechtende oppervlakken zoals tegels, kunststof of glanzend lakwerk.",
+      "Je kunt primer overslaan als je een eerder geschilderde, goed hechtende muur in een vergelijkbare kleur overschildert. Dan volstaan twee lagen muur- of lakverf prima.",
+      "Op kaal hout voorkomt een primer dat de verf wegtrekt in de nerven en dat noesten doorslaan. Voor buitenwerk is een goede grondlaag geen luxe maar noodzaak — die bepaalt voor een groot deel hoe lang je schilderwerk meegaat.",
+      "Tip: veel grondverf kun je laten inkleuren richting je eindkleur. Schilder je donker, dan dekt je eindlaag dan sneller en bespaar je een laag.",
+    ],
+    relatedLinks: [
+      { label: "Primer & grondverf", href: "/categorie/verf/primer" },
+      { label: "Lak voor hout & metaal", href: "/categorie/verf/lak" },
+      { label: "Stappenplan: kozijn schilderen", href: "/klushulp/kozijn-schilderen" },
+    ],
+    faq: [
+      {
+        question: "Is primer hetzelfde als grondverf?",
+        answer:
+          "In de praktijk wel: beide zorgen voor hechting en een gelijkmatige ondergrond. ‘Primer' is de internationale term, ‘grondverf' de Nederlandse.",
+      },
+      {
+        question: "Moet ik altijd gronden voor het schilderen?",
+        answer:
+          "Nee. Op een kale, zuigende of gladde ondergrond of bij een groot kleurverschil wel. Een goed hechtende, eerder geschilderde muur in dezelfde kleurfamilie kun je zonder grondlaag overschilderen.",
+      },
+    ],
+  },
+  {
+    id: "badkamer-schilderen-schimmelwerend",
+    title: "Badkamer schilderen: schimmelwerend en vochtbestendig",
+    slug: "badkamer-schilderen-schimmelwerend",
+    excerpt:
+      "Condens, stoom en spatwater vragen om de juiste verf. Zo schilder je een badkamer die jarenlang strak en schimmelvrij blijft.",
+    image: "https://picsum.photos/seed/klusr-art-badkamer/1200/675",
+    category: "Verven",
+    readingTime: 5,
+    date: "2026-05-18",
+    author: "Team KLUSR",
+    body: [
+      "Een badkamer is de zwaarste ruimte van je huis voor verf. Door de constante wisseling van vocht en warmte krijgt gewone muurverf het zwaar: hij neemt vocht op, gaat bollen en schimmelt. Kies daarom altijd een speciaal voor vochtige ruimtes ontwikkelde, schimmelwerende muurverf.",
+      "Stap 1 — Behandel bestaande schimmel: Verwijder schimmelplekken eerst met een schimmelreiniger en laat de muur goed drogen. Schilderen over actieve schimmel heeft geen zin.",
+      "Stap 2 — Zorg voor een droge, schone ondergrond: Maak de muur vet- en stofvrij. Repareer beschadigingen en grond zuigende of gerepareerde plekken voor.",
+      "Stap 3 — Kies de juiste verf: Gebruik een vochtbestendige, schimmelwerende muurverf. Voor het houtwerk en kozijnen in de badkamer pak je een goed dekkende lak die tegen vocht kan.",
+      "Stap 4 — Ventileer tijdens en na het schilderen: Zet een raam open of laat de mechanische ventilatie draaien, zodat de verf goed uithardt en het vocht weg kan.",
+      "De beste verf helpt alleen als de ruimte goed geventileerd is. Een afzuiging of een raampje dat na het douchen even openstaat, doet meer tegen schimmel dan welk product dan ook.",
+    ],
+    relatedLinks: [
+      { label: "Schimmelwerende muurverf", href: "/categorie/verf/binnenverf" },
+      { label: "Lak voor kozijnen", href: "/categorie/verf/lak" },
+      { label: "Kleur kiezen", href: "/kleurkiezer" },
+    ],
+  },
+  {
+    id: "buiten-schilderen-temperatuur-seizoen",
+    title: "Buiten schilderen: het beste seizoen en de juiste temperatuur",
+    slug: "buiten-schilderen-temperatuur-seizoen",
+    excerpt:
+      "Te koud, te nat of te veel zon en je schilderwerk gaat het niet houden. Dit zijn de ideale omstandigheden voor buitenschilderwerk.",
+    image: "https://picsum.photos/seed/klusr-art-buiten/1200/675",
+    category: "Buiten",
+    readingTime: 5,
+    date: "2026-05-08",
+    author: "Team KLUSR",
+    body: [
+      "Buiten schilderen draait om timing. De meeste buitenverven en beitsen verwerk je het best tussen 10 en 25 °C, bij een luchtvochtigheid onder de 80%. Onder de 8 °C droogt en hecht de verf slecht; boven de 28 °C of in de volle zon droogt hij juist te snel en krijg je aanzetten.",
+      "Het ideale seizoen in Nederland is daarom het late voorjaar en de vroege herfst. De zomer kan ook, mits je in de schaduw werkt en niet op de heetste uren van de dag.",
+      "Let op de ondergrond, niet alleen op de lucht. Hout moet droog zijn (vochtgehalte onder de 15%) en de ondergrond mag geen ochtenddauw meer bevatten. Begin daarom niet te vroeg op de dag en stop ruim voor het avondvocht neerslaat.",
+      "Controleer de weersverwachting voor de komende 24 tot 48 uur. Regen kort na het schilderen spoelt verse verf weg en veroorzaakt vlekken. Reken voor watergedragen verf op enkele uren regenvrij, voor terpentinebasis langer.",
+      "Bereid het houtwerk goed voor: schuren, stof verwijderen, kale plekken gronden en kieren dichten. Voor tuinhout en schuttingen kies je een beits die diep intrekt en het hout beschermt tegen UV en vocht.",
+    ],
+    relatedLinks: [
+      { label: "Buitenverf", href: "/categorie/verf/buitenverf" },
+      { label: "Beits & houtbescherming", href: "/categorie/verf/beits" },
+      { label: "Stappenplan: beitsen", href: "/klushulp/beitsen" },
+    ],
+  },
+  {
+    id: "kozijnen-schilderen-stappenplan",
+    title: "Kozijnen schilderen in 7 stappen voor een strak resultaat",
+    slug: "kozijnen-schilderen-stappenplan",
+    excerpt:
+      "Strakke, glanzende kozijnen zonder druipers of kwaststrepen? Met de juiste voorbereiding en lak lukt het ook jou.",
+    image: "https://picsum.photos/seed/klusr-art-kozijn/1200/675",
+    category: "Verven",
+    readingTime: 6,
+    date: "2026-04-20",
+    author: "Team KLUSR",
+    body: [
+      "Lakwerk is genadeloos: elke oneffenheid en elke kwaststreek blijft zichtbaar. Het goede nieuws is dat het resultaat vooral van de voorbereiding afhangt, niet van een vaste hand.",
+      "Stap 1 — Schuren: Schuur het oude lakwerk mat met fijn schuurpapier (korrel 180-240). Zo hecht de nieuwe laag goed.",
+      "Stap 2 — Reinigen: Neem het stof af en ontvet het kozijn. Een schone ondergrond is de helft van het werk.",
+      "Stap 3 — Repareren: Vul beschadigingen en gaatjes met houtvuller, laat drogen en schuur glad.",
+      "Stap 4 — Gronden: Grond kale plekken en houtvuller met een geschikte primer, anders slaan ze dof weg in je eindlaag.",
+      "Stap 5 — Afplakken: Plak het glas en de muur af met goede afplaktape. Trek de tape weg als de verf nog niet volledig is uitgehard.",
+      "Stap 6 — Lakken: Breng de lak dun en gelijkmatig aan, in de lengterichting van het hout. Liever twee dunne lagen dan één dikke — dik aangebrachte lak gaat druipen.",
+      "Stap 7 — Naverzorgen: Laat elke laag goed drogen en schuur licht tussen de lagen voor de strakste afwerking.",
+    ],
+    relatedLinks: [
+      { label: "Lakverf voor kozijnen", href: "/categorie/verf/lak" },
+      { label: "Schildersgereedschap", href: "/categorie/gereedschap" },
+      { label: "Stappenplan: kozijn schilderen", href: "/klushulp/kozijn-schilderen" },
+    ],
+  },
+  {
+    id: "behang-verwijderen-muur-voorbereiden",
+    title: "Behang verwijderen en je muur voorbereiden",
+    slug: "behang-verwijderen-muur-voorbereiden",
+    excerpt:
+      "Voordat er nieuw behang of verf op gaat, moet de muur kaal en glad zijn. Zo haal je oud behang er snel en netjes af.",
+    image: "https://picsum.photos/seed/klusr-art-behang/1200/675",
+    category: "Inspiratie",
+    readingTime: 4,
+    date: "2026-04-06",
+    author: "Team KLUSR",
+    body: [
+      "Nieuw behang of een mooie verflaag begint met een schone, gladde muur. Oud behang dat nog goed vastzit lijkt verleidelijk om over te schilderen, maar de naden en luchtbellen blijven zichtbaar — beter haal je het er eerst af.",
+      "Stap 1 — Inweken: Maak het behang nat met warm water en een scheutje afwasmiddel, of gebruik een behangafweker. Laat het enkele minuten intrekken.",
+      "Stap 2 — Afkrabben: Trek het behang van onder naar boven los en werk de restjes weg met een plamuurmes. Vliesbehang laat vaak in hele banen los.",
+      "Stap 3 — Lijmresten verwijderen: Was de muur na met schoon water om alle oude lijm te verwijderen. Lijmresten geven later hechtingsproblemen.",
+      "Stap 4 — Repareren en voorstrijken: Vul beschadigingen met muurvuller, schuur glad en breng een voorstrijk aan. Op een goed voorbereide muur hecht je nieuwe behang of verf perfect.",
+      "Klaar om te behangen? In ons stappenplan lees je precies hoe je strak en naadloos nieuw behang aanbrengt.",
+    ],
+    relatedLinks: [
+      { label: "Stappenplan: behangen", href: "/klushulp/behangen" },
+      { label: "Plamuur & muurvuller", href: "/categorie/afbouw-fijnbouw" },
+      { label: "Schuurmateriaal", href: "/categorie/gereedschap" },
+    ],
+  },
+  {
+    id: "schuurpapier-korrel-kiezen",
+    title: "Welke korrel schuurpapier voor welke klus?",
+    slug: "schuurpapier-korrel-kiezen",
+    excerpt:
+      "Grof, middel of fijn? De juiste korrel bespaart je tijd en geeft een gladder resultaat. Een handig overzicht per klus.",
+    image: "https://picsum.photos/seed/klusr-art-schuren/1200/675",
+    category: "Gereedschap",
+    readingTime: 4,
+    date: "2026-03-30",
+    author: "Team KLUSR",
+    body: [
+      "Het getal op schuurpapier is de korrel: hoe lager het getal, hoe grover het papier. Grof haalt snel materiaal weg, fijn maakt glad. De kunst is om met een grovere korrel te beginnen en in stappen naar fijner te werken.",
+      "Korrel 40-60 (grof) gebruik je voor zwaar werk: oude verf- of laklagen verwijderen en ruw hout afbramen.",
+      "Korrel 80-120 (middel) is je werkpaard voor het gladmaken van hout en het wegschuren van kleine oneffenheden voor de eerste laag.",
+      "Korrel 150-180 (fijn) pak je om een ondergrond schilderklaar te maken en om bestaand lakwerk mat te schuren zodat de nieuwe laag hecht.",
+      "Korrel 220-400 (extra fijn) is voor het licht tussenschuren van laklagen en voor een spiegelglad eindresultaat.",
+      "Schuur altijd met de houtnerf mee, niet ertegenin, en neem het stof tussendoor af. Stof tussen de lagen is de meest voorkomende oorzaak van een ruwe afwerking.",
+    ],
+    relatedLinks: [
+      { label: "Schuurmateriaal", href: "/categorie/gereedschap" },
+      { label: "Lak & grondverf", href: "/categorie/verf/lak" },
+    ],
+    faq: [
+      {
+        question: "Welke korrel om verf te verwijderen?",
+        answer:
+          "Begin met een grove korrel 40 tot 60. Werk daarna terug naar korrel 120 om de ondergrond glad en schilderklaar te maken.",
+      },
+      {
+        question: "Welke korrel om tussen laklagen te schuren?",
+        answer:
+          "Schuur licht tussen met een extra fijne korrel 220 tot 320. Zo hecht de volgende laklaag zonder dat je krassen ziet.",
+      },
+    ],
+  },
+  {
+    id: "mengverf-elke-kleur-laten-mengen",
+    title: "Mengverf: elke kleur op maat laten mengen",
+    slug: "mengverf-elke-kleur-laten-mengen",
+    excerpt:
+      "Een kleur uit een tijdschrift, een oude verfbon of die ene RAL-code — bij KLUSR mengen we het op de winkel precies na.",
+    image: "https://picsum.photos/seed/klusr-art-mengen/1200/675",
+    category: "Inspiratie",
+    readingTime: 4,
+    date: "2026-03-12",
+    author: "Team KLUSR",
+    body: [
+      "Mengverf is verf die de winkel op een mengmachine precies in jouw kleur aanmaakt. Je kiest de kleur, wij bepalen de juiste basis en het pigment en mengen het op de gram nauwkeurig. Zo krijg je vrijwel elke kleur, ook tinten die niet standaard op het schap staan.",
+      "Het werkt met een basisblik en kleurpasta. De ‘basis' (bijvoorbeeld een witte of transparante basis) bepaalt hoeveel pigment erin kan: lichte kleuren komen uit een witte basis, diepe en donkere kleuren uit een transparante. Daar hoef jij niets van te weten — de juiste basis kiezen wij voor je.",
+      "Je kunt een kleur op verschillende manieren aanleveren: een RAL- of NCS-code, een kleurstaal of stukje geverfd materiaal, of een kleur uit onze digitale kleurkiezer. We mengen dezelfde kleur later probleemloos bij, zolang je het recept of de bon bewaart.",
+      "Het grote voordeel is keuzevrijheid en een exacte match. Bijkleuren na een verhuizing of reparatie? Met het bewaarde recept maken we precies dezelfde kleur opnieuw aan.",
+      "Gebruik onze kleurkiezer om rustig thuis tinten te vergelijken, en laat je favoriet daarna in de gewenste verfsoort en glansgraad mengen.",
+    ],
+    relatedLinks: [
+      { label: "Verf op kleur laten mengen", href: "/mengverf" },
+      { label: "Open de kleurkiezer", href: "/kleurkiezer" },
+      { label: "Alle verf", href: "/categorie/verf" },
+    ],
   },
 ];
 
