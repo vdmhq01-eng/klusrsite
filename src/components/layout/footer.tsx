@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 import { Logo } from "./logo";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
-import { stores } from "@/lib/data/stores";
 import { navCategories } from "@/lib/data/categories";
 
 const serviceLinks = [
@@ -86,14 +85,6 @@ export function Footer() {
           {aboutLinks.map((l) => (
             <FooterLink key={l.href} href={l.href}>
               {l.label}
-            </FooterLink>
-          ))}
-        </FooterColumn>
-
-        <FooterColumn title="Winkels">
-          {stores.map((s) => (
-            <FooterLink key={s.id} href={`/winkels/${s.slug}`}>
-              {s.city}
             </FooterLink>
           ))}
         </FooterColumn>

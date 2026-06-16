@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 export function AiAssistantWidget() {
   const open = useUI((s) => s.aiChatOpen);
   const toggle = useUI((s) => s.toggleAiChat);
+  const pending = useUI((s) => s.aiPendingQuestion);
+  const clearPending = useUI((s) => s.clearAiPending);
 
   return (
     <>
@@ -56,7 +58,13 @@ export function AiAssistantWidget() {
           </button>
         </div>
 
-        {open && <ChatPanel className="flex-1" />}
+        {open && (
+          <ChatPanel
+            className="flex-1"
+            autoSendMessage={pending}
+            onAutoSent={clearPending}
+          />
+        )}
       </div>
     </>
   );

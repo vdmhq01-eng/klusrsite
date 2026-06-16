@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, ChevronRight, MapPin, Headphones, User, CreditCard } from "lucide-react";
+import { Menu, ChevronRight, Headphones, User, CreditCard } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -14,7 +14,6 @@ import { Logo } from "./logo";
 import { navCategories } from "@/lib/data/categories";
 
 const quickLinks = [
-  { href: "/winkels", label: "Winkels", icon: MapPin },
   { href: "/kluspas", label: "KLUSRPAS", icon: CreditCard },
   { href: "/klantenservice", label: "Klantenservice", icon: Headphones },
   { href: "/account", label: "Mijn account", icon: User },

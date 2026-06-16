@@ -33,7 +33,7 @@ import { priceView } from "@/lib/pricing";
 
 const usps = [
   { icon: Truck, label: "Gratis verzending vanaf €50" },
-  { icon: RotateCcw, label: "Gratis retouren in de winkel" },
+  { icon: RotateCcw, label: "Gratis retourneren binnen 30 dagen" },
   { icon: Sparkles, label: "Advies van ex-schilders" },
   { icon: CreditCard, label: "Achteraf betalen mogelijk" },
 ];

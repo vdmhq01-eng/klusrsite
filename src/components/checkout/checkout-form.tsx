@@ -11,7 +11,6 @@ import {
   Lock,
   ShieldCheck,
   Truck,
-  Store,
   RotateCcw,
   ArrowLeft,
   UserRound,
@@ -327,7 +326,7 @@ export function CheckoutForm({
           <Section title="Verzendmethode" step={3}>
             <div className="space-y-2">
               <ShippingOption
-                active={shippingMethod === "standard"}
+                active
                 onClick={() => setShippingMethod("standard")}
                 icon={Truck}
                 title="Bezorgen"
@@ -337,14 +336,6 @@ export function CheckoutForm({
                     ? "Gratis"
                     : formatPrice(shippingFor(summary.grossSubtotal))
                 }
-              />
-              <ShippingOption
-                active={shippingMethod === "pickup"}
-                onClick={() => setShippingMethod("pickup")}
-                icon={Store}
-                title="Afhalen in de winkel"
-                hint="Gratis — klaar binnen 1 uur in Nijverdal"
-                price="Gratis"
               />
             </div>
           </Section>
