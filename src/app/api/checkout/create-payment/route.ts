@@ -85,6 +85,56 @@ export async function POST(req: Request) {
         }
       })();
 
+    // Factuuradres (= bezorgadres) — vereist voor Klarna e.d.
+    const billingAddress = {
+      givenName: data.customer.firstName,
+      familyName: data.customer.lastName,
+      email: data.customer.email,
+      streetAndNumber: data.customer.street,
+      postalCode: data.customer.postalCode,
+      city: data.customer.city,
+      country: "NL",
+    };
+
+    // Order-regels voor pay-later (Klarna): moeten exact optellen tot het totaal.
+    // Alleen voor pay-later meesturen, zodat iDEAL/kaart nooit kan breken.
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    let lines: unknown[] | undefined;
+    if (/klarna|riverty|in3|billie|afterpay/i.test(data.method ?? "")) {
+      const sumK = data.items.reduce((s, i) => s + r2(i.kluspasPrice) * i.quantity, 0);
+      const sumN = data.items.reduce((s, i) => s + r2(i.price) * i.quantity, 0);
+      const useK = Math.abs(r2(sumK) - r2(data.subtotal)) <= Math.abs(r2(sumN) - r2(data.subtotal));
+      const vat = (tot: number) => r2(tot - r2(tot / 1.21));
+      const all = data.items.map((i) => {
+        const u = useK ? r2(i.kluspasPrice) : r2(i.price);
+        const tot = r2(u * i.quantity);
+        return {
+          type: "physical",
+          description: (i.title || "Artikel").slice(0, 100),
+          quantity: i.quantity,
+          unitPrice: { currency: "EUR", value: u.toFixed(2) },
+          totalAmount: { currency: "EUR", value: tot.toFixed(2) },
+          vatRate: "21.00",
+          vatAmount: { currency: "EUR", value: vat(tot).toFixed(2) },
+        };
+      });
+      const sumItems = all.reduce((s, l) => s + Number(l.totalAmount.value), 0);
+      const ship = r2(data.total - sumItems);
+      if (ship > 0) {
+        all.push({
+          type: "shipping_fee",
+          description: "Verzendkosten",
+          quantity: 1,
+          unitPrice: { currency: "EUR", value: ship.toFixed(2) },
+          totalAmount: { currency: "EUR", value: ship.toFixed(2) },
+          vatRate: "21.00",
+          vatAmount: { currency: "EUR", value: vat(ship).toFixed(2) },
+        });
+      }
+      const linesSum = r2(all.reduce((s, l) => s + Number(l.totalAmount.value), 0));
+      if (Math.abs(linesSum - r2(data.total)) < 0.005) lines = all;
+    }
+
     const payment = await createPayment({
       orderId: order.id,
       reference: order.reference,
@@ -93,6 +143,8 @@ export async function POST(req: Request) {
       issuer: data.issuer,
       baseUrl: origin,
       cardToken: data.cardToken,
+      billingAddress,
+      lines,
     });
 
     if (payment.molliePaymentId) {

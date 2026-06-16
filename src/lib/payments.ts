@@ -68,6 +68,10 @@ export interface CreatePaymentInput {
   cardToken?: string;
   /** iDEAL-bank (issuer-id) — vooraf gekozen op onze eigen checkout. */
   issuer?: string;
+  /** Factuuradres — vereist voor Klarna e.d. (pay-later). */
+  billingAddress?: Record<string, unknown>;
+  /** Order-regels — vereist voor Klarna e.d.; moeten exact optellen tot `amount`. */
+  lines?: unknown[];
 }
 
 export interface CreatePaymentResult {
@@ -104,6 +108,9 @@ export async function createPayment(
   if (mollieMethod === "ideal" && input.issuer) params.issuer = input.issuer;
   // Mollie Components: card-token meegeven bij een ingebedde creditcard-betaling.
   if (input.cardToken) params.cardToken = input.cardToken;
+  // Factuuradres + order-regels (Klarna e.d.).
+  if (input.billingAddress) params.billingAddress = input.billingAddress;
+  if (input.lines && input.lines.length) params.lines = input.lines;
   const payment = await mollie.payments.create(params as never);
 
   return {
