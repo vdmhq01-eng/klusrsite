@@ -24,11 +24,11 @@ import { ColorChip } from "@/components/cart/color-chip";
 import { PaymentMethods, type PaymentMethodId } from "./payment-methods";
 import {
   useCart,
-  cartSubtotal,
-  kluspasSavings,
+  cartSummary,
+  displayLine,
   shippingFor,
-  linePrice,
 } from "@/lib/store/cart";
+import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
@@ -50,6 +50,7 @@ type FormValues = z.infer<typeof schema>;
 export function CheckoutForm() {
   const { items, kluspasActive } = useCart();
   const mounted = useMounted();
+  const mode = usePricingMode((s) => s.mode);
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("ideal");
   const [submitting, setSubmitting] = useState(false);
@@ -77,16 +78,18 @@ export function CheckoutForm() {
     );
   }
 
-  const subtotal = cartSubtotal(items, kluspasActive);
-  const savings = kluspasSavings(items);
-  const shipping = shippingMethod === "pickup" ? 0 : shippingFor(subtotal);
-  const total = subtotal + shipping;
+  const summary = cartSummary(
+    items,
+    mode,
+    kluspasActive,
+    shippingMethod === "pickup" ? 0 : undefined,
+  );
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     setError(null);
-    trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: total });
-    trackEvent("add_payment_info", { payment_type: paymentMethod, value: total });
+    trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
+    trackEvent("add_payment_info", { payment_type: paymentMethod, value: summary.total });
 
     try {
       const res = await fetch("/api/checkout/create-payment", {
@@ -95,10 +98,10 @@ export function CheckoutForm() {
         body: JSON.stringify({
           customer: values,
           items,
-          subtotal,
-          shipping,
-          total,
-          kluspasSavings: savings,
+          subtotal: summary.grossSubtotal,
+          shipping: summary.grossShipping,
+          total: summary.grossTotal,
+          kluspasSavings: summary.savings,
           method: paymentMethod,
         }),
       });
@@ -185,7 +188,11 @@ export function CheckoutForm() {
                 icon={Truck}
                 title="Bezorgen"
                 hint="Voor 16:00 besteld, morgen in huis"
-                price={shippingFor(subtotal) === 0 ? "Gratis" : formatPrice(shippingFor(subtotal))}
+                price={
+                  shippingFor(summary.grossSubtotal) === 0
+                    ? "Gratis"
+                    : formatPrice(shippingFor(summary.grossSubtotal))
+                }
               />
               <ShippingOption
                 active={shippingMethod === "pickup"}
@@ -224,7 +231,7 @@ export function CheckoutForm() {
                     )}
                   </div>
                   <span className="text-sm font-semibold">
-                    {formatPrice(linePrice(item, kluspasActive) * item.quantity)}
+                    {formatPrice(displayLine(item, mode, kluspasActive).main)}
                   </span>
                 </li>
               ))}
@@ -233,25 +240,40 @@ export function CheckoutForm() {
             <Separator className="my-4" />
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotaal</dt>
-                <dd>{formatPrice(subtotal)}</dd>
+                <dt className="text-muted-foreground">
+                  Subtotaal{!summary.vatIncluded && " (excl. btw)"}
+                </dt>
+                <dd>{formatPrice(summary.subtotalRegular)}</dd>
               </div>
-              {savings > 0 && kluspasActive && (
+              {summary.savings > 0 && (
                 <div className="flex justify-between text-primary">
-                  <dt className="font-medium">KLUSRPAS-voordeel</dt>
-                  <dd className="font-bold">-{formatPrice(savings)}</dd>
+                  <dt className="font-medium">
+                    {summary.vatIncluded ? "KLUSRPAS-voordeel" : "ProfPas-korting"}
+                  </dt>
+                  <dd className="font-bold">-{formatPrice(summary.savings)}</dd>
                 </div>
               )}
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Verzendkosten</dt>
-                <dd>{shipping === 0 ? <span className="text-klusr-stock">Gratis</span> : formatPrice(shipping)}</dd>
+                <dt className="text-muted-foreground">
+                  Verzendkosten{!summary.vatIncluded && " (excl. btw)"}
+                </dt>
+                <dd>{summary.shipping === 0 ? <span className="text-klusr-stock">Gratis</span> : formatPrice(summary.shipping)}</dd>
               </div>
+              {summary.vat !== undefined && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Btw (21%)</dt>
+                  <dd>{formatPrice(summary.vat)}</dd>
+                </div>
+              )}
             </dl>
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">Totaal</span>
-              <span className="text-2xl font-black">{formatPrice(total)}</span>
+              <span className="text-2xl font-black">{formatPrice(summary.total)}</span>
             </div>
+            {!summary.vatIncluded && (
+              <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
+            )}
 
             {error && (
               <p className="mt-3 rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
@@ -265,7 +287,7 @@ export function CheckoutForm() {
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  Betaal {formatPrice(total)}
+                  Betaal {formatPrice(summary.total)}
                 </>
               )}
             </Button>
