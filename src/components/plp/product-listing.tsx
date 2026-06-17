@@ -5,6 +5,7 @@ import { LayoutGrid, List, SlidersHorizontal, Star, X } from "lucide-react";
 import type { Product, ProductBadge } from "@/types";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductListRow } from "@/components/product/product-list-row";
+import { AiFinder, type AiSelections } from "@/components/plp/ai-finder";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -352,6 +353,32 @@ export function ProductListing({
     return out;
   }, [visibleProducts]);
 
+  // Opties + voorbeelden voor de AI-productzoeker (bovenaan de lijst).
+  const finderOptions = useMemo(
+    () => ({
+      subCategories: availableSubCategories,
+      brands: availableBrands,
+      attrs: availableAttrs.map((a) => ({
+        key: a.facet.key,
+        title: a.facet.title,
+        values: a.values.map((v) => ({ id: v.id, label: v.label })),
+      })),
+    }),
+    [availableSubCategories, availableBrands, availableAttrs],
+  );
+  const finderExamples = useMemo(() => availableSubCategories.slice(0, 4), [availableSubCategories]);
+
+  // AI-keuzes toepassen: vervang de filters door de gevonden selectie.
+  const applyAiFilters = (sel: AiSelections) => {
+    setFilters({
+      ...EMPTY_FILTERS,
+      brands: sel.brands.filter((b) => availableBrands.includes(b)),
+      subCategories: sel.subCategories.filter((s) => availableSubCategories.includes(s)),
+      attrs: sel.attrs,
+    });
+    setSheetOpen(false);
+  };
+
   const filtered = useMemo(() => {
     return visibleProducts.filter((p) => {
       if (filters.mengverf && !p.colorMatchable) return false;
@@ -493,6 +520,13 @@ export function ProductListing({
 
   return (
     <div className={cn("container-klusr", className)}>
+      <AiFinder
+        category={listName}
+        options={finderOptions}
+        examples={finderExamples}
+        onApply={applyAiFilters}
+        className="mb-6"
+      />
       <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-8">
         {/* Desktop sidebar */}
         <aside className="hidden lg:block">
