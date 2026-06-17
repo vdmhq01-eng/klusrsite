@@ -110,11 +110,18 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
 
   const collection = colorCollections.find((c) => c.id === activeCollection) ?? colorCollections[0];
   const searching = query.trim().length > 0;
+  const q = query.trim().toLowerCase();
   const shownColors = useMemo(() => {
     if (!searching) return collection.colors;
-    const q = query.trim().toLowerCase();
-    return allColors.filter((c) => `${c.name} ${c.code}`.toLowerCase().includes(q)).slice(0, 48);
-  }, [searching, query, collection]);
+    return allColors
+      .filter((c) => `${c.name} ${c.code} ${c.collection ?? ""}`.toLowerCase().includes(q))
+      .slice(0, 48);
+  }, [searching, q, collection]);
+  // Suggesties terwijl je typt: collecties waarvan de naam matcht.
+  const collectionSuggestions = useMemo(
+    () => (searching ? colorCollections.filter((c) => c.name.toLowerCase().includes(q)) : []),
+    [searching, q],
+  );
 
   function pickColor(c: SelectedColor) {
     setColor(withBase(c));
@@ -314,7 +321,7 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Zoek op kleur of RAL-code…"
+              placeholder="Zoek op kleur, code of collectie…"
               className="w-full rounded-full border border-input bg-card py-2.5 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -331,6 +338,32 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                   {c.name}
                 </button>
               ))}
+            </div>
+          )}
+
+          {searching && collectionSuggestions.length > 0 && (
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Collecties
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {collectionSuggestions.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveCollection(c.id);
+                      setQuery("");
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {c.name}
+                    <span className="rounded-full bg-secondary px-1.5 text-[10px] font-bold leading-4 text-muted-foreground">
+                      {c.colors.length}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

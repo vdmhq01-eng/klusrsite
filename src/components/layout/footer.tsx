@@ -19,6 +19,7 @@ const aboutLinks = [
   { href: "/kluspas", label: "KLUSRPAS" },
   { href: "/zakelijk", label: "Zakelijk & ProfPas" },
   { href: "/mengverf", label: "Mengverf" },
+  { href: "/kleuren", label: "Alle kleuren & collecties" },
   { href: "/advies", label: "Advies & inspiratie" },
   { href: "/klushulp", label: "Klushulp AI" },
   { href: "/werken-bij", label: "Werken bij KLUSR" },
