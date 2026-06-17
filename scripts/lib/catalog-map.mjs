@@ -774,7 +774,10 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const badges = [];
     const saving = base.price > 0 ? 1 - base.kluspasPrice / base.price : 0;
     if (PRO_BRANDS.has(lead.brand)) badges.push("PRO KEUZE");
-    if (totalStock > 12 && rng > 0.55) badges.push("BESTSELLER");
+    // Bestseller alleen voor écht uitschietende producten (geloofwaardig houden):
+    // hoge voorraad + topbeoordeling + veel reviews + zeldzaam.
+    if (totalStock > 20 && rating >= 4.6 && reviewCount >= 170 && rng > 0.55)
+      badges.push("BESTSELLER");
     if (saving >= 0.07) badges.push("ACTIE");
     if (group.length > 1 && rng > 0.85) badges.push("NIEUW");
 

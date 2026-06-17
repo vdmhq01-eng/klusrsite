@@ -69,6 +69,7 @@ export function Price({
         <span className="text-[11px] font-semibold text-klusr-stock">
           Je bespaart {formatPrice(view.savings)}
           {view.savingsPct ? ` (${view.savingsPct}%)` : ""}
+          {view.savingsVsAdvies ? " op de adviesprijs" : ""}
         </span>
       )}
     </div>
