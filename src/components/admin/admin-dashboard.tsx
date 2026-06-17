@@ -19,6 +19,7 @@ import {
   ShieldOff,
   Plus,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -134,39 +135,127 @@ function StatCard({
   );
 }
 
+type Period = "vandaag" | "week" | "maand" | "alles" | "eigen";
+const PERIODS: { id: Period; label: string }[] = [
+  { id: "vandaag", label: "Vandaag" },
+  { id: "week", label: "Deze week" },
+  { id: "maand", label: "Deze maand" },
+  { id: "alles", label: "Alles" },
+  { id: "eigen", label: "Eigen periode" },
+];
+
 function Overview({ orders, onGo }: { orders: Order[]; onGo: (s: SectionId) => void }) {
+  const [period, setPeriod] = useState<Period>("alles");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const range = useMemo(() => {
+    const now = new Date();
+    const sod = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    if (period === "vandaag") return { start: sod(now), end: Infinity };
+    if (period === "week") {
+      const dow = (now.getDay() + 6) % 7; // maandag = 0
+      return { start: sod(new Date(now.getTime() - dow * 86400000)), end: Infinity };
+    }
+    if (period === "maand")
+      return { start: new Date(now.getFullYear(), now.getMonth(), 1).getTime(), end: Infinity };
+    if (period === "eigen")
+      return {
+        start: from ? new Date(`${from}T00:00:00`).getTime() : -Infinity,
+        end: to ? new Date(`${to}T23:59:59`).getTime() : Infinity,
+      };
+    return { start: -Infinity, end: Infinity };
+  }, [period, from, to]);
+
+  const periodOrders = useMemo(
+    () =>
+      orders.filter((o) => {
+        const t = new Date(o.createdAt).getTime();
+        return t >= range.start && t <= range.end;
+      }),
+    [orders, range],
+  );
+
   const stats = useMemo(() => {
-    const paid = orders.filter(isPaid);
+    const paid = periodOrders.filter(isPaid);
     // Omzet = betaalde orders minus eventuele (deel)terugbetalingen.
     const omzet = paid.reduce((s, o) => s + o.total - (o.refundedAmount ?? 0), 0);
     // Klanten = unieke e-mails van échte (betaalde) orders.
     const klanten = new Set(paid.map((o) => o.customer.email.toLowerCase())).size;
-    const open = orders.filter(isOpen).length;
-    const refunded = orders.filter((o) => o.paymentStatus === "refunded").length;
+    const open = periodOrders.filter(isOpen).length;
+    const terugbetaald = periodOrders.reduce((s, o) => s + (o.refundedAmount ?? 0), 0);
+    const refundedCount = periodOrders.filter(
+      (o) => o.paymentStatus === "refunded" || (o.refundedAmount ?? 0) > 0,
+    ).length;
     return {
       omzet,
       orders: paid.length,
       klanten,
       open,
-      refunded,
+      terugbetaald,
+      refundedCount,
       gem: paid.length ? omzet / paid.length : 0,
     };
-  }, [orders]);
+  }, [periodOrders]);
 
-  const recent = orders.slice(0, 6);
+  const recent = periodOrders.slice(0, 6);
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Periodekiezer */}
+      <div className="flex flex-wrap items-center gap-2">
+        {PERIODS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setPeriod(p.id)}
+            className={cn(
+              "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+              period === p.id
+                ? "bg-klusr-black text-white"
+                : "bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+        {period === "eigen" && (
+          <div className="flex items-center gap-2 text-sm">
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="rounded-md border border-border bg-card px-2 py-1"
+              aria-label="Van"
+            />
+            <span className="text-muted-foreground">t/m</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="rounded-md border border-border bg-card px-2 py-1"
+              aria-label="Tot en met"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard icon={Euro} label="Omzet (betaald)" value={formatPrice(stats.omzet)} />
         <StatCard
           icon={ShoppingBag}
           label="Orders (betaald)"
           value={String(stats.orders)}
-          hint={`${stats.open} openstaand${stats.refunded ? ` · ${stats.refunded} terugbetaald` : ""}`}
+          hint={`${stats.open} openstaand`}
         />
         <StatCard icon={Users} label="Klanten" value={String(stats.klanten)} />
         <StatCard icon={TrendingUp} label="Gem. orderwaarde" value={formatPrice(stats.gem)} />
+        <StatCard
+          icon={RotateCcw}
+          label="Terugbetaald"
+          value={formatPrice(stats.terugbetaald)}
+          hint={stats.refundedCount ? `${stats.refundedCount} order(s)` : "—"}
+        />
       </div>
 
       <Card>
