@@ -47,6 +47,8 @@ export interface PriceView {
   /** Besparing van de KLUSR-/ProfPas-prijs t.o.v. de normale prijs. */
   savings?: number;
   savingsPct?: number;
+  /** True wanneer de besparing t.o.v. de adviesprijs is (commerciële framing). */
+  savingsVsAdvies?: boolean;
 }
 
 /** Bereken alles wat de UI nodig heeft om een prijs in een modus te tonen. */
@@ -76,6 +78,12 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
   // Doorstrepen = uitsluitend de adviesprijs (RRP), nooit de normale prijs.
   const hasAdvies = compareAtPrice !== undefined && compareAtPrice > price;
 
+  // Besparing: commercieel t.o.v. de adviesprijs als die er is (groter, mooier),
+  // anders de KLUSR-korting t.o.v. de normale prijs.
+  const savingsBase = hasAdvies ? compareAtPrice! : price;
+  const savingsAmt = savingsBase > amount ? savingsBase - amount : 0;
+  const showSavings = hasAdvies ? savingsAmt > 0 : member && savingsAmt > 0;
+
   return {
     amount,
     reference: hasAdvies ? compareAtPrice! : undefined,
@@ -84,8 +92,9 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
     vatSuffix: "incl. btw",
     // Toon de normale prijs apart wanneer de KLUSR-prijs lager is.
     normalPrice: member ? price : undefined,
-    savings: member ? price - amount : undefined,
-    savingsPct: member ? Math.round(((price - amount) / price) * 100) : undefined,
+    savings: showSavings ? savingsAmt : undefined,
+    savingsPct: showSavings ? Math.round((savingsAmt / savingsBase) * 100) : undefined,
+    savingsVsAdvies: hasAdvies && showSavings ? true : undefined,
   };
 }
 
