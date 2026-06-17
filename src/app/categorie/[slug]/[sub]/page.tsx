@@ -4,11 +4,13 @@ import { Info } from "lucide-react";
 import {
   categories,
   getCategory,
-  getProductsByCategory,
-  getProductsBySubCategory,
   getSubCategories,
   getSubCategory,
 } from "@/lib/data";
+import {
+  getLocalizedProductsByCategory,
+  getLocalizedProductsBySubCategory,
+} from "@/lib/data/products-i18n";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { getVerfLeafContent } from "@/lib/data/verf-content";
@@ -53,9 +55,9 @@ export default function SubCategoryPage({ params }: SubPageProps) {
   const { category, subCategory } = resolve(params);
   if (!category || !subCategory) notFound();
 
-  const subProducts = getProductsBySubCategory(subCategory.slug);
+  const subProducts = getLocalizedProductsBySubCategory(subCategory.slug);
   const usesFallback = subProducts.length === 0;
-  const products = usesFallback ? getProductsByCategory(category.slug) : subProducts;
+  const products = usesFallback ? getLocalizedProductsByCategory(category.slug) : subProducts;
   const seo = getVerfLeafContent(subCategory.slug);
 
   const breadcrumbItems = [

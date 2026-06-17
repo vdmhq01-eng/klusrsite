@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Tag } from "lucide-react";
 import { categories, getCategory } from "@/lib/data";
-import { getProductsByCategory, getSubCategories } from "@/lib/data";
+import { getSubCategories } from "@/lib/data";
+import { getLocalizedProductsByCategory } from "@/lib/data/products-i18n";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { CategoryIcon } from "@/components/shared/category-icon";
@@ -43,7 +44,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const category = getCategory(params.slug);
   if (!category) notFound();
 
-  const products = getProductsByCategory(category.slug);
+  const products = getLocalizedProductsByCategory(category.slug);
   const subs = getSubCategories(category.slug);
   const isActies = category.slug === "acties";
 

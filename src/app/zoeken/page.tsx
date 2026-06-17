@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { categories, searchProducts } from "@/lib/data";
+import { localizeProducts } from "@/lib/data/products-i18n";
 import { logEvent } from "@/lib/store/analytics";
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
@@ -27,7 +28,7 @@ function getQuery(searchParams: SearchPageProps["searchParams"]): string {
 
 export default function SearchPage({ searchParams }: SearchPageProps) {
   const query = getQuery(searchParams);
-  const results = query ? searchProducts(query, 240) : [];
+  const results = query ? localizeProducts(searchProducts(query, 240)) : [];
   const hasQuery = query.length > 0;
   if (hasQuery) void logEvent("search", { query, resultCount: results.length });
   const hasResults = results.length > 0;
