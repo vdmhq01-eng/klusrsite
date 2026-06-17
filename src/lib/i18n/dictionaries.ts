@@ -578,6 +578,7 @@ export type Messages = {
   "plp.facet.toepassing": string;
   "plp.facet.korrel": string;
   "plp.facet.lichtkleur": string;
+  "plp.facet.type": string;
 
   // PLP — prijsbuckets (statisch; € blijft)
   "plp.priceBucket.lt25": string;
@@ -1239,6 +1240,7 @@ const nl: Messages = {
   "plp.facet.toepassing": "Toepassing",
   "plp.facet.korrel": "Korrel",
   "plp.facet.lichtkleur": "Lichtkleur",
+  "plp.facet.type": "Type",
 
   "plp.priceBucket.lt25": "Tot € 25",
   "plp.priceBucket.mid": "€ 25 – € 50",
@@ -1893,6 +1895,7 @@ const en: Messages = {
   "plp.facet.toepassing": "Use",
   "plp.facet.korrel": "Grit",
   "plp.facet.lichtkleur": "Light colour",
+  "plp.facet.type": "Type",
 
   "plp.priceBucket.lt25": "Up to € 25",
   "plp.priceBucket.mid": "€ 25 – € 50",
@@ -2547,6 +2550,7 @@ const fr: Messages = {
   "plp.facet.toepassing": "Utilisation",
   "plp.facet.korrel": "Grain",
   "plp.facet.lichtkleur": "Couleur de lumière",
+  "plp.facet.type": "Type",
 
   "plp.priceBucket.lt25": "Jusqu'à € 25",
   "plp.priceBucket.mid": "€ 25 – € 50",
@@ -3201,6 +3205,7 @@ const de: Messages = {
   "plp.facet.toepassing": "Anwendung",
   "plp.facet.korrel": "Körnung",
   "plp.facet.lichtkleur": "Lichtfarbe",
+  "plp.facet.type": "Typ",
 
   "plp.priceBucket.lt25": "Bis € 25",
   "plp.priceBucket.mid": "€ 25 – € 50",
