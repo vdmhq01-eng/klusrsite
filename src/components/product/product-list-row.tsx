@@ -10,6 +10,7 @@ import { StarRating } from "./star-rating";
 import { Price } from "./price";
 import { StockStatus } from "./stock-status";
 import { ProductBadges } from "./product-badges";
+import { CompareButton } from "./compare-button";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
@@ -166,6 +167,7 @@ export function ProductListRow({
             In winkelwagen
           </Button>
         </div>
+        <CompareButton productId={product.id} variant="labeled" className="pt-0.5 sm:self-end" />
       </div>
     </div>
   );
