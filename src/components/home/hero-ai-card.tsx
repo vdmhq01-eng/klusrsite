@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useUI } from "@/lib/store/ui";
+import { useT } from "@/components/i18n/locale-provider";
+import type { MessageKey } from "@/lib/i18n/dictionaries";
 
-const EXAMPLES = [
-  "Welke verf voor mijn slaapkamer?",
-  "Hoeveel liter heb ik nodig?",
-  "Welke primer op kaal hout?",
+const EXAMPLE_KEYS: MessageKey[] = [
+  "home.heroAi.example.bedroom",
+  "home.heroAi.example.liters",
+  "home.heroAi.example.primer",
 ];
 
 /**
@@ -16,6 +18,7 @@ const EXAMPLES = [
  */
 export function HeroAiCard() {
   const askAi = useUI((s) => s.askAi);
+  const t = useT();
   const [q, setQ] = useState("");
 
   return (
@@ -24,12 +27,11 @@ export function HeroAiCard() {
       <div className="relative">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">
           <Sparkles className="h-3.5 w-3.5" />
-          Klushulp · advies van ex-schilders
+          {t("home.heroAi.chip")}
         </span>
-        <h2 className="mt-3 text-2xl font-black leading-tight">Wat ga je klussen?</h2>
+        <h2 className="mt-3 text-2xl font-black leading-tight">{t("home.heroAi.title")}</h2>
         <p className="mt-1 text-sm text-white/85">
-          Stel direct je vraag — onze klushulp helpt je met verf, hoeveelheden en het
-          juiste gereedschap.
+          {t("home.heroAi.text")}
         </p>
       </div>
 
@@ -44,13 +46,13 @@ export function HeroAiCard() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Bijv. welke verf voor mijn badkamer?"
-              aria-label="Stel je klusvraag aan de klushulp"
+              placeholder={t("home.heroAi.placeholder")}
+              aria-label={t("home.heroAi.inputAria")}
               className="h-9 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
             <button
               type="submit"
-              aria-label="Vraag de klushulp"
+              aria-label={t("home.heroAi.submitAria")}
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-white transition-transform hover:scale-105"
             >
               <ArrowRight className="h-4 w-4" />
@@ -59,16 +61,19 @@ export function HeroAiCard() {
         </form>
 
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              onClick={() => askAi(ex)}
-              className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur transition-colors hover:bg-white/25"
-            >
-              {ex}
-            </button>
-          ))}
+          {EXAMPLE_KEYS.map((key) => {
+            const ex = t(key);
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => askAi(ex)}
+                className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur transition-colors hover:bg-white/25"
+              >
+                {ex}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { klushulpTasks } from "@/lib/data/klushulp";
 import { CategoryIcon } from "@/components/shared/category-icon";
 import { trackEvent } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 interface KlushulpFunnelProps {
   title?: string;
@@ -19,14 +20,19 @@ interface KlushulpFunnelProps {
  * "Wat ga je doen?" funnel — shown on the homepage and above product lists.
  */
 export function KlushulpFunnel({
-  title = "Wat ga je doen?",
-  subtitle = "Kies je klus en wij helpen je met de juiste producten en advies.",
+  title,
+  subtitle,
   className,
   compact = false,
   categorySlug,
 }: KlushulpFunnelProps) {
+  const t = useT();
+  // Standaardteksten komen uit de i18n-catalogus; expliciete props (bv. op de
+  // klushulp-pagina) overschrijven ze ongewijzigd.
+  const heading = title ?? t("home.funnel.title");
+  const sub = subtitle ?? t("home.funnel.subtitle");
   const tasks = categorySlug
-    ? klushulpTasks.filter((t) => t.relatedCategories.includes(categorySlug))
+    ? klushulpTasks.filter((task) => task.relatedCategories.includes(categorySlug))
     : klushulpTasks;
   if (tasks.length === 0) return null;
 
@@ -35,8 +41,8 @@ export function KlushulpFunnel({
       <div className="rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6">
         {!compact && (
           <div className="mb-4">
-            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{heading}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{sub}</p>
           </div>
         )}
         <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 no-scrollbar sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7">

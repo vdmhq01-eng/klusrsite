@@ -11,6 +11,7 @@ import { ProductCarousel } from "@/components/shared/product-carousel";
 import { ViewItemListTracker } from "@/components/analytics/view-item-list-tracker";
 import { getBestsellers, getActieProducts } from "@/lib/data/products";
 import { getHeroImage } from "@/lib/store/hero";
+import { t } from "@/lib/i18n/server";
 
 // De homepage-banner kan een door de owner gegenereerd sfeerbeeld tonen (KV);
 // haal 'm bij elk bezoek op zodat een nieuw beeld direct verschijnt.
@@ -40,10 +41,10 @@ export default async function HomePage() {
       {/* Populaire producten */}
       <section className="container-klusr">
         <SectionHeading
-          title="Populaire producten"
-          subtitle="De favorieten van onze klussers"
+          title={t("home.popular.title")}
+          subtitle={t("home.popular.subtitle")}
           href="/categorie/verf"
-          linkLabel="Meer producten"
+          linkLabel={t("home.popular.link")}
         />
         <ViewItemListTracker products={bestsellers} listName="Populaire producten" />
         <ProductCarousel products={bestsellers} listName="Populaire producten" />
@@ -54,8 +55,8 @@ export default async function HomePage() {
       {/* Acties */}
       <section className="container-klusr">
         <SectionHeading
-          title="Acties & aanbiedingen"
-          subtitle="Tijdelijk extra voordeel"
+          title={t("home.acties.title")}
+          subtitle={t("home.acties.subtitle")}
           href="/categorie/acties"
         />
         <ProductCarousel products={acties} listName="Acties" />

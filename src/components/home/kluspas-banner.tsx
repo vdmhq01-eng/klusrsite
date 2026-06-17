@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { Check, CreditCard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const benefits = [
-  "Altijd de scherpste KLUSRPAS-prijs",
-  "Exclusieve acties en voorrang bij uitverkoop",
-  "Gratis kleuradvies in de winkel",
-  "Spaar voor klustegoed",
-];
+import { t } from "@/lib/i18n/server";
 
 export function KluspasBanner() {
+  const benefits = [
+    t("home.kluspas.benefit1"),
+    t("home.kluspas.benefit2"),
+    t("home.kluspas.benefit3"),
+    t("home.kluspas.benefit4"),
+  ];
+
   return (
     <section className="container-klusr">
       <div className="overflow-hidden rounded-2xl bg-klusr-black text-white">
@@ -17,19 +18,18 @@ export function KluspasBanner() {
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-bold">
               <CreditCard className="h-3.5 w-3.5" />
-              KLUSPAS
+              {t("home.kluspas.badge")}
             </span>
             <h2 className="mt-4 text-2xl font-black sm:text-3xl">
-              Word lid en betaal altijd de laagste prijs
+              {t("home.kluspas.title")}
             </h2>
             <p className="mt-2 text-white/70">
-              Met de gratis KLUSRPAS profiteer je direct van KLUSRPAS-prijzen op het hele
-              assortiment en mis je geen enkele actie.
+              {t("home.kluspas.text")}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href="/kluspas">
-                  Vraag je KLUSRPAS aan
+                  {t("home.kluspas.cta")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>

@@ -7,6 +7,7 @@ import { useCart } from "@/lib/store/cart";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ProductCarousel } from "@/components/shared/product-carousel";
+import { useT } from "@/components/i18n/locale-provider";
 
 /**
  * Persoonlijke homepage-secties voor terugkerende klanten: aanbevelingen op
@@ -17,6 +18,7 @@ export function ForYouSection() {
   const ids = useCart((s) => s.recentlyViewed);
   const { data: session, status } = useSession();
   const mounted = useMounted();
+  const t = useT();
   const [forYou, setForYou] = useState<Product[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
 
@@ -56,15 +58,15 @@ export function ForYouSection() {
       {showForYou && (
         <section className="container-klusr">
           <SectionHeading
-            title="Speciaal voor jou"
-            subtitle="Aanbevolen op basis van wat je bekeek en bestelde"
+            title={t("home.forYou.title")}
+            subtitle={t("home.forYou.subtitle")}
           />
           <ProductCarousel products={forYou} listName="Voor jou" />
         </section>
       )}
       {showViewed && (
         <section className="container-klusr">
-          <SectionHeading title="Verder kijken" subtitle="Onlangs door jou bekeken" />
+          <SectionHeading title={t("home.viewed.title")} subtitle={t("home.viewed.subtitle")} />
           <ProductCarousel products={recentlyViewed} listName="Recent bekeken" />
         </section>
       )}
