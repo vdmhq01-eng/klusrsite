@@ -82,6 +82,7 @@ export const useCart = create<CartState>()(
           image: product.images[0],
           variantLabel: variant.label,
           slug: product.slug,
+          gtin: product.gtin,
           quantity,
           price: variant.price + surcharge,
           kluspasPrice: variant.kluspasPrice + surcharge,
