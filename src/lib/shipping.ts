@@ -60,12 +60,11 @@ export const SHIPPING_COUNTRY_MAP: Record<string, CountryShipping> = Object.from
 
 export const DEFAULT_COUNTRY = "NL";
 
-/** Voordelig brievenbuspakje-tarief (incl. btw), alleen NL/BE. Pas aan vanaf het
- *  PostNL-tariefblad. */
-export const BRIEVENBUS_PRICE: Record<string, number> = { NL: 3.95, BE: 5.5 };
+/** Voordelig brievenbuspakje-tarief (incl. btw) — alleen Nederland. */
+export const BRIEVENBUS_PRICE: Record<string, number> = { NL: 3.95 };
 
 /** Verzendkosten (incl. btw) voor een land; gratis alleen NL/BE boven de drempel.
- *  Met `brievenbus: true` (en NL/BE) geldt het goedkopere brievenbus-tarief. */
+ *  Met `brievenbus: true` (alleen NL) geldt het goedkopere brievenbuspakje-tarief. */
 export function shippingForCountry(
   grossSubtotal: number,
   code: string = DEFAULT_COUNTRY,

@@ -4,7 +4,9 @@ import {
   ArrowRight,
   BadgeCheck,
   CreditCard,
+  Globe,
   Mail,
+  Mailbox,
   MapPin,
   MessageCircle,
   Palette,
@@ -16,6 +18,8 @@ import {
   Truck,
 } from "lucide-react";
 import { flagshipStore } from "@/lib/data";
+import { SHIPPING_COUNTRIES, BRIEVENBUS_PRICE } from "@/lib/shipping";
+import { formatPrice } from "@/lib/utils";
 import {
   Accordion,
   AccordionContent,
@@ -35,6 +39,18 @@ export const metadata: Metadata = {
       "Vind snel antwoord op je vraag over verzending, retour, betalen en garantie, of neem contact op.",
   },
 };
+
+// Tarieven komen rechtstreeks uit src/lib/shipping.ts, zodat de
+// klantenservice-pagina nooit uit de pas loopt met het afrekenen.
+const nlShipping = SHIPPING_COUNTRIES.find((c) => c.code === "NL")!;
+const beShipping = SHIPPING_COUNTRIES.find((c) => c.code === "BE")!;
+const euTiers = Array.from(
+  SHIPPING_COUNTRIES.filter((c) => c.code !== "NL" && c.code !== "BE").reduce(
+    (map, c) => map.set(c.price, [...(map.get(c.price) ?? []), c.name]),
+    new Map<number, string[]>(),
+  ),
+).sort((a, b) => a[0] - b[0]);
+const cheapestEu = euTiers[0]?.[0] ?? 0;
 
 const contactCards = [
   {
@@ -84,7 +100,17 @@ const shippingFaqs = [
   {
     question: "Wat kost de verzending?",
     answer:
-      "Verzending is gratis bij bestellingen vanaf € 50. Onder dat bedrag rekenen we een vaste bijdrage in de verzendkosten, die je tijdens het afrekenen ziet.",
+      `In Nederland en België is verzending gratis vanaf ${formatPrice(nlShipping.freeOver!)}. ` +
+      `Daaronder betaal je ${formatPrice(nlShipping.price)} in Nederland en ${formatPrice(beShipping.price)} in België. ` +
+      `Kleine, platte artikelen sturen we als brievenbuspakje voor ${formatPrice(BRIEVENBUS_PRICE.NL)} (alleen NL). ` +
+      `Naar de overige EU-landen bezorgen we vanaf ${formatPrice(cheapestEu)}; daar geldt geen gratis verzending. ` +
+      "De exacte verzendkosten zie je altijd tijdens het afrekenen.",
+  },
+  {
+    question: "Leveren jullie ook naar het buitenland?",
+    answer:
+      `We bezorgen in de hele EU. Naar België is verzending gratis vanaf ${formatPrice(beShipping.freeOver!)}; naar de overige EU-landen geldt een vast tarief per land vanaf ${formatPrice(cheapestEu)}, dat je tijdens het afrekenen ziet. ` +
+      "Buiten de EU — waaronder Zwitserland en het Verenigd Koninkrijk — verzenden we niet, vanwege de douane.",
   },
   {
     question: "Hoe retourneer ik een product?",
@@ -194,7 +220,7 @@ const faqGroups = [
     title: "Verzending & retour",
     icon: Truck,
     intro:
-      "Gratis verzending vanaf € 50, voor 19:00 besteld is morgen in huis, en gratis retourneren in de winkel.",
+      `Gratis verzending vanaf ${formatPrice(nlShipping.freeOver!)} in NL en BE, voor 19:00 besteld is morgen in huis, en gratis retourneren in de winkel. Naar de rest van de EU vanaf ${formatPrice(cheapestEu)}.`,
     faqs: shippingFaqs,
   },
   {
@@ -284,6 +310,78 @@ export default function KlantenservicePage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* Verzendkosten — tarieven per land (data-driven uit shipping.ts) */}
+      <section id="verzendkosten" className="container-klusr scroll-mt-24">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Truck className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+              Verzendkosten
+            </h2>
+            <p className="mt-1 max-w-2xl text-muted-foreground">
+              Gratis verzending vanaf {formatPrice(nlShipping.freeOver!)} in
+              Nederland en België. Voor 19:00 besteld op werkdagen? Dan ligt je
+              pakket de volgende dag in huis.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 max-w-3xl overflow-hidden rounded-xl border border-border shadow-card">
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="px-4 py-3 font-medium">Nederland</td>
+                <td className="px-4 py-3 text-right">
+                  <span className="font-semibold">{formatPrice(nlShipping.price)}</span>
+                  <span className="text-muted-foreground">
+                    {" "}· gratis vanaf {formatPrice(nlShipping.freeOver!)}
+                  </span>
+                </td>
+              </tr>
+              <tr className="bg-secondary/40">
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-1.5 font-medium">
+                    <Mailbox className="h-4 w-4 text-primary" /> Brievenbuspakje (NL)
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Kleine, platte artikelen die door de brievenbus passen
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right font-semibold">
+                  {formatPrice(BRIEVENBUS_PRICE.NL)}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium">België</td>
+                <td className="px-4 py-3 text-right">
+                  <span className="font-semibold">{formatPrice(beShipping.price)}</span>
+                  <span className="text-muted-foreground">
+                    {" "}· gratis vanaf {formatPrice(beShipping.freeOver!)}
+                  </span>
+                </td>
+              </tr>
+              {euTiers.map(([price, names]) => (
+                <tr key={price}>
+                  <td className="px-4 py-3 text-muted-foreground">{names.join(", ")}</td>
+                  <td className="px-4 py-3 text-right font-semibold">{formatPrice(price)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-3 flex max-w-3xl items-start gap-2 text-sm text-muted-foreground">
+          <Globe className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <span>
+            We leveren binnen de hele EU. Buiten Nederland en België is er geen
+            gratis verzending. Buiten de EU — waaronder Zwitserland en het
+            Verenigd Koninkrijk — verzenden we niet, vanwege de douane.
+          </span>
+        </p>
       </section>
 
       {/* Grouped FAQ sections */}
