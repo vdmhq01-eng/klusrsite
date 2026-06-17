@@ -3,18 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { useT } from "@/components/i18n/locale-provider";
 
 /** Zoekbalk op de 404-pagina — stuurt door naar de zoekresultaten. */
 export function NotFoundSearch() {
   const router = useRouter();
+  const t = useT();
   const [q, setQ] = useState("");
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const t = q.trim();
-        if (t) router.push(`/zoeken?q=${encodeURIComponent(t)}`);
+        const query = q.trim();
+        if (query) router.push(`/zoeken?q=${encodeURIComponent(query)}`);
       }}
       className="mx-auto mt-6 flex w-full max-w-lg gap-2"
       role="search"
@@ -24,9 +26,9 @@ export function NotFoundSearch() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Zoek een product, merk of kleur…"
+          placeholder={t("notFound.searchPlaceholder")}
           className="h-12 w-full rounded-full border border-input bg-card pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          aria-label="Zoeken"
+          aria-label={t("notFound.searchAria")}
           autoFocus
         />
       </div>
@@ -34,7 +36,7 @@ export function NotFoundSearch() {
         type="submit"
         className="shrink-0 rounded-full bg-primary px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
       >
-        Zoeken
+        {t("notFound.searchSubmit")}
       </button>
     </form>
   );

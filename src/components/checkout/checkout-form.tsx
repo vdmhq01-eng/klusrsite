@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
@@ -39,39 +39,50 @@ import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
-const schema = z.object({
-  email: z.string().email("Vul een geldig e-mailadres in"),
-  firstName: z.string().min(1, "Verplicht"),
-  lastName: z.string().min(1, "Verplicht"),
-  postalCode: z.string().min(3, "Vul je postcode in"),
-  houseNumber: z.string().min(1, "Verplicht"),
-  houseNumberAddition: z.string().optional(),
-  street: z.string().min(2, "Vul je straatnaam in"),
-  city: z.string().min(1, "Verplicht"),
-  country: z.string().min(2).default("NL"),
-  phone: z.string().optional(),
-  // Zakelijk (optioneel; alleen getoond/relevant in zakelijke modus).
-  companyName: z.string().optional(),
-  cocNumber: z.string().optional(),
-  vatNumber: z.string().optional(),
-  // Afwijkend factuuradres (optioneel).
-  billingDifferent: z.boolean().optional(),
-  billingCompany: z.string().optional(),
-  billingStreet: z.string().optional(),
-  billingPostalCode: z.string().optional(),
-  billingCity: z.string().optional(),
-  terms: z.boolean().refine((v) => v === true, {
-    message: "Ga akkoord met de algemene voorwaarden om te bestellen.",
-  }),
-  newsletter: z.boolean().optional(),
-}).superRefine((val, ctx) => {
-  // Nederlandse postcode strikt valideren (1234 AB); buitenland soepeler.
-  if (val.country === "NL" && !/^\d{4}\s?[A-Za-z]{2}$/.test(val.postalCode)) {
-    ctx.addIssue({ path: ["postalCode"], code: z.ZodIssueCode.custom, message: "Bijv. 7443 BR" });
-  }
-});
+// Het schema is een FACTORY zodat de validatieteksten vertaalbaar zijn: de
+// component bouwt het binnen een useMemo op met de actieve `t`. De vorm blijft
+// identiek aan voorheen, alleen de meldingen komen nu uit de berichtencatalogus.
+function makeSchema(t: ReturnType<typeof useT>) {
+  return z
+    .object({
+      email: z.string().email(t("checkout.validation.email")),
+      firstName: z.string().min(1, t("checkout.validation.required")),
+      lastName: z.string().min(1, t("checkout.validation.required")),
+      postalCode: z.string().min(3, t("checkout.validation.postalCode")),
+      houseNumber: z.string().min(1, t("checkout.validation.required")),
+      houseNumberAddition: z.string().optional(),
+      street: z.string().min(2, t("checkout.validation.street")),
+      city: z.string().min(1, t("checkout.validation.required")),
+      country: z.string().min(2).default("NL"),
+      phone: z.string().optional(),
+      // Zakelijk (optioneel; alleen getoond/relevant in zakelijke modus).
+      companyName: z.string().optional(),
+      cocNumber: z.string().optional(),
+      vatNumber: z.string().optional(),
+      // Afwijkend factuuradres (optioneel).
+      billingDifferent: z.boolean().optional(),
+      billingCompany: z.string().optional(),
+      billingStreet: z.string().optional(),
+      billingPostalCode: z.string().optional(),
+      billingCity: z.string().optional(),
+      terms: z.boolean().refine((v) => v === true, {
+        message: t("checkout.validation.terms"),
+      }),
+      newsletter: z.boolean().optional(),
+    })
+    .superRefine((val, ctx) => {
+      // Nederlandse postcode strikt valideren (1234 AB); buitenland soepeler.
+      if (val.country === "NL" && !/^\d{4}\s?[A-Za-z]{2}$/.test(val.postalCode)) {
+        ctx.addIssue({
+          path: ["postalCode"],
+          code: z.ZodIssueCode.custom,
+          message: t("checkout.validation.postalCodeNl"),
+        });
+      }
+    });
+}
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
 /** Fallback wanneer de methodenroute onbereikbaar is. Landbewust: BE → Bancontact,
@@ -134,6 +145,9 @@ export function CheckoutForm({
     // Bank-keuze alleen relevant voor iDEAL.
     if (id !== "ideal") setIssuer(null);
   }
+
+  // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
+  const schema = useMemo(() => makeSchema(t), [t]);
 
   const {
     register,
