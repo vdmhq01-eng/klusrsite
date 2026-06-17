@@ -140,7 +140,14 @@ export default async function PakbonPage({ params }: { params: { orderId: string
                   <span className="font-semibold">{it.title}</span>
                   {it.variantLabel && it.variantLabel !== "Standaard" ? ` · ${it.variantLabel}` : ""}
                   {it.selectedColor ? (
-                    <span className="text-neutral-600"> · kleur {it.selectedColor.name}</span>
+                    <span className="text-neutral-600">
+                      {" "}· kleur{" "}
+                      <strong className="text-black">{it.selectedColor.name}</strong>
+                      {it.selectedColor.code ? ` (${it.selectedColor.code})` : ""}
+                      {it.selectedColor.collection ? (
+                        <> · <strong className="text-black">{it.selectedColor.collection}</strong></>
+                      ) : null}
+                    </span>
                   ) : null}
                 </td>
                 <td className="py-2.5 text-right text-xs text-neutral-500">

@@ -50,7 +50,9 @@ export default async function LooplijstPage() {
           brand: it.brand,
           title: it.title,
           variant: it.variantLabel && it.variantLabel !== "Standaard" ? it.variantLabel : "",
-          color: it.selectedColor ? `${it.selectedColor.name}${it.selectedColor.code ? ` (${it.selectedColor.code})` : ""}` : undefined,
+          color: it.selectedColor
+            ? `${it.selectedColor.name}${it.selectedColor.code ? ` (${it.selectedColor.code})` : ""}${it.selectedColor.collection ? ` · ${it.selectedColor.collection}` : ""}`
+            : undefined,
           sku: String(it.productId).replace(/^tilroy-/, ""),
           category,
           qty: it.quantity,

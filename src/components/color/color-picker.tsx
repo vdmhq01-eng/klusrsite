@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Search, Pipette, X } from "lucide-react";
 import type { SelectedColor } from "@/types";
-import { colorCollections, popularColors2026, isLightColor } from "@/lib/data/colors";
+import { colorCollections, popularColors2026, allColors, isLightColor } from "@/lib/data/colors";
 import { fetchPortalColors } from "@/lib/portal-colors";
 import { withBase } from "@/lib/paint-bases";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,8 @@ export function ColorPicker({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<SelectedColor | undefined>(value);
   const [customHex, setCustomHex] = useState(value?.hex ?? "#C90000");
+  const [codeInput, setCodeInput] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   // Live kleuren uit de portal (Gamma/AkzoNobel/RAL); terugval op gecureerde set.
   useEffect(() => {
@@ -109,6 +111,24 @@ export function ColorPicker({
       color_name: enriched.name,
       paint_base: enriched.base?.id,
     });
+  }
+
+  /** Zoek een kleur op zijn code (bv. "RAL 9005", "ral9005", "9005"). */
+  function applyCode() {
+    const norm = (s: string) => s.toUpperCase().replace(/\s+/g, "");
+    const target = norm(codeInput);
+    if (!target) return;
+    const found =
+      allColors.find((c) => norm(c.code) === target) ||
+      // ook "9005" → "RAL9005" toestaan
+      (/^\d{3,4}$/.test(target) ? allColors.find((c) => norm(c.code) === `RAL${target}`) : undefined);
+    if (found) {
+      pick(found);
+      setCodeError(null);
+      setCodeInput("");
+    } else {
+      setCodeError("Onbekende code — probeer bijvoorbeeld RAL 9005.");
+    }
   }
 
   function applyCustom() {
@@ -331,6 +351,31 @@ export function ColorPicker({
             <Pipette className="h-4 w-4 text-primary" />
             Eigen kleur mengen
           </p>
+
+          {/* Kleurcode invoeren (bv. RAL 9005) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={codeInput}
+              onChange={(e) => {
+                setCodeInput(e.target.value);
+                setCodeError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyCode();
+                }
+              }}
+              placeholder="Kleurcode, bv. RAL 9005"
+              className="min-w-0 flex-1 uppercase"
+            />
+            <Button variant="outline" onClick={applyCode}>
+              Zoek code
+            </Button>
+          </div>
+          {codeError && <p className="mt-1 text-xs text-destructive">{codeError}</p>}
+
+          <p className="mb-1 mt-3 text-xs text-muted-foreground">Of kies een eigen tint:</p>
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="color"
