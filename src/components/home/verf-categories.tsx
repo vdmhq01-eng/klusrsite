@@ -24,17 +24,18 @@ export function VerfCategories() {
         subtitle="Op kleur gemengd, professionele kwaliteit"
         href="/categorie/verf"
       />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      {/* Lichte 'shop op verftype'-strip — bewust anders dan de klus-funnel hierboven */}
+      <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1 no-scrollbar">
         {groups.map((group) => (
           <Link
             key={group.slug}
             href={`/categorie/verf/${group.subCategories[0].slug}`}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+            className="group flex shrink-0 items-center gap-2.5 rounded-full border border-border bg-card py-2 pl-2 pr-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-card"
           >
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-primary/5 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-              <CategoryIcon name={groupIcons[group.slug]} className="h-7 w-7" />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+              <CategoryIcon name={groupIcons[group.slug]} className="h-5 w-5" />
             </span>
-            <span className="text-sm font-semibold leading-tight">{group.title}</span>
+            <span className="whitespace-nowrap text-sm font-semibold">{group.title}</span>
           </Link>
         ))}
       </div>
