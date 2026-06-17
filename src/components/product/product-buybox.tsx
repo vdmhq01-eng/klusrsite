@@ -238,6 +238,22 @@ export function ProductBuybox({
             <span className="text-xs">{t("pdp.withoutAccount")}</span>
           </p>
         )}
+        {priceInfo.badge === "KLUSRPAS" && (
+          <Link
+            href="/kluspas"
+            className="mt-2 block rounded-lg border border-primary/20 bg-primary/5 p-3 transition-colors hover:border-primary/40 hover:bg-primary/10"
+          >
+            <p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <CreditCard className="h-3.5 w-3.5 shrink-0 text-primary" />
+              {t("pdp.kluspas.title")}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("pdp.kluspas.body")}</p>
+            <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+              {t("pdp.kluspas.link")}
+              <span aria-hidden>→</span>
+            </span>
+          </Link>
+        )}
         {surcharge > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
             {t("pdp.surcharge", {

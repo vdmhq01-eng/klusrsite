@@ -642,6 +642,9 @@ export type Messages = {
   "pdp.profpasPrice": string;
   "pdp.normalPrice": string;
   "pdp.withoutAccount": string;
+  "pdp.kluspas.title": string;
+  "pdp.kluspas.body": string;
+  "pdp.kluspas.link": string;
   "pdp.surcharge": string; // {base} {amount}
   "pdp.perLiter": string; // {price}
   "pdp.perLiterCheaper": string;
@@ -1300,6 +1303,10 @@ const nl: Messages = {
   "pdp.profpasPrice": "ProfPas-prijs",
   "pdp.normalPrice": "Normale prijs",
   "pdp.withoutAccount": "— zonder account",
+  "pdp.kluspas.title": "KLUSRPAS-prijs — gratis voor iedereen",
+  "pdp.kluspas.body":
+    "Vraag de gratis KLUSRPAS in 30 seconden aan met je e-mail en betaal meteen deze prijs. Geen abonnement, geen verplichtingen.",
+  "pdp.kluspas.link": "Wat is de KLUSRPAS?",
   "pdp.surcharge": "Incl. {base} (+{amount} voor donkere kleur)",
   "pdp.perLiter": "{price} per liter",
   "pdp.perLiterCheaper": "grotere bus is voordeliger per liter",
@@ -1955,6 +1962,10 @@ const en: Messages = {
   "pdp.profpasPrice": "ProfPas price",
   "pdp.normalPrice": "Regular price",
   "pdp.withoutAccount": "— without an account",
+  "pdp.kluspas.title": "KLUSRPAS price — free for everyone",
+  "pdp.kluspas.body":
+    "Get the free KLUSRPAS in 30 seconds with your email and pay this price right away. No subscription, no obligations.",
+  "pdp.kluspas.link": "What is the KLUSRPAS?",
   "pdp.surcharge": "Incl. {base} (+{amount} for a dark colour)",
   "pdp.perLiter": "{price} per litre",
   "pdp.perLiterCheaper": "larger tin is cheaper per litre",
@@ -2610,6 +2621,10 @@ const fr: Messages = {
   "pdp.profpasPrice": "Prix ProfPas",
   "pdp.normalPrice": "Prix normal",
   "pdp.withoutAccount": "— sans compte",
+  "pdp.kluspas.title": "Prix KLUSRPAS — gratuit pour tous",
+  "pdp.kluspas.body":
+    "Obtenez la KLUSRPAS gratuite en 30 secondes avec votre e-mail et payez immédiatement ce prix. Sans abonnement, sans engagement.",
+  "pdp.kluspas.link": "Qu'est-ce que la KLUSRPAS ?",
   "pdp.surcharge": "Incl. {base} (+{amount} pour une couleur foncée)",
   "pdp.perLiter": "{price} par litre",
   "pdp.perLiterCheaper": "le plus grand pot est plus avantageux au litre",
@@ -3265,6 +3280,10 @@ const de: Messages = {
   "pdp.profpasPrice": "ProfPas-Preis",
   "pdp.normalPrice": "Normaler Preis",
   "pdp.withoutAccount": "— ohne Konto",
+  "pdp.kluspas.title": "KLUSRPAS-Preis — kostenlos für alle",
+  "pdp.kluspas.body":
+    "Hol dir die kostenlose KLUSRPAS in 30 Sekunden mit deiner E-Mail und zahle sofort diesen Preis. Kein Abo, keine Verpflichtungen.",
+  "pdp.kluspas.link": "Was ist die KLUSRPAS?",
   "pdp.surcharge": "Inkl. {base} (+{amount} für dunkle Farbe)",
   "pdp.perLiter": "{price} pro Liter",
   "pdp.perLiterCheaper": "größerer Eimer ist günstiger pro Liter",
