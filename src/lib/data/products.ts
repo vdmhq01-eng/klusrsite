@@ -1142,7 +1142,9 @@ export function getProductsBySubCategory(sub: string): Product[] {
 
 // Nette titels voor de ruwe feed-slugs; anders een prettify-fallback.
 const SUB_TITLE_FIXUPS: Record<string, string> = {
-  "schildersger-en-schuurpapier": "Schildersgereedschap & schuurpapier",
+  "schildersgereedschap": "Schildergereedschap",
+  "schuurmateriaal": "Schuurmateriaal",
+  "schimmel-aanslag": "Schimmel & aanslag",
   "acc-elektrisch-gereedschap": "Accessoires elektrisch gereedschap",
   "elektrisch-gereedschap": "Elektrisch gereedschap",
   "ijzerwaren-hang-en-sluitwerk": "Hang- & sluitwerk",

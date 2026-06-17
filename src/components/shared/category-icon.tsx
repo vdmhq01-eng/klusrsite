@@ -12,6 +12,8 @@ import {
   LayoutPanelTop,
   Tag,
   TreePine,
+  Wallpaper,
+  SprayCan,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,6 +32,8 @@ const iconMap: Record<string, LucideIcon> = {
   LayoutPanelTop,
   Tag,
   TreePine,
+  Wallpaper,
+  SprayCan,
 };
 
 export function CategoryIcon({

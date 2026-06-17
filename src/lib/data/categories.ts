@@ -115,8 +115,6 @@ export const categories: Category[] = [
         title: "Wand & afwerking",
         slug: "wand-afwerking",
         subCategories: [
-          { title: "Behang", slug: "behang" },
-          { title: "Glasweefselbehang", slug: "glasweefselbehang" },
           { title: "Stuc & gips", slug: "stuc" },
         ],
       },
@@ -145,6 +143,32 @@ export const categories: Category[] = [
       { title: "Kit & purschuim", slug: "kit" },
       { title: "Stuc & gips", slug: "stuc" },
       { title: "Schuurmateriaal", slug: "schuren" },
+    ],
+  },
+  {
+    id: "behang",
+    title: "Behang",
+    slug: "behang",
+    image: "https://picsum.photos/seed/klusr-cat-behang/800/600",
+    icon: "Wallpaper",
+    description:
+      "Behang, vliesbehang en glasweefselbehang met bijbehorende lijm en gereedschap.",
+    seoTitle: "Behang kopen | Vlies- & glasweefselbehang | KLUSR",
+    seoDescription:
+      "Behang bij KLUSR: vliesbehang, glasweefselbehang, behanglijm en behanggereedschap. Bestel eenvoudig online bij KLUSR.",
+    subGroups: [
+      {
+        title: "Behang & wandbekleding",
+        slug: "behang-wandbekleding",
+        subCategories: [
+          { title: "Behang", slug: "behang" },
+          { title: "Glasweefselbehang", slug: "glasweefselbehang" },
+        ],
+      },
+    ],
+    subCategories: [
+      { title: "Behang", slug: "behang" },
+      { title: "Glasweefselbehang", slug: "glasweefselbehang" },
     ],
   },
   {
@@ -262,8 +286,8 @@ export const categories: Category[] = [
         title: "Schilderen & schuren",
         slug: "schilderen-schuren",
         subCategories: [
-          { title: "Schildersgereedschap & schuurpapier", slug: "schildersger-en-schuurpapier" },
-          { title: "Schildersgereedschap", slug: "schildersgereedschap" },
+          { title: "Schildergereedschap", slug: "schildersgereedschap" },
+          { title: "Schuurmateriaal", slug: "schuurmateriaal" },
           { title: "Verdunningsmiddelen", slug: "verdunningsmiddelen" },
         ],
       },
@@ -278,10 +302,39 @@ export const categories: Category[] = [
       },
     ],
     subCategories: [
-      { title: "Schildersgereedschap", slug: "schildersgereedschap" },
+      { title: "Schildergereedschap", slug: "schildersgereedschap" },
+      { title: "Schuurmateriaal", slug: "schuurmateriaal" },
       { title: "Elektrisch gereedschap", slug: "elektrisch-gereedschap" },
       { title: "Handgereedschap", slug: "handgereedschap" },
       { title: "Meetgereedschap", slug: "meetgereedschap" },
+    ],
+  },
+  {
+    id: "reiniging",
+    title: "Reiniging & onderhoud",
+    slug: "reiniging",
+    image: "https://picsum.photos/seed/klusr-cat-reiniging/800/600",
+    icon: "SprayCan",
+    description:
+      "Reinigers, schimmel- en aanslagverwijderaars en ongediertebestrijding voor in en om het huis.",
+    seoTitle: "Reiniging & onderhoud | Reinigers & ongediertebestrijding | KLUSR",
+    seoDescription:
+      "Reiniging & onderhoud bij KLUSR: reinigers, schimmel- en aanslagverwijderaars en ongediertebestrijding van o.a. HG. Bestel eenvoudig online.",
+    subGroups: [
+      {
+        title: "Reinigen & onderhoud",
+        slug: "reinigen-onderhoud",
+        subCategories: [
+          { title: "Reinigers", slug: "reinigers" },
+          { title: "Schimmel & aanslag", slug: "schimmel-aanslag" },
+          { title: "Ongediertebestrijding", slug: "ongediertebestrijding" },
+        ],
+      },
+    ],
+    subCategories: [
+      { title: "Reinigers", slug: "reinigers" },
+      { title: "Schimmel & aanslag", slug: "schimmel-aanslag" },
+      { title: "Ongediertebestrijding", slug: "ongediertebestrijding" },
     ],
   },
   {
