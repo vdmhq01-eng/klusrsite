@@ -14,6 +14,7 @@ import { navCategories } from "@/lib/data/categories";
 import { TopicImage } from "@/components/shared/topic-image";
 import { categoryKeywords } from "@/lib/topic-images";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { t } from "@/lib/i18n/server";
 
 /** Lucide-icoon per categorie — vult de tegel ook als de foto (nog) niet laadt. */
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -32,7 +33,7 @@ export function CategoryTiles() {
 
   return (
     <section className="container-klusr">
-      <SectionHeading title="Shop per categorie" subtitle="Alles voor jouw klus onder één dak" />
+      <SectionHeading title={t("home.categories.title")} subtitle={t("home.categories.subtitle")} />
       {/* Horizontally scrollable on mobile, grid on desktop */}
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-8">
         {tiles.map((cat) => (

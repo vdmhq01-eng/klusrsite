@@ -2,6 +2,7 @@ import { getTrendingTheme } from "@/lib/trending";
 import { getProductsByCategory } from "@/lib/data/products";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ProductCarousel } from "@/components/shared/product-carousel";
+import { t } from "@/lib/i18n/server";
 
 /**
  * Trending-sectie die automatisch meebeweegt met seizoen en feestdagen
@@ -18,7 +19,7 @@ export function TrendingSection() {
         title={theme.title}
         subtitle={theme.subtitle}
         href={theme.href}
-        linkLabel="Bekijk alles"
+        linkLabel={t("home.trending.link")}
       />
       <ProductCarousel products={products} listName={`Trending — ${theme.key}`} />
     </section>

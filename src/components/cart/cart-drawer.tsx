@@ -28,11 +28,13 @@ import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 export function CartDrawer() {
   const open = useUI((s) => s.cartOpen);
   const setCartOpen = useUI((s) => s.setCartOpen);
   const { items, kluspasActive, updateQuantity, removeItem, addItem } = useCart();
+  const t = useT();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
   const { active: reorderFree } = useReorderActive();
@@ -69,7 +71,7 @@ export function CartDrawer() {
         <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2">
             <TrailerIcon className="h-5 w-5 text-primary" />
-            Winkelwagen ({items.length})
+            {t("cart.title")} ({items.length})
           </SheetTitle>
         </SheetHeader>
 
@@ -79,13 +81,13 @@ export function CartDrawer() {
               <TrailerIcon className="h-7 w-7 text-muted-foreground" />
             </div>
             <div>
-              <p className="font-semibold">Je winkelwagen is leeg</p>
+              <p className="font-semibold">{t("cart.empty.title")}</p>
               <p className="text-sm text-muted-foreground">
-                Voeg producten toe om je klus compleet te maken.
+                {t("cart.empty.drawerText")}
               </p>
             </div>
             <Button asChild onClick={() => setCartOpen(false)}>
-              <Link href="/categorie/verf">Begin met verf</Link>
+              <Link href="/categorie/verf">{t("cart.empty.startPaint")}</Link>
             </Button>
           </div>
         ) : (
@@ -114,7 +116,7 @@ export function CartDrawer() {
                         </div>
                         <button
                           onClick={() => removeItem(item.key)}
-                          aria-label="Verwijder"
+                          aria-label={t("cart.item.removeLabel")}
                           className="text-muted-foreground hover:text-primary"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -140,7 +142,7 @@ export function CartDrawer() {
 
               {forgotten.length > 0 && (
                 <div className="mt-5">
-                  <p className="mb-2 text-sm font-bold">Vaak vergeten</p>
+                  <p className="mb-2 text-sm font-bold">{t("cart.forgotten")}</p>
                   <div className="space-y-2">
                     {forgotten.map((p) => (
                       <div
@@ -163,7 +165,7 @@ export function CartDrawer() {
                             addItem({ product: p!, variant: p!.variants[0], quantity: 1 })
                           }
                         >
-                          Toevoegen
+                          {t("cart.item.add")}
                         </Button>
                       </div>
                     ))}
@@ -177,24 +179,24 @@ export function CartDrawer() {
                 <div className="mb-2 flex items-center justify-between rounded-md bg-primary/5 px-3 py-2 text-sm">
                   <span className="inline-flex items-center gap-1.5 font-medium text-primary">
                     <Sparkles className="h-4 w-4" />
-                    {summary.vatIncluded ? "KLUSRPAS-voordeel" : "ProfPas-korting"}
+                    {summary.vatIncluded ? t("cart.kluspasDiscount") : t("cart.profpasDiscount")}
                   </span>
                   <span className="font-bold text-primary">-{formatPrice(savings)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  Subtotaal{!summary.vatIncluded && " (excl. btw)"}
+                  {t("cart.subtotal")}{!summary.vatIncluded && t("cart.exclVat")}
                 </span>
                 <span className="font-semibold">{formatPrice(subtotal)}</span>
               </div>
               <div className="mt-1.5 flex items-center justify-between text-sm">
                 <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                   <TrailerIcon className="h-4 w-4" />
-                  Verzendkosten
+                  {t("cart.shipping")}
                 </span>
                 {shipping === 0 ? (
-                  <span className="font-semibold text-klusr-stock">Gratis</span>
+                  <span className="font-semibold text-klusr-stock">{t("cart.free")}</span>
                 ) : (
                   <span className="font-semibold">{formatPrice(shipping)}</span>
                 )}
@@ -202,7 +204,7 @@ export function CartDrawer() {
               <Separator className="my-2.5" />
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-sm font-semibold">
-                  Totaal{!summary.vatIncluded && " (excl. btw)"}
+                  {t("cart.total")}{!summary.vatIncluded && t("cart.exclVat")}
                 </span>
                 <span className="text-lg font-extrabold">{formatPrice(total)}</span>
               </div>
@@ -216,7 +218,7 @@ export function CartDrawer() {
                 }}
               >
                 <Link href="/winkelwagen">
-                  Naar winkelwagen
+                  {t("cart.toCart")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -224,7 +226,7 @@ export function CartDrawer() {
                 onClick={() => setCartOpen(false)}
                 className="mt-2 w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                Verder winkelen
+                {t("cart.continueShopping")}
               </button>
             </div>
           </>

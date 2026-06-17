@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCategory } from "@/lib/data/categories";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { CategoryIcon } from "@/components/shared/category-icon";
+import { t } from "@/lib/i18n/server";
 
 const groupIcons: Record<string, string> = {
   lakken: "PaintbrushVertical",
@@ -20,8 +21,8 @@ export function VerfCategories() {
   return (
     <section className="container-klusr">
       <SectionHeading
-        title="Verf — onze specialiteit"
-        subtitle="Op kleur gemengd, professionele kwaliteit"
+        title={t("home.verf.title")}
+        subtitle={t("home.verf.subtitle")}
         href="/categorie/verf"
       />
       {/* Lichte 'shop op verftype'-strip — bewust anders dan de klus-funnel hierboven */}
