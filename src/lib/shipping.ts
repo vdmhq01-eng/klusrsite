@@ -4,10 +4,12 @@
  * Alleen EU-landen (geen douane) — Zwitserland, VK, Noorwegen e.d. zijn bewust
  * weggelaten i.v.m. douane. **Gratis verzending alleen voor NL en BE.**
  *
- * LET OP: de bedragen hieronder zijn realistische schattingen op basis van de
- * PostNL-zonestructuur. Vul ze in vanaf het officiële tariefblad
- * "Landenoverzicht zakelijke tarieven (bus)pakjes 2026" — pas alleen `price`
- * (en evt. `freeOver`) aan; de rest van de webshop pakt het automatisch op.
+ * De internationale tarieven (buiten NL/BE) komen rechtstreeks uit het PostNL-
+ * tariefblad "Landenoverzicht zakelijke tarieven (bus)pakjes — per januari 2026",
+ * tabel **Klein Pakket met track & trace**, gewichtsklasse **500–1000 g**,
+ * omgerekend van excl. → incl. 21% btw en afgerond op €0,05. Andere
+ * gewichtsklasse als basis? Pas dan alleen de `price`-waarden hieronder aan.
+ * NL en BE houden hun eigen consumentprijs met gratis verzending vanaf €50.
  */
 
 export interface CountryShipping {
@@ -22,36 +24,36 @@ export interface CountryShipping {
 const FREE_THRESHOLD = 50;
 
 export const SHIPPING_COUNTRIES: CountryShipping[] = [
-  // Gratis vanaf €50
+  // Gratis vanaf €50 — eigen consumentprijs (NL/BE)
   { code: "NL", name: "Nederland", price: 4.95, freeOver: FREE_THRESHOLD },
   { code: "BE", name: "België", price: 6.95, freeOver: FREE_THRESHOLD },
-  // Buurlanden
-  { code: "DE", name: "Duitsland", price: 8.95 },
-  { code: "LU", name: "Luxemburg", price: 8.95 },
-  { code: "FR", name: "Frankrijk", price: 9.95 },
-  // Overige EU
-  { code: "AT", name: "Oostenrijk", price: 12.95 },
-  { code: "DK", name: "Denemarken", price: 12.95 },
-  { code: "PL", name: "Polen", price: 12.95 },
-  { code: "CZ", name: "Tsjechië", price: 12.95 },
-  { code: "IT", name: "Italië", price: 13.95 },
-  { code: "ES", name: "Spanje", price: 13.95 },
-  { code: "IE", name: "Ierland", price: 13.95 },
-  { code: "SK", name: "Slowakije", price: 13.95 },
-  { code: "HU", name: "Hongarije", price: 13.95 },
-  { code: "SI", name: "Slovenië", price: 13.95 },
-  { code: "SE", name: "Zweden", price: 13.95 },
-  { code: "PT", name: "Portugal", price: 14.95 },
-  { code: "HR", name: "Kroatië", price: 14.95 },
-  { code: "RO", name: "Roemenië", price: 14.95 },
-  { code: "BG", name: "Bulgarije", price: 14.95 },
-  { code: "FI", name: "Finland", price: 14.95 },
-  { code: "EE", name: "Estland", price: 14.95 },
-  { code: "LV", name: "Letland", price: 14.95 },
-  { code: "LT", name: "Litouwen", price: 14.95 },
-  { code: "GR", name: "Griekenland", price: 15.95 },
-  { code: "CY", name: "Cyprus", price: 16.95 },
-  { code: "MT", name: "Malta", price: 16.95 },
+  // Buurlanden — PostNL Klein Pakket met T&T (500–1000 g) × btw
+  { code: "DE", name: "Duitsland", price: 9.45 },
+  { code: "FR", name: "Frankrijk", price: 11.2 },
+  { code: "LU", name: "Luxemburg", price: 12.1 },
+  // Overige EU (oplopend) — zelfde PostNL-tabel, incl. 21% btw
+  { code: "ES", name: "Spanje", price: 11.8 },
+  { code: "PT", name: "Portugal", price: 11.8 },
+  { code: "CZ", name: "Tsjechië", price: 12.1 },
+  { code: "EE", name: "Estland", price: 12.1 },
+  { code: "LV", name: "Letland", price: 12.1 },
+  { code: "PL", name: "Polen", price: 12.45 },
+  { code: "IT", name: "Italië", price: 12.45 },
+  { code: "SE", name: "Zweden", price: 12.45 },
+  { code: "HU", name: "Hongarije", price: 12.75 },
+  { code: "FI", name: "Finland", price: 12.75 },
+  { code: "LT", name: "Litouwen", price: 12.75 },
+  { code: "HR", name: "Kroatië", price: 12.9 },
+  { code: "CY", name: "Cyprus", price: 12.9 },
+  { code: "DK", name: "Denemarken", price: 13.15 },
+  { code: "AT", name: "Oostenrijk", price: 13.35 },
+  { code: "SI", name: "Slovenië", price: 13.35 },
+  { code: "RO", name: "Roemenië", price: 13.35 },
+  { code: "BG", name: "Bulgarije", price: 13.35 },
+  { code: "MT", name: "Malta", price: 15.35 },
+  { code: "IE", name: "Ierland", price: 15.45 },
+  { code: "GR", name: "Griekenland", price: 15.45 },
+  { code: "SK", name: "Slowakije", price: 16.95 },
 ];
 
 export const SHIPPING_COUNTRY_MAP: Record<string, CountryShipping> = Object.fromEntries(
