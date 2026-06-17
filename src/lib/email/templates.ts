@@ -551,6 +551,97 @@ function orderConfirmationText(order: Order): string {
   return lines.join("\n");
 }
 
+/** "Je bestelling is onderweg" — verzonden bij het aanmaken van het label. */
+export function shippingConfirmationEmail(order: Order): { subject: string; html: string; text: string } {
+  const c = order.customer;
+  const ship = order.shipment;
+  const trackUrl = ship?.trackTrace || `${SITE_URL}/bestelstatus`;
+  const delivery = formatDate(order.estimatedDelivery);
+
+  const itemsTable =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
+    order.items.map(itemRow).join("") +
+    `</table>`;
+
+  const trackBox =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;background:${C.bg};border-radius:10px;">` +
+    `<tr><td style="padding:14px 18px;font-size:14px;color:${C.text};">` +
+    `<span style="color:${C.muted};">Bestelnummer</span><br>` +
+    `<strong style="font-size:20px;letter-spacing:0.5px;">${esc(order.reference)}</strong>` +
+    (ship?.barcode
+      ? `<br><span style="color:${C.muted};">Track &amp; trace-code</span><br><strong style="font-size:16px;letter-spacing:0.5px;">${esc(ship.barcode)}</strong>`
+      : "") +
+    `</td></tr></table>`;
+
+  const content = `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">
+      <tr>
+        <td valign="middle" style="width:44px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:${C.red};color:#ffffff;text-align:center;line-height:40px;font-size:20px;font-weight:bold;">&#128666;</div>
+        </td>
+        <td valign="middle" style="padding-left:12px;">
+          <h1 style="margin:0;font-size:22px;color:${C.text};font-family:Arial,Helvetica,sans-serif;">Je bestelling is onderweg!</h1>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">
+      Hoi ${esc(c.firstName)}, goed nieuws — je bestelling is zojuist met PostNL verzonden.
+      ${delivery ? `Verwachte bezorging: <strong>${esc(delivery)}</strong>.` : "Je pakket is hard op weg naar je toe."}
+    </p>
+
+    ${trackBox}
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+      ${button("Volg je pakket (Track &amp; Trace)", trackUrl)}
+    </td></tr></table>
+
+    <div style="height:24px;"></div>
+    <h2 style="margin:0 0 4px;font-size:15px;color:${C.text};">Wat er onderweg is</h2>
+    ${itemsTable}
+
+    <div style="height:24px;"></div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td valign="top" style="font-size:13px;color:${C.text};line-height:1.6;">
+        <strong style="display:block;margin-bottom:4px;color:${C.muted};text-transform:uppercase;font-size:11px;letter-spacing:0.5px;">Bezorgadres</strong>
+        ${esc(c.firstName)} ${esc(c.lastName)}<br>${esc(c.street)}<br>${esc(c.postalCode)} ${esc(c.city)}
+      </td></tr>
+    </table>
+
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:${C.muted};text-align:center;">
+      Vragen over je bezorging? Mail naar
+      <a href="mailto:${esc(CONTACT_EMAIL)}" style="color:${C.red};text-decoration:none;">${esc(CONTACT_EMAIL)}</a>
+      of bel ${esc(flagshipStore.phone)}.
+    </p>
+  `;
+
+  const textLines = [
+    "Je bestelling is onderweg!",
+    "",
+    `Hoi ${c.firstName}, je bestelling ${order.reference} is zojuist met PostNL verzonden.`,
+    ship?.barcode ? `Track & trace-code: ${ship.barcode}` : "",
+    delivery ? `Verwachte bezorging: ${delivery}` : "",
+    "",
+    "Wat er onderweg is:",
+    ...order.items.map((i) => `  - ${i.quantity}x ${i.title}${i.selectedColor ? ` (${i.selectedColor.name})` : ""}`),
+    "",
+    `Volg je pakket: ${trackUrl}`,
+    `Bezorgadres: ${c.firstName} ${c.lastName}, ${c.street}, ${c.postalCode} ${c.city}`,
+    "",
+    `Vragen? ${CONTACT_EMAIL} of ${flagshipStore.phone}`,
+  ].filter(Boolean);
+
+  return {
+    subject: `Je bestelling ${order.reference} is onderweg — KLUSR`,
+    html: layout({
+      title: `Je bestelling ${order.reference} is onderweg`,
+      preheader: `Hoi ${c.firstName}, je pakket is verzonden met PostNL.${delivery ? ` Verwacht: ${delivery}.` : ""}`,
+      content,
+    }),
+    text: textLines.join("\n"),
+  };
+}
+
 // --- Newsletter welcome -----------------------------------------------------
 
 export function welcomeEmail({ firstName }: { firstName?: string }): {

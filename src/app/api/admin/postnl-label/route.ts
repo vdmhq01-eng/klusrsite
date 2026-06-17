@@ -3,6 +3,7 @@ import { getAdminSession } from "@/auth";
 import { getOrder, setShipped } from "@/lib/store/orders";
 import { createLabel, isPostNLConfigured } from "@/lib/postnl";
 import { pushShipment } from "@/lib/channable";
+import { sendShippingConfirmation } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -28,12 +29,18 @@ export async function POST(req: Request) {
 
     // Bij succes de order als verzonden markeren + verzendgegevens bewaren.
     if (result.ok && result.barcode) {
-      await setShipped(order.id, {
+      const shipped = await setShipped(order.id, {
         carrier: "postnl",
         barcode: result.barcode,
         trackTrace: result.trackTrace,
         labelCreatedAt: new Date().toISOString(),
       });
+
+      // Klant mailen dat de bestelling onderweg is, met track & trace.
+      // Best-effort: faalt nooit de labelrespons.
+      void sendShippingConfirmation(shipped ?? order).catch((e) =>
+        console.error("[postnl-label] verzendmail mislukt", e),
+      );
 
       // Marketplace-order? Koppel de PostNL-tracking terug aan Channable, die
       // de verzending doorzet naar de betreffende marketplace. (Demo-safe.)

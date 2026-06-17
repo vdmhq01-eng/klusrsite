@@ -10,6 +10,7 @@ import {
   RefreshCw,
   KeyRound,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -161,6 +162,14 @@ export function OrdersPanel() {
                     <td className="py-3 pr-3">
                       <div className="font-semibold">{o.reference}</div>
                       <div className="text-xs text-muted-foreground">{formatDate(o.createdAt)}</div>
+                      <a
+                        href={`/pakbon/${o.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        <FileText className="h-3 w-3" /> Print pakbon
+                      </a>
                     </td>
                     <td className="py-3 pr-3">
                       <div>{o.customer.firstName} {o.customer.lastName}</div>

@@ -2,6 +2,7 @@ import type { Order } from "@/types";
 import { sendEmail, isEmailConfigured, type SendEmailResult } from "./client";
 import {
   orderConfirmationEmail,
+  shippingConfirmationEmail,
   welcomeEmail,
   verificationEmail,
   magicLinkEmail,
@@ -62,6 +63,12 @@ export async function sendPasswordReset(input: {
 /** Verstuur de bestelbevestiging naar de klant. */
 export async function sendOrderConfirmation(order: Order): Promise<SendEmailResult> {
   const { subject, html, text } = orderConfirmationEmail(order);
+  return sendEmail({ to: order.customer.email, subject, html, text });
+}
+
+/** Verstuur de "je bestelling is onderweg"-mail met track & trace. */
+export async function sendShippingConfirmation(order: Order): Promise<SendEmailResult> {
+  const { subject, html, text } = shippingConfirmationEmail(order);
   return sendEmail({ to: order.customer.email, subject, html, text });
 }
 
