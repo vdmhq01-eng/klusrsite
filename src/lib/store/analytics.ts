@@ -14,7 +14,12 @@ import {
   kvSRem,
   kvSMembers,
   kvSetEx,
+  kvSetExNX,
   kvMGet,
+  kvGetJSON,
+  kvHIncrBy,
+  kvHGetAll,
+  kvExpire,
 } from "./kv";
 
 export interface AnalyticsEvent {
@@ -36,16 +41,31 @@ const mem: AnalyticsEvent[] = [];
 
 const memVisitors = new Map<string, Set<string>>();
 
-// Live sessies (huidige pagina + afreken-vlag) per bezoeker, kortlevend.
+/** Compacte winkelmand-momentopname van een live bezoeker. */
+export interface LiveCart {
+  /** Totaal aantal stuks in het mandje. */
+  count: number;
+  /** Brutowaarde (incl. btw) van het mandje in euro's. */
+  value: number;
+}
+
+// Live sessies (huidige pagina + afreken-vlag + herkomst + mandje) per bezoeker, kortlevend.
 const SESSION_TTL_S = 60; // seconden dat een sessie "live" blijft zonder heartbeat
 const SESSION_INDEX_KEY = "analytics:sessions"; // set met actieve bezoeker-id's
 const sessionKey = (vid: string) => `presence:session:${vid}`;
 const CHECKOUT_PATH = "/checkout"; // de afrekenpagina (winkelwagen → "Verder naar afrekenen")
 const MAX_SESSIONS = 50;
-const memSessions = new Map<
-  string,
-  { path: string; ts: number; checkout: boolean; ip?: string }
->();
+const SOURCE_MAX_LEN = 80; // veiligheidslimiet op de herkomst-label
+
+interface SessionMem {
+  path: string;
+  ts: number;
+  checkout: boolean;
+  ip?: string;
+  source?: string;
+  cart?: LiveCart;
+}
+const memSessions = new Map<string, SessionMem>();
 
 // IP-uitsluiting: eigen/intern verkeer telt niet mee in rapportages en live.
 const EXCLUDED_IPS_KEY = "analytics:excluded-ips";
@@ -55,7 +75,25 @@ const ENV_EXCLUDED_IPS = (process.env.INTERNAL_IPS || "")
   .filter(Boolean);
 const memExcludedIps = new Set<string>();
 
-const dayKey = (d = new Date()) => `analytics:visitors:${d.toISOString().slice(0, 10)}`;
+const isoDay = (d = new Date()) => d.toISOString().slice(0, 10);
+const dayKey = (d = new Date()) => `analytics:visitors:${isoDay(d)}`;
+
+// Herkomst (traffic source) per dag: hash bron→aantal, plus de éérste bron per
+// bezoeker (zodat de telling stabiel blijft en niet bij elke pageview oploopt).
+const HERKOMST_DAY_TTL_S = 60 * 60 * 24 * 8; // ~8 dagen, daarna ruimt de TTL het op
+const herkomstDayKey = (d = new Date()) => `analytics:herkomst:${isoDay(d)}`;
+const visitorSourceKey = (vid: string, d = new Date()) =>
+  `analytics:vsource:${isoDay(d)}:${vid}`;
+
+/** Normaliseer een bron-label naar een korte, schone string (of undefined). */
+function cleanSource(source?: string): string | undefined {
+  if (!source) return undefined;
+  const s = String(source).replace(/\s+/g, " ").trim().slice(0, SOURCE_MAX_LEN);
+  return s || undefined;
+}
+
+const memHerkomst = new Map<string, Map<string, number>>(); // dag → (bron → aantal)
+const memVisitorSource = new Map<string, string>(); // "dag:vid" → bron (eerste)
 
 /** Is een path de afrekenpagina? (start-with, zodat sub-stappen meetellen) */
 function isCheckoutPath(path?: string): boolean {
@@ -156,18 +194,49 @@ interface SessionRecord {
   /** IP van de bezoeker — alleen serverside; om live op het laatste moment te
    *  filteren wanneer een IP later wordt uitgesloten. Kort bewaard via de TTL. */
   ip?: string;
+  /** Herkomst-label van deze bezoeker (bijv. "Google Ads", "Direct"). */
+  source?: string;
+  /** Compacte winkelmand-momentopname (aantal stuks + brutowaarde). */
+  cart?: LiveCart;
+}
+
+/** Wat de admin per live bezoeker te zien krijgt. */
+export interface LiveSession {
+  path: string;
+  secondsAgo: number;
+  checkout: boolean;
+  source?: string;
+  cart?: LiveCart;
+}
+
+/** Valideer/normaliseer een aangeleverd winkelmandje (defensief tegen rommel). */
+function cleanCart(cart?: { count?: unknown; value?: unknown }): LiveCart | undefined {
+  if (!cart || typeof cart !== "object") return undefined;
+  const count = Math.max(0, Math.min(9999, Math.round(Number(cart.count) || 0)));
+  if (count <= 0) return undefined;
+  const value = Math.max(0, Math.round((Number(cart.value) || 0) * 100) / 100);
+  return { count, value };
 }
 
 /**
- * Werk de live-sessie van een bezoeker bij: huidige pagina + afreken-vlag, met
- * korte TTL. Houdt daarnaast een index-set bij zodat we sessies kunnen oplijsten.
+ * Werk de live-sessie van een bezoeker bij: huidige pagina + afreken-vlag +
+ * herkomst + winkelmand, met korte TTL. Houdt daarnaast een index-set bij zodat
+ * we sessies kunnen oplijsten.
  */
-async function touchSession(visitorId: string, path?: string, ip?: string): Promise<void> {
+async function touchSession(
+  visitorId: string,
+  path?: string,
+  ip?: string,
+  source?: string,
+  cart?: LiveCart,
+): Promise<void> {
   const rec: SessionRecord = {
     path: path || "/",
     ts: Date.now(),
     checkout: isCheckoutPath(path),
     ip,
+    source: cleanSource(source),
+    cart,
   };
   try {
     if (isKvEnabled()) {
@@ -184,28 +253,30 @@ async function touchSession(visitorId: string, path?: string, ip?: string): Prom
 
 /**
  * Actieve live-sessies: per niet-verlopen bezoeker de huidige pagina, hoe lang
- * geleden en of die afrekent. Verlopen sessies (TTL) worden overgeslagen en uit
- * de index opgeruimd. Begrensd tot MAX_SESSIONS. Best-effort: leeg bij storing.
+ * geleden, of die afrekent, de herkomst en het winkelmandje. Verlopen sessies
+ * (TTL) worden overgeslagen en uit de index opgeruimd. Begrensd tot
+ * MAX_SESSIONS. Best-effort: leeg bij storing.
  */
-export async function getLiveSessions(): Promise<
-  { path: string; secondsAgo: number; checkout: boolean }[]
-> {
+export async function getLiveSessions(): Promise<LiveSession[]> {
   const now = Date.now();
+  const toView = (rec: SessionRecord | SessionMem): LiveSession => ({
+    path: rec.path,
+    secondsAgo: Math.floor((now - rec.ts) / 1000),
+    checkout: Boolean(rec.checkout),
+    source: rec.source,
+    cart: rec.cart,
+  });
   try {
     const excluded = await getExcludedSet();
     if (!isKvEnabled()) {
-      const out: { path: string; secondsAgo: number; checkout: boolean }[] = [];
+      const out: LiveSession[] = [];
       for (const [vid, rec] of memSessions) {
         if (now - rec.ts > SESSION_TTL_S * 1000) {
           memSessions.delete(vid);
           continue;
         }
         if (rec.ip && excluded.has(rec.ip)) continue; // sinds kort uitgesloten IP
-        out.push({
-          path: rec.path,
-          secondsAgo: Math.floor((now - rec.ts) / 1000),
-          checkout: rec.checkout,
-        });
+        out.push(toView(rec));
       }
       return out
         .sort((a, b) => a.secondsAgo - b.secondsAgo)
@@ -215,7 +286,7 @@ export async function getLiveSessions(): Promise<
     const ids = await kvSMembers(SESSION_INDEX_KEY);
     if (ids.length === 0) return [];
     const raws = await kvMGet(ids.map(sessionKey));
-    const out: { path: string; secondsAgo: number; checkout: boolean }[] = [];
+    const out: LiveSession[] = [];
     const stale: string[] = [];
     ids.forEach((vid, i) => {
       const raw = raws[i];
@@ -230,11 +301,7 @@ export async function getLiveSessions(): Promise<
           return;
         }
         if (rec.ip && excluded.has(rec.ip)) return; // sinds kort uitgesloten IP
-        out.push({
-          path: rec.path,
-          secondsAgo: Math.floor((now - rec.ts) / 1000),
-          checkout: Boolean(rec.checkout),
-        });
+        out.push(toView(rec));
       } catch {
         stale.push(vid);
       }
@@ -242,6 +309,79 @@ export async function getLiveSessions(): Promise<
     // Opruimen (best-effort, niet awaiten zodat de respons snel blijft).
     for (const vid of stale) void kvSRem(SESSION_INDEX_KEY, vid);
     return out.sort((a, b) => a.secondsAgo - b.secondsAgo).slice(0, MAX_SESSIONS);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Leg de herkomst van een bezoeker vast voor de dagaggregatie. Telt de bron maar
+ * ÉÉN keer per bezoeker per dag (de eerste pageview wint), zodat het overzicht
+ * stabiel blijft en niet bij elke pageview/heartbeat oploopt. Best-effort.
+ */
+async function recordHerkomst(visitorId: string, source?: string): Promise<void> {
+  const src = cleanSource(source);
+  if (!src) return;
+  const day = isoDay();
+  try {
+    if (isKvEnabled()) {
+      // NX-claim van de bron per bezoeker per dag → alleen de eerste keer tellen.
+      // JSON-gecodeerd opslaan zodat kvGetJSON het later correct teruglezen kan.
+      const first = await kvSetExNX(
+        visitorSourceKey(visitorId),
+        JSON.stringify(src),
+        HERKOMST_DAY_TTL_S,
+      );
+      if (first) {
+        await kvHIncrBy(herkomstDayKey(), src, 1);
+        await kvExpire(herkomstDayKey(), HERKOMST_DAY_TTL_S);
+      }
+    } else {
+      const vKey = `${day}:${visitorId}`;
+      if (!memVisitorSource.has(vKey)) {
+        memVisitorSource.set(vKey, src);
+        const counts = memHerkomst.get(day) ?? new Map<string, number>();
+        counts.set(src, (counts.get(src) || 0) + 1);
+        memHerkomst.set(day, counts);
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** De vastgelegde (eerste) herkomstbron van een bezoeker vandaag, indien bekend. */
+async function getVisitorSource(visitorId: string): Promise<string | undefined> {
+  try {
+    if (isKvEnabled()) {
+      return (await kvGetJSON<string>(visitorSourceKey(visitorId))) ?? undefined;
+    }
+    return memVisitorSource.get(`${isoDay()}:${visitorId}`);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Herkomst vandaag: top-bronnen met aantallen, aflopend gesorteerd. Best-effort:
+ * leeg bij storing. Wordt door het live-endpoint meegestuurd naar de admin.
+ */
+export async function getHerkomstToday(
+  limit = 12,
+): Promise<{ source: string; count: number }[]> {
+  try {
+    let entries: [string, number][];
+    if (isKvEnabled()) {
+      const hash = await kvHGetAll(herkomstDayKey());
+      entries = Object.entries(hash).map(([s, c]) => [s, Number(c) || 0]);
+    } else {
+      entries = [...(memHerkomst.get(isoDay()) ?? new Map()).entries()];
+    }
+    return entries
+      .filter(([s, c]) => s && c > 0)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
   } catch {
     return [];
   }
@@ -267,12 +407,21 @@ export async function recordVisit(input: {
   ip?: string;
   productId?: string;
   title?: string;
+  /** Herkomst-label, alleen meegestuurd bij de eerste pageview van een sessie. */
+  source?: string;
+  /** Compacte winkelmand-momentopname (pageview én heartbeat). */
+  cart?: LiveCart;
   logType?: "pageview" | "view_item" | null;
 }): Promise<void> {
-  const { visitorId, path, ip, productId, title, logType } = input;
+  const { visitorId, path, ip, productId, title, source, cart, logType } = input;
   try {
     if (visitorId) {
-      await touchSession(visitorId, path, ip);
+      // Herkomst is alleen bij de éérste pageview aanwezig; leg 'm vast voor de
+      // dagaggregatie en hergebruik 'm zodat de live-sessie de bron blijft tonen
+      // ook als latere events (heartbeat) geen bron meesturen.
+      if (source) await recordHerkomst(visitorId, source);
+      const liveSource = cleanSource(source) ?? (await getVisitorSource(visitorId));
+      await touchSession(visitorId, path, ip, liveSource, cleanCart(cart));
       if (isKvEnabled()) {
         await kvSAdd(dayKey(), visitorId);
       } else {

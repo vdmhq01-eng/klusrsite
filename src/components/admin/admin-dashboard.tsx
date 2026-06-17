@@ -20,6 +20,7 @@ import {
   Plus,
   Trash2,
   RotateCcw,
+  MapPin,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -401,11 +402,14 @@ interface LiveSession {
   path: string;
   secondsAgo: number;
   checkout: boolean;
+  source?: string;
+  cart?: { count: number; value: number };
 }
 
 interface LiveData {
   count: number;
   sessions: LiveSession[];
+  herkomst?: { source: string; count: number }[];
 }
 
 /** Maak een pad leesbaar voor de owner ("/" → "Home"). */
@@ -438,6 +442,7 @@ function LiveSessionsCard() {
 
   const count = data?.count ?? 0;
   const sessions = data?.sessions ?? [];
+  const herkomst = data?.herkomst ?? [];
 
   return (
     <Card>
@@ -454,30 +459,76 @@ function LiveSessionsCard() {
       </CardHeader>
       <CardContent>
         <ul className="divide-y divide-border text-sm">
-          {sessions.map((s, i) => (
-            <li key={i} className="flex items-center justify-between gap-3 py-2">
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="truncate font-medium">{prettyPath(s.path)}</span>
-                {s.checkout && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-                    <ShoppingCart className="h-3 w-3" /> Rekent af
+          {sessions.map((s, i) => {
+            // Mandje zonder afrekenpagina + al even op de pagina = mogelijk "aan
+            // het afhaken"; markeer dat zodat de owner het mandje opmerkt.
+            const dropping = !!s.cart && s.cart.count > 0 && !s.checkout;
+            return (
+              <li key={i} className="flex items-start justify-between gap-3 py-2">
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate font-medium">{prettyPath(s.path)}</span>
+                    {s.checkout && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                        <ShoppingCart className="h-3 w-3" /> Rekent af
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                {s.secondsAgo} sec geleden
-              </span>
-            </li>
-          ))}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{s.source || "Direct"}</span>
+                    </span>
+                    {s.cart && s.cart.count > 0 && (
+                      <span
+                        className={cn(
+                          "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                          dropping
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-secondary text-secondary-foreground",
+                        )}
+                      >
+                        <ShoppingCart className="h-3 w-3" /> {s.cart.count} in mandje ·{" "}
+                        {formatPrice(s.cart.value)}
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {s.secondsAgo} sec geleden
+                </span>
+              </li>
+            );
+          })}
           {sessions.length === 0 && (
             <li className="py-3 text-center text-muted-foreground">
               Op dit moment geen actieve bezoekers.
             </li>
           )}
         </ul>
+
+        {/* Herkomst vandaag: top-bronnen met aantallen uit de dagaggregatie. */}
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" /> Herkomst vandaag
+          </p>
+          {herkomst.length > 0 ? (
+            <ul className="space-y-1 text-sm">
+              {herkomst.map((h) => (
+                <li key={h.source} className="flex items-center justify-between gap-3">
+                  <span className="truncate">{h.source}</span>
+                  <span className="shrink-0 font-semibold tabular-nums">{h.count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">Nog geen herkomstdata vandaag.</p>
+          )}
+        </div>
+
         <p className="mt-3 text-xs text-muted-foreground">
-          Toont per actieve bezoeker de huidige pagina. Ververst elke 12s. Uitgesloten IP&apos;s
-          verschijnen hier niet.
+          Toont per actieve bezoeker de huidige pagina, herkomst en winkelmand. Ververst elke 12s.
+          Uitgesloten IP&apos;s verschijnen hier niet.
         </p>
       </CardContent>
     </Card>

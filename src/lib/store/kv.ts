@@ -93,11 +93,55 @@ export async function kvSetEx(key: string, value: string, seconds: number): Prom
   await cmd(["SET", key, value, "EX", seconds]);
 }
 
+/**
+ * Zet een string met TTL alleen als de key nog NIET bestaat (SET … EX … NX).
+ * True = nieuw gezet (jij was de eerste), false = bestond al of KV uit/fout.
+ * Handig om de éérste waarde (bijv. de herkomstbron) per bezoeker vast te leggen.
+ */
+export async function kvSetExNX(key: string, value: string, seconds: number): Promise<boolean> {
+  const res = await cmd<string>(["SET", key, value, "EX", seconds, "NX"]);
+  return res === "OK";
+}
+
 /** Lees meerdere keys in één keer (MGET). Mist een key → null op die positie. */
 export async function kvMGet(keys: string[]): Promise<(string | null)[]> {
   if (keys.length === 0) return [];
   const res = await cmd<(string | null)[]>(["MGET", ...keys]);
   return Array.isArray(res) ? res : keys.map(() => null);
+}
+
+/** Verhoog een hash-veld met `by` (HINCRBY). Voor per-bron tellers per dag. */
+export async function kvHIncrBy(key: string, field: string, by = 1): Promise<void> {
+  await cmd(["HINCRBY", key, field, by]);
+}
+
+/**
+ * Lees een hele hash als field→value object (HGETALL). Leeg bij elke fout.
+ * Upstash REST kan de hash als vlakke array [field, value, …] of als object
+ * teruggeven; beide vormen worden afgevangen.
+ */
+export async function kvHGetAll(key: string): Promise<Record<string, string>> {
+  const res = await cmd<unknown>(["HGETALL", key]);
+  if (Array.isArray(res)) {
+    const out: Record<string, string> = {};
+    for (let i = 0; i + 1 < res.length; i += 2) {
+      out[String(res[i])] = String(res[i + 1]);
+    }
+    return out;
+  }
+  if (res && typeof res === "object") {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(res as Record<string, unknown>)) {
+      out[k] = String(v);
+    }
+    return out;
+  }
+  return {};
+}
+
+/** Zet (of verleng) de TTL van een bestaande key, in seconden (EXPIRE). */
+export async function kvExpire(key: string, seconds: number): Promise<void> {
+  await cmd(["EXPIRE", key, seconds]);
 }
 
 /** Push een JSON-waarde vooraan een lijst (voor event-logs). */

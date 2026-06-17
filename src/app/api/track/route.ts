@@ -33,17 +33,25 @@ export async function POST(req: Request) {
     visitorId?: string;
     productId?: string;
     title?: string;
+    source?: string;
+    cart?: { count?: unknown; value?: unknown };
   };
   const type = String(body.type || "");
   if (!ALLOWED.has(type)) return NextResponse.json({ ok: false }, { status: 400 });
 
   const visitorId = body.visitorId ? String(body.visitorId).slice(0, 64) : undefined;
   const path = body.path ? String(body.path).slice(0, 200) : undefined;
+  // Herkomst-label (alleen op de eerste pageview) en compacte winkelmand.
+  const source = body.source ? String(body.source).slice(0, 80) : undefined;
+  const cart =
+    body.cart && typeof body.cart === "object"
+      ? { count: Number(body.cart.count) || 0, value: Number(body.cart.value) || 0 }
+      : undefined;
 
   if (type === "pageview" || type === "view") {
-    await recordVisit({ visitorId, path, ip, logType: "pageview" });
+    await recordVisit({ visitorId, path, ip, source, cart, logType: "pageview" });
   } else if (type === "heartbeat") {
-    await recordVisit({ visitorId, path, ip, logType: null });
+    await recordVisit({ visitorId, path, ip, cart, logType: null });
   } else if (type === "view_item") {
     await recordVisit({
       visitorId,
