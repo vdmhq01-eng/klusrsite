@@ -5,7 +5,8 @@ import { Toaster as SonnerToaster } from "sonner";
 export function Toaster() {
   return (
     <SonnerToaster
-      position="bottom-right"
+      // Boven-midden: blokkeert op mobiel niet de sticky checkout-knop / winkelwagen-drawer.
+      position="top-center"
       toastOptions={{
         classNames: {
           toast:

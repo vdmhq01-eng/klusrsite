@@ -42,6 +42,8 @@ export function CartDrawer() {
       : summary.subtotalRegular - summary.savings
     : 0;
   const savings = mounted ? summary.savings : 0;
+  const shipping = mounted ? summary.shipping : 0;
+  const total = subtotal + shipping;
 
   // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
   // drawer opens, so the catalogus stays out of the global bundle.
@@ -178,11 +180,29 @@ export function CartDrawer() {
                   <span className="font-bold text-primary">-{formatPrice(savings)}</span>
                 </div>
               )}
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
                   Subtotaal{!summary.vatIncluded && " (excl. btw)"}
                 </span>
-                <span className="text-lg font-extrabold">{formatPrice(subtotal)}</span>
+                <span className="font-semibold">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between text-sm">
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <TrailerIcon className="h-4 w-4" />
+                  Verzendkosten
+                </span>
+                {shipping === 0 ? (
+                  <span className="font-semibold text-klusr-stock">Gratis</span>
+                ) : (
+                  <span className="font-semibold">{formatPrice(shipping)}</span>
+                )}
+              </div>
+              <Separator className="my-2.5" />
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold">
+                  Totaal{!summary.vatIncluded && " (excl. btw)"}
+                </span>
+                <span className="text-lg font-extrabold">{formatPrice(total)}</span>
               </div>
               <Button
                 asChild
