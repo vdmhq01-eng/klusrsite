@@ -34,12 +34,28 @@ import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { priceView } from "@/lib/pricing";
+import { useT } from "@/components/i18n/locale-provider";
+import type { MessageKey } from "@/lib/i18n/dictionaries";
 
-const usps = [
-  { icon: Truck, label: "Gratis verzending vanaf €50" },
-  { icon: RotateCcw, label: "Gratis retourneren binnen 30 dagen" },
-  { icon: Sparkles, label: "Advies van ex-schilders" },
-  { icon: CreditCard, label: "Achteraf betalen mogelijk" },
+/**
+ * `pricing.ts` levert `referenceLabel` ("Adviesprijs"/"Normaal") en `vatSuffix`
+ * ("incl. btw"/"excl. btw") als vaste NL-strings. We veranderen die return-waarden
+ * niet, maar mappen ze hier naar vertaalsleutels (NL blijft identiek, rest vertaalt).
+ */
+const REFERENCE_LABEL_KEY: Record<string, MessageKey> = {
+  Adviesprijs: "price.advies",
+  Normaal: "price.normal",
+};
+const VAT_SUFFIX_KEY: Record<string, MessageKey> = {
+  "incl. btw": "price.inclVat",
+  "excl. btw": "price.exclVat",
+};
+
+const usps: { icon: typeof Truck; labelKey: MessageKey }[] = [
+  { icon: Truck, labelKey: "pdp.usp.freeShipping" },
+  { icon: RotateCcw, labelKey: "pdp.usp.returns" },
+  { icon: Sparkles, labelKey: "usp.advice" },
+  { icon: CreditCard, labelKey: "pdp.usp.afterpay" },
 ];
 
 export function ProductBuybox({
@@ -49,6 +65,7 @@ export function ProductBuybox({
   product: Product;
   glansVariants?: GlansVariant[];
 }) {
+  const t = useT();
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
   const [color, setColor] = useState<SelectedColor | undefined>();
   const [quantity, setQuantity] = useState(1);
@@ -111,8 +128,8 @@ export function ProductBuybox({
    * (daar staan o.a. Apple Pay / Google Pay zodra die in Mollie actief zijn). */
   function handleBuyNow() {
     if (product.colorMatchable && !color) {
-      toast("Kies eerst een kleur", {
-        description: "Selecteer een kleur voordat je deze verf bestelt.",
+      toast(t("pdp.chooseColorTitle"), {
+        description: t("pdp.chooseColorBuy"),
       });
       return;
     }
@@ -123,8 +140,8 @@ export function ProductBuybox({
 
   function handleAdd() {
     if (product.colorMatchable && !color) {
-      toast("Kies eerst een kleur", {
-        description: "Selecteer een kleur voordat je deze verf toevoegt.",
+      toast(t("pdp.chooseColorTitle"), {
+        description: t("pdp.chooseColorAdd"),
       });
       return;
     }
@@ -145,7 +162,7 @@ export function ProductBuybox({
         },
       ],
     });
-    toast.success("Toegevoegd aan winkelwagen", {
+    toast.success(t("pdp.addedToCart"), {
       description: `${product.title} · ${variant.label}${color ? ` · ${color.name}` : ""}`,
     });
   }
@@ -163,7 +180,7 @@ export function ProductBuybox({
         <div className="mt-2 flex items-center gap-3">
           <StarRating rating={product.rating} size="md" showCount={false} />
           <a href="#reviews" className="text-sm font-medium text-muted-foreground hover:text-primary">
-            {product.rating.toFixed(1)} · {product.reviewCount} reviews
+            {t("pdp.reviewsLink", { rating: product.rating.toFixed(1), count: product.reviewCount })}
           </a>
         </div>
       </div>
@@ -184,7 +201,7 @@ export function ProductBuybox({
       <div>
         {priceInfo.reference && (
           <p className="text-sm text-muted-foreground">
-            {priceInfo.referenceLabel}{" "}
+            {priceInfo.referenceLabel ? t(REFERENCE_LABEL_KEY[priceInfo.referenceLabel]) : null}{" "}
             <span className="line-through">{formatPrice(priceInfo.reference)}</span>
           </p>
         )}
@@ -194,45 +211,47 @@ export function ProductBuybox({
           </span>
           {priceInfo.badge && (
             <span className="mb-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase text-primary">
-              {priceInfo.badge === "ProfPas" ? "ProfPas-prijs" : "KLUSRPAS-prijs"}
+              {priceInfo.badge === "ProfPas" ? t("pdp.profpasPrice") : t("pdp.kluspasPrice")}
             </span>
           )}
           <span className="mb-1.5 text-xs font-medium text-muted-foreground">
-            {priceInfo.vatSuffix}
+            {t(VAT_SUFFIX_KEY[priceInfo.vatSuffix])}
           </span>
         </div>
         {priceInfo.savings !== undefined && priceInfo.savings > 0 && (
           <p className="mt-1 text-sm font-semibold text-klusr-stock">
-            Je bespaart {formatPrice(priceInfo.savings)}
-            {priceInfo.savingsPct ? ` (${priceInfo.savingsPct}%)` : ""}
+            {t("price.save", { amount: formatPrice(priceInfo.savings) })}
+            {priceInfo.savingsPct ? t("price.savePct", { pct: priceInfo.savingsPct }) : ""}
             {priceInfo.savingsVsAdvies
-              ? " op de adviesprijs"
+              ? t("price.vsAdvies")
               : priceInfo.badge === "KLUSRPAS"
-                ? " met je gratis KLUSR-account"
+                ? t("price.vsAccount")
                 : ""}
           </p>
         )}
         {priceInfo.normalPrice !== undefined && (
           <p className="mt-1 text-sm text-muted-foreground">
-            Normale prijs{" "}
+            {t("pdp.normalPrice")}{" "}
             <span className="font-semibold text-foreground">
               {formatPrice(priceInfo.normalPrice)}
             </span>{" "}
-            <span className="text-xs">— zonder account</span>
+            <span className="text-xs">{t("pdp.withoutAccount")}</span>
           </p>
         )}
         {surcharge > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
-            Incl. {color?.base?.label.toLowerCase()} (+{formatPrice(surcharge)} voor
-            donkere kleur)
+            {t("pdp.surcharge", {
+              base: color?.base?.label.toLowerCase() ?? "",
+              amount: formatPrice(surcharge),
+            })}
           </p>
         )}
         {perLiter && (
           <p className="mt-1 text-xs text-muted-foreground">
-            {formatPrice(perLiter)} per liter
+            {t("pdp.perLiter", { price: formatPrice(perLiter) })}
             {bestPerLiter && perLiter > bestPerLiter + 0.01 && (
               <span className="ml-1 font-medium text-primary">
-                · grotere bus is voordeliger per liter
+                · {t("pdp.perLiterCheaper")}
               </span>
             )}
           </p>
@@ -248,8 +267,7 @@ export function ProductBuybox({
       />
       {color?.base && (
         <p className="-mt-2 text-xs text-muted-foreground">
-          Voorraad getoond voor <strong>{color.base.label}</strong> — elke basis
-          heeft een eigen voorraad.
+          {t("pdp.stockForBasePre")}<strong>{color.base.label}</strong>{t("pdp.stockForBasePost")}
         </p>
       )}
 
@@ -259,7 +277,7 @@ export function ProductBuybox({
       {product.variants.length > 1 && (
         <div>
           <p className="mb-2 text-sm font-semibold">
-            Maat / inhoud: <span className="text-muted-foreground">{variant.label}</span>
+            {t("pdp.sizeLabel")} <span className="text-muted-foreground">{variant.label}</span>
           </p>
           {product.variants.length > 8 ? (
             <select
@@ -301,7 +319,7 @@ export function ProductBuybox({
       {/* Glansgraad — andere glansvarianten van dezelfde verflijn */}
       {glansVariants.length > 1 && (
         <div>
-          <p className="mb-2 text-sm font-semibold">Glansgraad</p>
+          <p className="mb-2 text-sm font-semibold">{t("plp.facet.glans")}</p>
           <div className="flex flex-wrap gap-2">
             {glansVariants.map((g) =>
               g.active ? (
@@ -329,10 +347,10 @@ export function ProductBuybox({
       {product.colorMatchable && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Kleur</p>
+            <p className="text-sm font-semibold">{t("pdp.color")}</p>
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
               <Palette className="h-3 w-3" />
-              Mengverf
+              {t("plp.group.mengverf")}
             </span>
           </div>
 
@@ -356,7 +374,7 @@ export function ProductBuybox({
                   trigger={
                     <Button variant="outline" className="gap-2">
                       <Palette className="h-4 w-4" />
-                      {color && !isWhite ? "Kleur wijzigen" : "Kies je kleur"}
+                      {color && !isWhite ? t("pdp.changeColor") : t("pdp.chooseColor")}
                     </Button>
                   }
                 />
@@ -385,17 +403,16 @@ export function ProductBuybox({
               <div className="flex items-start gap-2 bg-secondary/40 p-3 text-xs text-muted-foreground">
                 <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <span>
-                  Wordt{" "}
-                  <strong className="text-foreground">professioneel op kleur gemengd</strong>
-                  {color.base ? ` in ${color.base.label.toLowerCase()}` : ""}. Exacte match,
-                  klaar voor gebruik.
+                  {t("pdp.mixed.pre")}
+                  <strong className="text-foreground">{t("pdp.mixed.bold")}</strong>
+                  {color.base ? t("pdp.mixed.inBase", { base: color.base.label.toLowerCase() }) : ""}
+                  {t("pdp.mixed.post")}
                 </span>
               </div>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Elke kleur mogelijk — wij mengen de verf exact op jouw gekozen tint. Kies een
-              kleur om &apos;m op de muur te zien.
+              {t("pdp.anyColor")}
             </p>
           )}
         </div>
@@ -407,7 +424,7 @@ export function ProductBuybox({
           <QuantityStepper value={quantity} onChange={setQuantity} />
           <Button onClick={handleAdd} size="lg" className="flex-1">
             <ShoppingCart className="h-5 w-5" />
-            In winkelwagen
+            {t("pdp.addToCart")}
           </Button>
         </div>
         <Button
@@ -415,29 +432,29 @@ export function ProductBuybox({
           size="lg"
           className="w-full bg-klusr-black text-white hover:bg-klusr-black/90"
         >
-          Direct afrekenen
+          {t("pdp.buyNow")}
         </Button>
         <Button
           variant="outline"
           className="w-full gap-2"
           onClick={() => {
             toggleFavorite(product.id);
-            toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten", {
+            toast(isFavorite ? t("pdp.favRemoved") : t("pdp.favAdded"), {
               description: product.title,
             });
           }}
         >
           <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
-          {isFavorite ? "Bewaard in favorieten" : "Bewaar voor later"}
+          {isFavorite ? t("pdp.favSaved") : t("pdp.favSave")}
         </Button>
       </div>
 
       {/* USPs */}
       <ul className="grid grid-cols-1 gap-2 rounded-lg border border-border bg-secondary/40 p-3 sm:grid-cols-2">
-        {usps.map(({ icon: Icon, label }) => (
-          <li key={label} className="flex items-start gap-2 text-xs font-medium">
+        {usps.map(({ icon: Icon, labelKey }) => (
+          <li key={labelKey} className="flex items-start gap-2 text-xs font-medium">
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            {label}
+            {t(labelKey)}
           </li>
         ))}
       </ul>

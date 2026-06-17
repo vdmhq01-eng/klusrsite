@@ -17,6 +17,7 @@ import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { productKindLabel } from "@/lib/product-kind";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 interface ProductCardProps {
   product: Product;
@@ -26,6 +27,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, listName, className }: ProductCardProps) {
+  const t = useT();
   const addItem = useCart((s) => s.addItem);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const favoriteIds = useFavorites((s) => s.ids);
@@ -53,7 +55,7 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
         }),
       ],
     });
-    toast.success("Toegevoegd aan winkelwagen", {
+    toast.success(t("pdp.addedToCart"), {
       description: `${product.brand} ${product.title}`,
     });
   }
@@ -88,9 +90,9 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
             type="button"
             onClick={() => {
               toggleFavorite(product.id);
-              toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten");
+              toast(isFavorite ? t("pdp.favRemoved") : t("pdp.favAdded"));
             }}
-            aria-label="Bewaar als favoriet"
+            aria-label={t("plp.favorite")}
             className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-primary"
           >
             <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
@@ -145,7 +147,7 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
           <StockStatus stockByStore={product.stockByStore} showScarcity />
           <Button onClick={handleAdd} className="w-full" size="sm">
             <ShoppingCart className="h-4 w-4" />
-            In winkelwagen
+            {t("pdp.addToCart")}
           </Button>
         </div>
       </div>

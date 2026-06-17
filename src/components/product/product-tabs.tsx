@@ -15,20 +15,21 @@ import {
 import { StarRating } from "./star-rating";
 import { formatDate } from "@/lib/utils";
 import { getProductReviews } from "@/lib/reviews";
+import { t } from "@/lib/i18n/server";
 
 export function ProductTabs({ product }: { product: Product }) {
   const reviews = getProductReviews(product);
   return (
     <Tabs defaultValue="omschrijving" className="w-full">
       <TabsList className="w-full">
-        <TabsTrigger value="omschrijving">Omschrijving</TabsTrigger>
-        <TabsTrigger value="specificaties">Specificaties</TabsTrigger>
-        <TabsTrigger value="reviews">Reviews ({product.reviewCount})</TabsTrigger>
+        <TabsTrigger value="omschrijving">{t("pdp.tab.description")}</TabsTrigger>
+        <TabsTrigger value="specificaties">{t("pdp.tab.specs")}</TabsTrigger>
+        <TabsTrigger value="reviews">{t("pdp.tab.reviews")} ({product.reviewCount})</TabsTrigger>
         {product.faqs && product.faqs.length > 0 && (
-          <TabsTrigger value="faq">Veelgestelde vragen</TabsTrigger>
+          <TabsTrigger value="faq">{t("faq.title")}</TabsTrigger>
         )}
         {product.processingAdvice && (
-          <TabsTrigger value="verwerking">Verwerking &amp; advies</TabsTrigger>
+          <TabsTrigger value="verwerking">{t("pdp.tab.processing")}</TabsTrigger>
         )}
       </TabsList>
 
@@ -80,8 +81,7 @@ export function ProductTabs({ product }: { product: Product }) {
               <StarRating rating={product.rating} showCount={false} />
             </div>
             <div className="text-sm text-muted-foreground">
-              Gebaseerd op <strong className="text-foreground">{product.reviewCount}</strong>{" "}
-              reviews van geverifieerde klussers.
+              {t("pdp.reviews.basedOnPre")}<strong className="text-foreground">{product.reviewCount}</strong>{t("pdp.reviews.basedOnPost")}
             </div>
           </div>
           <ul className="space-y-4">
@@ -94,7 +94,7 @@ export function ProductTabs({ product }: { product: Product }) {
                   </div>
                   {r.verified && (
                     <span className="inline-flex items-center gap-1 text-xs text-klusr-stock">
-                      <Check className="h-3 w-3" strokeWidth={3} /> Geverifieerd
+                      <Check className="h-3 w-3" strokeWidth={3} /> {t("pdp.reviews.verified")}
                     </span>
                   )}
                 </div>
@@ -105,7 +105,7 @@ export function ProductTabs({ product }: { product: Product }) {
               </li>
             ))}
             {reviews.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nog geen reviews.</p>
+              <p className="text-sm text-muted-foreground">{t("pdp.reviews.none")}</p>
             )}
           </ul>
         </div>
@@ -131,7 +131,7 @@ export function ProductTabs({ product }: { product: Product }) {
           <div className="max-w-2xl rounded-lg border border-border bg-secondary/30 p-4">
             <p className="mb-2 flex items-center gap-2 text-sm font-bold">
               <Sparkles className="h-4 w-4 text-primary" />
-              Advies van onze ex-schilders
+              {t("pdp.processing.title")}
             </p>
             <p className="text-sm leading-relaxed text-muted-foreground">
               {product.processingAdvice}

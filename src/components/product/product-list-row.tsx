@@ -17,6 +17,7 @@ import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { productKindLabel } from "@/lib/product-kind";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 interface ProductListRowProps {
   product: Product;
@@ -42,6 +43,7 @@ export function ProductListRow({
   listName,
   className,
 }: ProductListRowProps) {
+  const t = useT();
   const addItem = useCart((s) => s.addItem);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const favoriteIds = useFavorites((s) => s.ids);
@@ -69,7 +71,7 @@ export function ProductListRow({
         }),
       ],
     });
-    toast.success("Toegevoegd aan winkelwagen", {
+    toast.success(t("pdp.addedToCart"), {
       description: `${product.brand} ${product.title}`,
     });
   }
@@ -155,16 +157,16 @@ export function ProductListRow({
             type="button"
             onClick={() => {
               toggleFavorite(product.id);
-              toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten");
+              toast(isFavorite ? t("pdp.favRemoved") : t("pdp.favAdded"));
             }}
-            aria-label="Bewaar als favoriet"
+            aria-label={t("plp.favorite")}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:text-primary"
           >
             <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
           </button>
           <Button onClick={handleAdd} className="flex-1" size="sm">
             <ShoppingCart className="h-4 w-4" />
-            In winkelwagen
+            {t("pdp.addToCart")}
           </Button>
         </div>
         <CompareButton productId={product.id} variant="labeled" className="pt-0.5 sm:self-end" />
