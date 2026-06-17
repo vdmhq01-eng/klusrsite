@@ -37,6 +37,7 @@ import { isBrievenbusOrder } from "@/lib/brievenbus";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 const schema = z.object({
   email: z.string().email("Vul een geldig e-mailadres in"),
@@ -95,6 +96,7 @@ export function CheckoutForm({
   mollieTest?: boolean;
 }) {
   const { items, kluspasActive } = useCart();
+  const t = useT();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
   const setMode = usePricingMode((s) => s.setMode);
@@ -172,7 +174,7 @@ export function CheckoutForm({
     });
     setLoginBusy(false);
     if (res?.error) {
-      setLoginError("Inloggen mislukt. Controleer je e-mailadres en wachtwoord.");
+      setLoginError(t("checkout.login.error"));
     } else {
       setShowLogin(false);
     }
@@ -258,16 +260,16 @@ export function CheckoutForm({
   }
 
   if (!mounted) {
-    return <div className="container-klusr py-16 text-center text-muted-foreground">Laden…</div>;
+    return <div className="container-klusr py-16 text-center text-muted-foreground">{t("cart.loading")}</div>;
   }
 
   if (items.length === 0) {
     return (
       <div className="container-klusr py-16 text-center">
-        <h1 className="text-2xl font-extrabold">Je winkelwagen is leeg</h1>
-        <p className="mt-1 text-muted-foreground">Voeg eerst producten toe om af te rekenen.</p>
+        <h1 className="text-2xl font-extrabold">{t("cart.empty.title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("checkout.empty.text")}</p>
         <Button asChild className="mt-5">
-          <Link href="/categorie/verf">Naar het assortiment</Link>
+          <Link href="/categorie/verf">{t("checkout.empty.toRange")}</Link>
         </Button>
       </div>
     );
@@ -298,11 +300,11 @@ export function CheckoutForm({
 
   async function onSubmit(values: FormValues) {
     if (!paymentMethod) {
-      setError("Kies eerst een betaalmethode.");
+      setError(t("checkout.error.choosePayment"));
       return;
     }
     if (needsIssuer && !issuer) {
-      setError("Kies eerst je bank voor iDEAL.");
+      setError(t("checkout.error.chooseBank"));
       return;
     }
     setSubmitting(true);
@@ -311,7 +313,7 @@ export function CheckoutForm({
     // Optioneel: account aanmaken vanuit de checkout (blijft volledig in de funnel).
     if (createAccount && !session) {
       if (accountPw.length < 8) {
-        setError("Kies een wachtwoord van minimaal 8 tekens voor je account.");
+        setError(t("checkout.error.accountPassword"));
         setSubmitting(false);
         return;
       }
@@ -342,7 +344,7 @@ export function CheckoutForm({
     if (useMollieComponents) {
       cardToken = (await cardRef.current?.createToken()) ?? null;
       if (!cardToken) {
-        setError("Controleer je kaartgegevens en probeer het opnieuw.");
+        setError(t("checkout.error.card"));
         setSubmitting(false);
         return;
       }
@@ -415,10 +417,10 @@ export function CheckoutForm({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Betaling aanmaken mislukt");
+      if (!res.ok) throw new Error(data.error || t("checkout.error.paymentFailed"));
       window.location.href = data.checkoutUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : t("checkout.error.generic"));
       setSubmitting(false);
     }
   }
@@ -429,9 +431,9 @@ export function CheckoutForm({
         href="/winkelwagen"
         className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary"
       >
-        <ArrowLeft className="h-4 w-4" /> Terug naar winkelwagen
+        <ArrowLeft className="h-4 w-4" /> {t("checkout.backToCart")}
       </Link>
-      <h1 className="mb-6 text-2xl font-extrabold sm:text-3xl">Afrekenen</h1>
+      <h1 className="mb-6 text-2xl font-extrabold sm:text-3xl">{t("checkout.title")}</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left: details */}
@@ -450,7 +452,7 @@ export function CheckoutForm({
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {m === "particulier" ? "Particulier" : "Zakelijk (excl. btw)"}
+                {m === "particulier" ? t("checkout.private") : t("checkout.business")}
               </button>
             ))}
           </div>
@@ -458,7 +460,7 @@ export function CheckoutForm({
           {reorderFree && (
             <div className="flex items-center gap-2 rounded-xl border border-klusr-stock/30 bg-klusr-stock/10 p-3 text-sm font-medium text-klusr-stock">
               <Truck className="h-4 w-4 shrink-0" />
-              Gratis verzending — je bestelt binnen 15 minuten na je vorige bestelling.
+              {t("checkout.reorderFree")}
             </div>
           )}
 
@@ -466,8 +468,8 @@ export function CheckoutForm({
             <div className="flex items-center gap-2.5 rounded-xl border border-klusr-stock/30 bg-klusr-stock/5 p-4">
               <UserRound className="h-5 w-5 shrink-0 text-klusr-stock" />
               <p className="text-sm">
-                Je bent ingelogd als{" "}
-                <strong>{session.user.email}</strong>. Je bestelling wordt aan je account gekoppeld.
+                {t("checkout.loggedInPre")}
+                <strong>{session.user.email}</strong>{t("checkout.loggedInPost")}
               </p>
             </div>
           ) : (
@@ -477,11 +479,10 @@ export function CheckoutForm({
                   <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <div>
                     <p className="text-sm font-semibold">
-                      Je rekent af als gast — supersnel, geen account nodig
+                      {t("checkout.guest.title")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Vul je gegevens in en bestel direct. Onderaan maak je met één vinkje een
-                      account aan voor je bestelhistorie.
+                      {t("checkout.guest.text")}
                     </p>
                   </div>
                 </div>
@@ -490,7 +491,7 @@ export function CheckoutForm({
                   onClick={() => setShowLogin((v) => !v)}
                   className="shrink-0 text-left text-sm font-semibold text-primary hover:underline"
                 >
-                  Heb je al een account? Inloggen
+                  {t("checkout.guest.haveAccount")}
                 </button>
               </div>
 
@@ -499,14 +500,14 @@ export function CheckoutForm({
                   <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <Input
                       type="email"
-                      placeholder="E-mailadres"
+                      placeholder={t("checkout.login.emailPlaceholder")}
                       autoComplete="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                     />
                     <Input
                       type="password"
-                      placeholder="Wachtwoord"
+                      placeholder={t("checkout.login.passwordPlaceholder")}
                       autoComplete="current-password"
                       value={loginPw}
                       onChange={(e) => setLoginPw(e.target.value)}
@@ -519,14 +520,14 @@ export function CheckoutForm({
                     />
                     <Button type="button" variant="dark" onClick={() => void handleLogin()} disabled={loginBusy}>
                       {loginBusy && <Loader2 className="h-4 w-4 animate-spin" />}
-                      Inloggen
+                      {t("checkout.login.submit")}
                     </Button>
                   </div>
                   {loginError && <p className="mt-2 text-xs text-destructive">{loginError}</p>}
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Wachtwoord vergeten of liever een inloglink?{" "}
+                    {t("checkout.login.forgotPre")}
                     <Link href="/inloggen" className="font-semibold text-primary hover:underline">
-                      Ga naar inloggen
+                      {t("checkout.login.forgotLink")}
                     </Link>
                   </p>
                 </div>
@@ -534,9 +535,9 @@ export function CheckoutForm({
             </div>
           )}
 
-          <Section title="Contactgegevens" step={1}>
-            <Field label="E-mailadres" error={errors.email?.message}>
-              <Input type="email" placeholder="jij@voorbeeld.nl" {...register("email")} />
+          <Section title={t("checkout.section.contact")} step={1}>
+            <Field label={t("checkout.field.email")} error={errors.email?.message}>
+              <Input type="email" placeholder={t("checkout.field.emailPlaceholder")} {...register("email")} />
             </Field>
 
             {!session && (
@@ -549,9 +550,8 @@ export function CheckoutForm({
                     className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-ring"
                   />
                   <span>
-                    <span className="font-semibold">Maak meteen een account aan</span> — bewaar je
-                    gegevens en bekijk later je bestellingen.{" "}
-                    <span className="text-muted-foreground">(optioneel)</span>
+                    <span className="font-semibold">{t("checkout.createAccount.labelBold")}</span>{t("checkout.createAccount.labelRest")}
+                    <span className="text-muted-foreground">{t("checkout.createAccount.optional")}</span>
                   </span>
                 </label>
                 {createAccount && (
@@ -559,12 +559,12 @@ export function CheckoutForm({
                     <Input
                       type="password"
                       autoComplete="new-password"
-                      placeholder="Kies een wachtwoord (min. 8 tekens)"
+                      placeholder={t("checkout.createAccount.passwordPlaceholder")}
                       value={accountPw}
                       onChange={(e) => setAccountPw(e.target.value)}
                     />
                     {accountPw.length > 0 && accountPw.length < 8 && (
-                      <p className="mt-1 text-xs text-destructive">Minimaal 8 tekens.</p>
+                      <p className="mt-1 text-xs text-destructive">{t("checkout.createAccount.passwordHint")}</p>
                     )}
                   </div>
                 )}
@@ -572,14 +572,14 @@ export function CheckoutForm({
             )}
             {mode === "zakelijk" && (
               <>
-                <Field label="Bedrijfsnaam" error={errors.companyName?.message}>
-                  <Input placeholder="Bedrijfsnaam B.V." {...register("companyName")} />
+                <Field label={t("checkout.field.company")} error={errors.companyName?.message}>
+                  <Input placeholder={t("checkout.field.companyPlaceholder")} {...register("companyName")} />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="KVK-nummer (optioneel)">
+                  <Field label={t("checkout.field.coc")}>
                     <Input placeholder="12345678" {...register("cocNumber")} />
                   </Field>
-                  <Field label="BTW-nummer (optioneel)">
+                  <Field label={t("checkout.field.vat")}>
                     <Input placeholder="NL000000000B00" {...register("vatNumber")} />
                   </Field>
                 </div>
@@ -587,8 +587,8 @@ export function CheckoutForm({
             )}
           </Section>
 
-          <Section title="Bezorgadres" step={2}>
-            <Field label="Land">
+          <Section title={t("checkout.section.delivery")} step={2}>
+            <Field label={t("checkout.field.country")}>
               <select
                 {...register("country")}
                 className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -601,42 +601,42 @@ export function CheckoutForm({
               </select>
               {country !== "NL" && country !== "BE" && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Buiten NL en BE gelden vaste verzendkosten (geen gratis verzending).
+                  {t("checkout.country.outsideNote")}
                 </p>
               )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Voornaam" error={errors.firstName?.message}>
+              <Field label={t("checkout.field.firstName")} error={errors.firstName?.message}>
                 <Input {...register("firstName")} />
               </Field>
-              <Field label="Achternaam" error={errors.lastName?.message}>
+              <Field label={t("checkout.field.lastName")} error={errors.lastName?.message}>
                 <Input {...register("lastName")} />
               </Field>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Postcode" error={errors.postalCode?.message}>
+              <Field label={t("checkout.field.postalCode")} error={errors.postalCode?.message}>
                 <Input placeholder="7442 CK" {...register("postalCode", { onBlur: lookupAddress })} />
               </Field>
-              <Field label="Huisnr." error={errors.houseNumber?.message}>
+              <Field label={t("checkout.field.houseNumber")} error={errors.houseNumber?.message}>
                 <Input placeholder="3" {...register("houseNumber", { onBlur: lookupAddress })} />
               </Field>
-              <Field label="Toevoeging">
+              <Field label={t("checkout.field.addition")}>
                 <Input placeholder="A" {...register("houseNumberAddition")} />
               </Field>
             </div>
 
             <Field
-              label={lookingUp ? "Straat (adres ophalen…)" : "Straat"}
+              label={lookingUp ? t("checkout.field.streetLookup") : t("checkout.field.street")}
               error={errors.street?.message}
             >
-              <Input placeholder="Wordt automatisch ingevuld" {...register("street")} />
+              <Input placeholder={t("checkout.field.autofill")} {...register("street")} />
             </Field>
-            <Field label="Plaats" error={errors.city?.message}>
-              <Input placeholder="Wordt automatisch ingevuld" {...register("city")} />
+            <Field label={t("checkout.field.city")} error={errors.city?.message}>
+              <Input placeholder={t("checkout.field.autofill")} {...register("city")} />
             </Field>
 
-            <Field label="Telefoon (optioneel)" error={errors.phone?.message}>
+            <Field label={t("checkout.field.phone")} error={errors.phone?.message}>
               <Input type="tel" {...register("phone")} />
             </Field>
 
@@ -647,21 +647,21 @@ export function CheckoutForm({
                 {...register("billingDifferent")}
                 className="h-4 w-4 accent-primary"
               />
-              Factuuradres wijkt af van het bezorgadres
+              {t("checkout.billing.toggle")}
             </label>
             {watch("billingDifferent") && (
               <div className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-3">
-                <Field label="Bedrijfsnaam (optioneel)">
+                <Field label={t("checkout.billing.companyOptional")}>
                   <Input {...register("billingCompany")} />
                 </Field>
-                <Field label="Straat en huisnummer">
-                  <Input placeholder="Straatnaam 1" {...register("billingStreet")} />
+                <Field label={t("checkout.billing.streetAndNumber")}>
+                  <Input placeholder={t("checkout.billing.streetPlaceholder")} {...register("billingStreet")} />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Postcode">
+                  <Field label={t("checkout.field.postalCode")}>
                     <Input placeholder="7442 CK" {...register("billingPostalCode")} />
                   </Field>
-                  <Field label="Plaats">
+                  <Field label={t("checkout.field.city")}>
                     <Input {...register("billingCity")} />
                   </Field>
                 </div>
@@ -669,24 +669,24 @@ export function CheckoutForm({
             )}
           </Section>
 
-          <Section title="Verzendmethode" step={3}>
+          <Section title={t("checkout.section.shipping")} step={3}>
             <div className="space-y-2">
               <ShippingOption
                 active
                 onClick={() => setShippingMethod("standard")}
                 icon={Truck}
-                title="Bezorgen"
-                hint="Voor 19:00 besteld, morgen in huis"
+                title={t("checkout.delivery.title")}
+                hint={t("usp.delivery")}
                 price={
                   shippingFor(summary.grossSubtotal) === 0
-                    ? "Gratis"
+                    ? t("cart.free")
                     : formatPrice(shippingFor(summary.grossSubtotal))
                 }
               />
             </div>
           </Section>
 
-          <Section title="Betaalmethode" step={4}>
+          <Section title={t("checkout.section.payment")} step={4}>
             <PaymentMethods
               methods={mode === "zakelijk" ? methods : methods.filter((m) => m.id !== "billie")}
               value={paymentMethod}
@@ -706,7 +706,7 @@ export function CheckoutForm({
         {/* Right: order summary */}
         <aside className="lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="mb-4 text-lg font-bold">Je bestelling</h2>
+            <h2 className="mb-4 text-lg font-bold">{t("checkout.summary.title")}</h2>
             <ul className="max-h-72 space-y-3 overflow-y-auto">
               {items.map((item) => (
                 <li key={item.key} className="flex gap-3">
@@ -732,44 +732,44 @@ export function CheckoutForm({
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">
-                  Subtotaal{!summary.vatIncluded && " (excl. btw)"}
+                  {t("cart.subtotal")}{!summary.vatIncluded && t("cart.exclVat")}
                 </dt>
                 <dd>{formatPrice(summary.subtotalRegular)}</dd>
               </div>
               {summary.savings > 0 && (
                 <div className="flex justify-between text-primary">
                   <dt className="font-medium">
-                    {summary.vatIncluded ? "KLUSRPAS-voordeel" : "ProfPas-korting"}
+                    {summary.vatIncluded ? t("cart.kluspasDiscount") : t("cart.profpasDiscount")}
                   </dt>
                   <dd className="font-bold">-{formatPrice(summary.savings)}</dd>
                 </div>
               )}
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">
-                  Verzendkosten{!summary.vatIncluded && " (excl. btw)"}
+                  {t("cart.shipping")}{!summary.vatIncluded && t("cart.exclVat")}
                 </dt>
-                <dd>{summary.shipping === 0 ? <span className="text-klusr-stock">Gratis</span> : formatPrice(summary.shipping)}</dd>
+                <dd>{summary.shipping === 0 ? <span className="text-klusr-stock">{t("cart.free")}</span> : formatPrice(summary.shipping)}</dd>
               </div>
               {summary.vat !== undefined && (
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Btw (21%)</dt>
+                  <dt className="text-muted-foreground">{t("cart.vat")}</dt>
                   <dd>{formatPrice(summary.vat)}</dd>
                 </div>
               )}
               {billieSurcharge > 0 && (
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Billie-toeslag</dt>
+                  <dt className="text-muted-foreground">{t("checkout.billieSurcharge")}</dt>
                   <dd>{formatPrice(billieSurcharge)}</dd>
                 </div>
               )}
             </dl>
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
-              <span className="font-bold">Totaal</span>
+              <span className="font-bold">{t("cart.total")}</span>
               <span className="text-2xl font-black">{formatPrice(payableTotal)}</span>
             </div>
             {!summary.vatIncluded && (
-              <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("cart.vatIncluded")}</p>
             )}
 
             {/* Akkoord + nieuwsbrief */}
@@ -777,15 +777,15 @@ export function CheckoutForm({
               <label className="flex items-start gap-2 text-xs leading-snug">
                 <input type="checkbox" {...register("terms")} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
                 <span>
-                  Ik ga akkoord met de{" "}
+                  {t("checkout.terms.pre")}
                   <Link href="/voorwaarden" target="_blank" className="font-medium text-primary hover:underline">
-                    algemene voorwaarden
-                  </Link>{" "}
-                  en het{" "}
-                  <Link href="/privacy" target="_blank" className="font-medium text-primary hover:underline">
-                    privacybeleid
+                    {t("checkout.terms.termsLink")}
                   </Link>
-                  .
+                  {t("checkout.terms.mid")}
+                  <Link href="/privacy" target="_blank" className="font-medium text-primary hover:underline">
+                    {t("checkout.terms.privacyLink")}
+                  </Link>
+                  {t("checkout.terms.post")}
                 </span>
               </label>
               {errors.terms && (
@@ -793,7 +793,7 @@ export function CheckoutForm({
               )}
               <label className="flex items-start gap-2 text-xs leading-snug">
                 <input type="checkbox" {...register("newsletter")} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
-                <span>Houd me op de hoogte van klustips en KLUSRPAS-aanbiedingen (nieuwsbrief).</span>
+                <span>{t("checkout.newsletter")}</span>
               </label>
             </div>
 
@@ -809,26 +809,26 @@ export function CheckoutForm({
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  Betaal {formatPrice(payableTotal)}
+                  {t("checkout.pay", { amount: formatPrice(payableTotal) })}
                 </>
               )}
             </Button>
             {!canPay && (
               <p className="mt-2 text-center text-xs text-muted-foreground">
-                {needsIssuer ? "Kies je bank om verder te gaan." : "Kies eerst een betaalmethode."}
+                {needsIssuer ? t("checkout.chooseBankHint") : t("checkout.choosePaymentHint")}
               </p>
             )}
 
             <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-klusr-stock" />
-              Veilig betalen via Mollie
+              {t("cart.usp.payment")}
             </div>
             <ul className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
               <li className="flex items-center gap-1.5">
-                <RotateCcw className="h-3.5 w-3.5 text-primary" /> Gratis retour
+                <RotateCcw className="h-3.5 w-3.5 text-primary" /> {t("checkout.usp.freeReturn")}
               </li>
               <li className="flex items-center gap-1.5">
-                <Truck className="h-3.5 w-3.5 text-primary" /> Snelle levering
+                <Truck className="h-3.5 w-3.5 text-primary" /> {t("checkout.usp.fastDelivery")}
               </li>
             </ul>
           </div>

@@ -11,6 +11,7 @@ import { useCart } from "@/lib/store/cart";
 import { useUI } from "@/lib/store/ui";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 /** "Iets vergeten?" — 15-min venster met aftelklok + bijbestel-suggesties. */
 export function ReorderUpsell() {
@@ -18,6 +19,7 @@ export function ReorderUpsell() {
   const { active, secondsLeft } = useReorderActive();
   const addItem = useCart((s) => s.addItem);
   const setCartOpen = useUI((s) => s.setCartOpen);
+  const t = useT();
   const [items, setItems] = useState<Product[]>([]);
 
   // Start het venster zodra de bedankpagina laadt.
@@ -42,7 +44,7 @@ export function ReorderUpsell() {
 
   function add(p: Product) {
     addItem({ product: p, variant: p.variants[0], quantity: 1 });
-    toast.success("Toegevoegd — geen extra verzendkosten", { description: p.title });
+    toast.success(t("checkout.reorder.added"), { description: p.title });
     setCartOpen(true);
   }
 
@@ -51,12 +53,14 @@ export function ReorderUpsell() {
       <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="inline-flex items-center gap-1.5 text-sm font-bold text-primary">
-            <Truck className="h-4 w-4" /> Iets vergeten?
+            <Truck className="h-4 w-4" /> {t("checkout.reorder.title")}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Bestel binnen <strong className="text-foreground">15 minuten</strong> nog iets en betaal{" "}
-            <strong className="text-foreground">geen extra verzendkosten</strong> — we sturen het in
-            één pakket.
+            {t("checkout.reorder.textPre")}
+            <strong className="text-foreground">{t("checkout.reorder.textMinutes")}</strong>
+            {t("checkout.reorder.textMid")}
+            <strong className="text-foreground">{t("checkout.reorder.textBold")}</strong>
+            {t("checkout.reorder.textPost")}
           </p>
         </div>
         <div className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 font-mono text-lg font-black text-white">
@@ -79,7 +83,7 @@ export function ReorderUpsell() {
               <p className="line-clamp-2 text-xs font-semibold leading-snug">{p.title}</p>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <span className="text-sm font-black">{formatPrice(p.kluspasPrice)}</span>
-                <Button size="sm" variant="outline" onClick={() => add(p)} aria-label={`Voeg ${p.title} toe`}>
+                <Button size="sm" variant="outline" onClick={() => add(p)} aria-label={t("checkout.reorder.addAria", { title: p.title })}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -90,10 +94,10 @@ export function ReorderUpsell() {
 
       <div className="flex flex-wrap gap-3 border-t border-primary/20 p-5">
         <Button variant="outline" onClick={() => setCartOpen(true)}>
-          <ShoppingCart className="h-4 w-4" /> Naar winkelwagen
+          <ShoppingCart className="h-4 w-4" /> {t("checkout.reorder.toCart")}
         </Button>
         <Button asChild variant="ghost">
-          <Link href="/categorie/verf">Verder winkelen</Link>
+          <Link href="/categorie/verf">{t("checkout.reorder.continueShopping")}</Link>
         </Button>
       </div>
     </div>

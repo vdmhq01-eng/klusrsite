@@ -2,13 +2,15 @@
 
 import { cn } from "@/lib/utils";
 import type { PaymentMethodInfo } from "@/types";
+import { useT } from "@/components/i18n/locale-provider";
+import type { MessageKey } from "@/lib/i18n/dictionaries";
 
 /** Korte, vertrouwenwekkende hint per methode-soort. */
-function hintFor(id: string): string | undefined {
-  if (id === "ideal") return "Betaal direct met je eigen bank";
-  if (id === "creditcard") return "Visa, Mastercard";
-  if (id.startsWith("klarna")) return "Achteraf betalen — binnen 14 dagen";
-  if (id === "bancontact") return "Betaal met je Bancontact-kaart";
+function hintKeyFor(id: string): MessageKey | undefined {
+  if (id === "ideal") return "checkout.payment.hint.ideal";
+  if (id === "creditcard") return "checkout.payment.hint.creditcard";
+  if (id.startsWith("klarna")) return "checkout.payment.hint.klarna";
+  if (id === "bancontact") return "checkout.payment.hint.bancontact";
   return undefined;
 }
 
@@ -29,6 +31,7 @@ export function PaymentMethods({
   onIssuerChange: (id: string) => void;
   loading?: boolean;
 }) {
+  const t = useT();
   if (loading) {
     return (
       <div className="space-y-2">
@@ -43,7 +46,8 @@ export function PaymentMethods({
     <div className="space-y-2">
       {methods.map((m) => {
         const active = value === m.id;
-        const hint = hintFor(m.id);
+        const hintKey = hintKeyFor(m.id);
+        const hint = hintKey ? t(hintKey) : undefined;
         const banks = m.issuers ?? [];
         const showIssuers = active && m.id === "ideal" && banks.length > 0;
         return (
@@ -84,7 +88,7 @@ export function PaymentMethods({
             {/* iDEAL: kies je bank al bij ons → direct door naar de juiste bank. */}
             {showIssuers && (
               <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3">
-                <p className="mb-2 text-xs font-semibold text-muted-foreground">Kies je bank</p>
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">{t("checkout.payment.chooseBank")}</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {banks.map((b) => {
                     const picked = issuer === b.id;
