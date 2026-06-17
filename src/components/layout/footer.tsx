@@ -107,6 +107,9 @@ export function Footer() {
             <Link href="/cookiebeleid" className="hover:text-white">
               Cookiebeleid
             </Link>
+            <Link href="/toegankelijkheid" className="hover:text-white">
+              Toegankelijkheid
+            </Link>
             <span className="hidden items-center gap-2 sm:flex">
               Veilig betalen via{" "}
               <span className="font-semibold text-white/80">iDEAL · Mollie</span>
