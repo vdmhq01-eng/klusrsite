@@ -28,8 +28,8 @@ import {
  * volgende schakel via een `fetch` naar zichzelf (geautoriseerd met CRON_SECRET).
  * Zo wordt de doorvoer bepaald door de self-chain — NIET door de cron-frequentie
  * — en werkt het dus op élk Vercel-plan (ook Hobby, waar crons alleen dagelijks
- * mogen draaien). De dagelijkse cron in vercel.json is enkel een vangnet om een
- * onderbroken run te hervatten.
+ * mogen draaien). De cron in vercel.json hervat een onderbroken run; op Pro
+ * staat die op elke minuut, zodat de generatie sowieso doorloopt.
  */
 
 export const runtime = "nodejs";

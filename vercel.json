@@ -15,7 +15,7 @@
     },
     {
       "path": "/api/cron/generate-content",
-      "schedule": "0 4 * * *"
+      "schedule": "* * * * *"
     }
   ]
 }
