@@ -66,6 +66,8 @@ function mapCategory(productType = "") {
   // niet in een verf-/klusshop.
   if (full.includes("aanhangw") || full.includes("neuswiel")) return null;
   if (top.includes("ijzerwaren")) return "ijzerwaren";
+  if (top.includes("huishoud") || top.includes("reinig") || top.includes("schoonmaak"))
+    return "reiniging";
   if (top.startsWith("verf") && top.includes("benodigd")) return "gereedschap";
   if (top.startsWith("verf") || top.includes("beits")) return "verf";
   if (top.includes("gereedschap")) return "gereedschap";
@@ -73,7 +75,7 @@ function mapCategory(productType = "") {
   if (top.includes("elektra")) return "elektra";
   if (top.includes("vloer")) return "vloeren-raam";
   if (top.includes("tuin")) return "tuin";
-  if (top.includes("behang") || top.includes("wandbekleding")) return "afbouw-fijnbouw";
+  if (top.includes("behang") || top.includes("wandbekleding")) return "behang";
   if (top.includes("lijm") || top.includes("kit")) return "afbouw-fijnbouw";
   if (top.includes("deuren") || top.includes("kozijn")) return "afbouw-fijnbouw";
   if (top.includes("bouwmaterial")) return "afbouw-fijnbouw";
@@ -166,11 +168,39 @@ function isMaintenanceItem(item) {
   return /wd-?40/i.test(item.brand || "") || MAINT_RE.test(item.title || "");
 }
 
+// Schuurmateriaal vs. schildersgereedschap: schuur-/korrelgerelateerde artikelen
+// (schuurpapier, schuurblok, glaspapier, grit…) vs. kwasten/rollers/tape/bakjes.
+const SCHUUR_RE =
+  /schuur|korrel|glaspapier|schuurpapier|schuurblok|schuurspons|schuurvel|schuurband|schuurschijf|schuurrol|schuurgaas|grit|schuurmiddel/i;
+
+// Reiniging & onderhoud: ongediertebestrijding → schimmel/aanslag → reinigers.
+const ONGEDIERTE_RE = /ongedierte|insect|mug|vlieg|slak|muiz|ratt|mier|wesp|gif/i;
+const SCHIMMEL_RE = /schimmel|aanslag|groene aanslag/i;
+
+/** Splits het gecombineerde schilders-/schuurbucket op basis van de titel. */
+function paintToolSub(title = "") {
+  return SCHUUR_RE.test(title) ? "schuurmateriaal" : "schildersgereedschap";
+}
+
+/** Subcategorie binnen "Reiniging & onderhoud" op basis van de titel. */
+function reinigingSub(title = "") {
+  if (ONGEDIERTE_RE.test(title)) return "ongediertebestrijding";
+  if (SCHIMMEL_RE.test(title)) return "schimmel-aanslag";
+  return "reinigers";
+}
+
 function subCategoryFor(category, title, productType) {
   if (category === "verf") return mapVerfSub(title, productType);
+  if (category === "reiniging") return reinigingSub(title);
+  if (category === "behang") return /glasweefsel/i.test(title) ? "glasweefselbehang" : "behang";
   const segs = productType.split(">").map((s) => s.trim());
   const seg = segs[2] || segs[1];
-  return seg ? slugify(seg) : undefined;
+  if (!seg) return undefined;
+  const slug = slugify(seg);
+  // Het gecombineerde "schildersgereedschap & schuurpapier"-bucket splitsen we
+  // in schuurmateriaal vs. schildersgereedschap (op titel).
+  if (slug === "schildersger-en-schuurpapier") return paintToolSub(title);
+  return slug;
 }
 
 const cleanTitle = (t = "") => t.replace(/\s+/g, " ").trim();
