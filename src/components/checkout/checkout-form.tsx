@@ -31,6 +31,7 @@ import {
   shippingFor,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
+import { useReorderActive } from "@/lib/store/reorder";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
@@ -83,6 +84,8 @@ export function CheckoutForm({
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
   const setMode = usePricingMode((s) => s.setMode);
+  // 15-min nabestelvenster → geen extra verzendkosten.
+  const { active: reorderFree } = useReorderActive();
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
   // Geen voorgekozen methode — de klant kiest bewust zelf.
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -254,7 +257,7 @@ export function CheckoutForm({
     items,
     mode,
     kluspasActive,
-    shippingMethod === "pickup" ? 0 : undefined,
+    shippingMethod === "pickup" || reorderFree ? 0 : undefined,
   );
 
   // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
@@ -427,6 +430,13 @@ export function CheckoutForm({
               </button>
             ))}
           </div>
+
+          {reorderFree && (
+            <div className="flex items-center gap-2 rounded-xl border border-klusr-stock/30 bg-klusr-stock/10 p-3 text-sm font-medium text-klusr-stock">
+              <Truck className="h-4 w-4 shrink-0" />
+              Gratis verzending — je bestelt binnen 15 minuten na je vorige bestelling.
+            </div>
+          )}
 
           {session?.user ? (
             <div className="flex items-center gap-2.5 rounded-xl border border-klusr-stock/30 bg-klusr-stock/5 p-4">

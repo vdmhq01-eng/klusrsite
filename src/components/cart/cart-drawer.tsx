@@ -22,6 +22,7 @@ import {
   displayLine,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
+import { useReorderActive } from "@/lib/store/reorder";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
@@ -34,8 +35,9 @@ export function CartDrawer() {
   const { items, kluspasActive, updateQuantity, removeItem, addItem } = useCart();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
+  const { active: reorderFree } = useReorderActive();
 
-  const summary = cartSummary(items, mode, kluspasActive);
+  const summary = cartSummary(items, mode, kluspasActive, reorderFree ? 0 : undefined);
   const subtotal = mounted
     ? summary.vatIncluded
       ? summary.grossSubtotal
