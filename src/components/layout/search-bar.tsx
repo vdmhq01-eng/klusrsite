@@ -9,6 +9,7 @@ import { categories } from "@/lib/data";
 import { ProductImage } from "@/components/product/product-image";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 const POPULAR_SEARCHES = [
   "muurverf",
@@ -56,6 +57,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 export function SearchBar({ className }: { className?: string }) {
   const router = useRouter();
+  const t = useT();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
@@ -146,7 +148,7 @@ export function SearchBar({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Waar ben je naar op zoek?"
+          placeholder={t("search.placeholder")}
           role="combobox"
           aria-expanded={showDropdown}
           aria-controls="search-results"

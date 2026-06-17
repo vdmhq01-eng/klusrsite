@@ -2,30 +2,32 @@ import Link from "next/link";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 import { Logo } from "./logo";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { navCategories } from "@/lib/data/categories";
-
-const serviceLinks = [
-  { href: "/klantenservice", label: "Klantenservice" },
-  { href: "/faq", label: "Veelgestelde vragen" },
-  { href: "/bestelstatus", label: "Bestelstatus volgen" },
-  { href: "/klantenservice#verzending", label: "Verzending & retour" },
-  { href: "/retourvoorwaarden", label: "Retourvoorwaarden" },
-  { href: "/klantenservice#betalen", label: "Veilig betalen" },
-  { href: "/klantenservice#garantie", label: "Garantie & service" },
-];
-
-const aboutLinks = [
-  { href: "/over-klusr", label: "Over KLUSR" },
-  { href: "/kluspas", label: "KLUSRPAS" },
-  { href: "/zakelijk", label: "Zakelijk & ProfPas" },
-  { href: "/mengverf", label: "Mengverf" },
-  { href: "/kleuren", label: "Alle kleuren & collecties" },
-  { href: "/advies", label: "Advies & inspiratie" },
-  { href: "/klushulp", label: "Klushulp AI" },
-  { href: "/werken-bij", label: "Werken bij KLUSR" },
-];
+import { t } from "@/lib/i18n/server";
 
 export function Footer() {
+  const serviceLinks = [
+    { href: "/klantenservice", label: t("footer.service.customerService") },
+    { href: "/faq", label: t("footer.service.faq") },
+    { href: "/bestelstatus", label: t("footer.service.orderStatus") },
+    { href: "/klantenservice#verzending", label: t("footer.service.shippingReturns") },
+    { href: "/retourvoorwaarden", label: t("footer.service.returnPolicy") },
+    { href: "/klantenservice#betalen", label: t("footer.service.securePayment") },
+    { href: "/klantenservice#garantie", label: t("footer.service.warranty") },
+  ];
+
+  const aboutLinks = [
+    { href: "/over-klusr", label: t("footer.about.aboutKlusr") },
+    { href: "/kluspas", label: t("footer.about.kluspas") },
+    { href: "/zakelijk", label: t("footer.about.business") },
+    { href: "/mengverf", label: t("footer.about.mixPaint") },
+    { href: "/kleuren", label: t("footer.about.colors") },
+    { href: "/advies", label: t("footer.about.advice") },
+    { href: "/klushulp", label: t("footer.about.klushulp") },
+    { href: "/werken-bij", label: t("footer.about.careers") },
+  ];
+
   return (
     <footer className="mt-16 bg-klusr-black text-white/80">
       {/* Newsletter band */}
@@ -33,11 +35,10 @@ export function Footer() {
         <div className="container-klusr flex flex-col items-start justify-between gap-6 py-10 lg:flex-row lg:items-center">
           <div className="max-w-md">
             <h3 className="text-xl font-extrabold text-white">
-              Mis geen enkele actie
+              {t("footer.newsletter.title")}
             </h3>
             <p className="mt-1 text-sm text-white/70">
-              Schrijf je in voor de nieuwsbrief en ontvang klustips, inspiratie en
-              de scherpste KLUSRPAS-aanbiedingen.
+              {t("footer.newsletter.text")}
             </p>
           </div>
           <NewsletterForm className="w-full max-w-md" source="footer" />
@@ -48,10 +49,7 @@ export function Footer() {
       <div className="container-klusr grid grid-cols-2 gap-8 py-12 md:grid-cols-4 lg:grid-cols-5">
         <div className="col-span-2 lg:col-span-1">
           <Logo className="[&_span:first-child]:text-white" />
-          <p className="mt-4 text-sm text-white/60">
-            De beste VERF en alles wat je NÚ nodig hebt voor de klus. Advies van
-            ex-schilders, professionele kwaliteit.
-          </p>
+          <p className="mt-4 text-sm text-white/60">{t("footer.tagline")}</p>
           <div className="mt-5 flex gap-3">
             {[Facebook, Instagram, Youtube].map((Icon, i) => (
               <a
@@ -66,7 +64,7 @@ export function Footer() {
           </div>
         </div>
 
-        <FooterColumn title="Assortiment">
+        <FooterColumn title={t("footer.col.assortment")}>
           {navCategories.slice(0, 6).map((c) => (
             <FooterLink key={c.slug} href={`/categorie/${c.slug}`}>
               {c.title}
@@ -74,7 +72,7 @@ export function Footer() {
           ))}
         </FooterColumn>
 
-        <FooterColumn title="Klantenservice">
+        <FooterColumn title={t("footer.col.customerService")}>
           {serviceLinks.map((l) => (
             <FooterLink key={l.href} href={l.href}>
               {l.label}
@@ -82,7 +80,7 @@ export function Footer() {
           ))}
         </FooterColumn>
 
-        <FooterColumn title="Over KLUSR">
+        <FooterColumn title={t("footer.col.about")}>
           {aboutLinks.map((l) => (
             <FooterLink key={l.href} href={l.href}>
               {l.label}
@@ -94,27 +92,28 @@ export function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="container-klusr flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/50 sm:flex-row">
-          <p>© {new Date().getFullYear()} KLUSR B.V. — Alle prijzen incl. btw.</p>
+          <p>{t("footer.bottom.copyright", { year: new Date().getFullYear() })}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link href="/voorwaarden" className="hover:text-white">
-              Algemene voorwaarden
+              {t("footer.bottom.terms")}
             </Link>
             <Link href="/retourvoorwaarden" className="hover:text-white">
-              Retourvoorwaarden
+              {t("footer.bottom.returnPolicy")}
             </Link>
             <Link href="/privacy" className="hover:text-white">
-              Privacy
+              {t("footer.bottom.privacy")}
             </Link>
             <Link href="/cookiebeleid" className="hover:text-white">
-              Cookiebeleid
+              {t("footer.bottom.cookies")}
             </Link>
             <Link href="/toegankelijkheid" className="hover:text-white">
-              Toegankelijkheid
+              {t("footer.bottom.accessibility")}
             </Link>
             <span className="hidden items-center gap-2 sm:flex">
-              Veilig betalen via{" "}
+              {t("footer.bottom.securePaymentVia")}{" "}
               <span className="font-semibold text-white/80">iDEAL · Mollie</span>
             </span>
+            <LanguageSwitcher className="border-l border-white/10 pl-4" />
           </div>
         </div>
       </div>

@@ -14,17 +14,19 @@ import { Logo } from "./logo";
 import { navCategories } from "@/lib/data/categories";
 import { getSubCategories } from "@/lib/data/products";
 import { cn } from "@/lib/utils";
-
-const quickLinks = [
-  { href: "/kluspas", label: "KLUSRPAS", icon: CreditCard },
-  { href: "/klantenservice", label: "Klantenservice", icon: Headphones },
-  { href: "/account", label: "Mijn account", icon: User },
-];
+import { useT } from "@/components/i18n/locale-provider";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const close = () => setOpen(false);
+  const t = useT();
+
+  const quickLinks = [
+    { href: "/kluspas", label: "KLUSRPAS", icon: CreditCard },
+    { href: "/klantenservice", label: t("nav.customerService"), icon: Headphones },
+    { href: "/account", label: "Mijn account", icon: User },
+  ];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

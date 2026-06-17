@@ -12,6 +12,11 @@ import {
 import { ConsentDefault } from "@/components/analytics/consent-init";
 import { CookieConsent } from "@/components/analytics/cookie-consent";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { LocaleProvider } from "@/components/i18n/locale-provider";
+import { LocaleSuggestBanner } from "@/components/i18n/locale-suggest-banner";
+import { getLocale, getMessages } from "@/lib/i18n/server";
+import { i18nEnabled } from "@/lib/i18n/config";
+import { getAlternates } from "@/lib/i18n/alternates";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -92,6 +97,9 @@ export const metadata: Metadata = {
   ...(googleSiteVerification
     ? { verification: { google: googleSiteVerification } }
     : {}),
+  // hreflang-alternatieven — ALLEEN wanneer de meertalige laag aan staat.
+  // Met de flag uit blijft de metadata exact zoals voorheen (geen alternates).
+  ...(i18nEnabled() ? { alternates: getAlternates("/") } : {}),
 };
 
 export const viewport: Viewport = {
@@ -105,8 +113,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Locale + berichten worden server-side bepaald uit het request (header/cookie).
+  // Met de flag uit is dit altijd "nl" → identiek aan voorheen (<html lang="nl">).
+  const locale = getLocale();
+  const messages = getMessages();
+
   return (
-    <html lang="nl" className={inter.variable}>
+    <html lang={locale} className={inter.variable}>
       <head>
         <ConsentDefault />
         <GoogleTagManager />
@@ -123,21 +136,24 @@ export default function RootLayout({
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
-        <AuthProvider>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
-          >
-            Naar hoofdinhoud
-          </a>
-          <Header />
-          <main id="main" tabIndex={-1} className="flex-1 pb-16 outline-none lg:pb-0">
-            {children}
-          </main>
-          <Footer />
-          <MobileBottomNav />
-          <GlobalOverlays />
-        </AuthProvider>
+        <LocaleProvider locale={locale} messages={messages}>
+          <AuthProvider>
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+            >
+              Naar hoofdinhoud
+            </a>
+            <LocaleSuggestBanner />
+            <Header />
+            <main id="main" tabIndex={-1} className="flex-1 pb-16 outline-none lg:pb-0">
+              {children}
+            </main>
+            <Footer />
+            <MobileBottomNav />
+            <GlobalOverlays />
+          </AuthProvider>
+        </LocaleProvider>
         <CookieConsent />
       </body>
     </html>
