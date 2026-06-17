@@ -7,5 +7,8 @@ export const metadata: Metadata = {
 };
 
 export default function CheckoutPage() {
-  return <CheckoutForm />;
+  // Mollie Components (ingebedde creditcard) als het profiel is geconfigureerd.
+  const mollieProfile = process.env.MOLLIE_PROFILE;
+  const mollieTest = (process.env.MOLLIE_API_KEY || "").startsWith("test_");
+  return <CheckoutForm mollieProfile={mollieProfile} mollieTest={mollieTest} />;
 }

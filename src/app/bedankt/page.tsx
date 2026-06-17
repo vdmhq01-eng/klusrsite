@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PurchaseTracker } from "@/components/checkout/purchase-tracker";
+import { ClearCart } from "@/components/checkout/clear-cart";
+import { ReorderUpsell } from "@/components/checkout/reorder-upsell";
 import { getOrder } from "@/lib/store/orders";
 import { formatPrice, formatDate } from "@/lib/utils";
 
@@ -19,15 +21,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ThankYouPage({
+export default async function ThankYouPage({
   searchParams,
 }: {
   searchParams: { order?: string; demo?: string };
 }) {
-  const order = searchParams.order ? getOrder(searchParams.order) : undefined;
+  const order = searchParams.order ? await getOrder(searchParams.order) : undefined;
 
   return (
     <div className="container-klusr py-10">
+      {/* Mand altijd legen na het afrekenen (ook als de order niet geladen kon worden). */}
+      {(searchParams.order || searchParams.demo) && <ClearCart />}
       <div className="mx-auto max-w-2xl">
         {/* Confirmation header */}
         <div className="flex flex-col items-center text-center">
@@ -113,6 +117,9 @@ export default function ThankYouPage({
               )}
             </div>
 
+            {/* Iets vergeten? — 15-min venster, geen extra verzendkosten */}
+            <ReorderUpsell />
+
             {/* Next steps */}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <NextStep icon={Mail} title="Bevestiging" hint="Check je inbox" />
@@ -131,6 +138,14 @@ export default function ThankYouPage({
                 <Link href="/">Verder winkelen</Link>
               </Button>
             </div>
+            <p className="mt-3 text-center text-sm">
+              <Link
+                href={`/factuur/${order.id}`}
+                className="font-semibold text-primary hover:underline"
+              >
+                Download je factuur (PDF)
+              </Link>
+            </p>
 
             {/* Address */}
             <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm">

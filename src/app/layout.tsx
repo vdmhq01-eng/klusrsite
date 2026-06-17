@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     template: "%s | KLUSR",
   },
   description:
-    "KLUSR is dé verfspeciaalzaak en lichte bouwmarkt. Professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer. Advies van ex-schilders. Voor 16:00 besteld, morgen in huis.",
+    "KLUSR is dé verfspeciaalzaak en lichte bouwmarkt. Professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer. Advies van ex-schilders. Voor 19:00 besteld, morgen in huis.",
   keywords: [
     "verf kopen",
     "verfwinkel",
@@ -124,8 +124,16 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
         <AuthProvider>
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+          >
+            Naar hoofdinhoud
+          </a>
           <Header />
-          <main className="flex-1 pb-16 lg:pb-0">{children}</main>
+          <main id="main" tabIndex={-1} className="flex-1 pb-16 outline-none lg:pb-0">
+            {children}
+          </main>
           <Footer />
           <MobileBottomNav />
           <GlobalOverlays />

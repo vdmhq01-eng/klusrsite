@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { categories, searchProducts } from "@/lib/data";
+import { logEvent } from "@/lib/store/analytics";
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { CategoryIcon } from "@/components/shared/category-icon";
@@ -28,6 +29,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
   const query = getQuery(searchParams);
   const results = query ? searchProducts(query, 240) : [];
   const hasQuery = query.length > 0;
+  if (hasQuery) void logEvent("search", { query, resultCount: results.length });
   const hasResults = results.length > 0;
 
   // Categories worth surfacing as suggestions (skip the "acties" meta-category).

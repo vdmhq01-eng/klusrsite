@@ -9,7 +9,6 @@ import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/lib/store/cart";
-import { useUI } from "@/lib/store/ui";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
 
@@ -29,7 +28,6 @@ export function FrequentlyBoughtTogether({
     Object.fromEntries(all.map((p) => [p.id, true])),
   );
   const addItem = useCart((s) => s.addItem);
-  const openCart = useUI((s) => s.openCart);
 
   const chosen = all.filter((p) => selected[p.id]);
   const total = chosen.reduce((sum, p) => sum + p.kluspasPrice, 0);
@@ -44,7 +42,6 @@ export function FrequentlyBoughtTogether({
     toast.success(`${chosen.length} producten toegevoegd`, {
       description: "Vaak samen gekocht",
     });
-    openCart();
   }
 
   if (companions.length === 0) return null;

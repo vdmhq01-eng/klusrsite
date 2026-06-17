@@ -50,8 +50,8 @@ const GROUPS: { title: string; items: QA[] }[] = [
     items: [
       {
         q: "Wanneer is mijn bestelling in huis?",
-        a: "Voor 16:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
-        text: "Voor 16:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
+        a: "Voor 19:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
+        text: "Voor 19:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
       },
       {
         q: "Kan ik in de winkel afhalen?",

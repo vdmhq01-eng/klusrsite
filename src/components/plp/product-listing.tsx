@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, Star, X } from "lucide-react";
+import { LayoutGrid, List, SlidersHorizontal, Star, X } from "lucide-react";
 import type { Product, ProductBadge } from "@/types";
 import { ProductGrid } from "@/components/product/product-grid";
+import { ProductListRow } from "@/components/product/product-list-row";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
+import { useViewMode } from "@/lib/store/view-mode";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import { cn } from "@/lib/utils";
 
 /* ----------------------------------------------------------------- config */
@@ -284,6 +287,13 @@ export function ProductListing({
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<SortKey>("populair");
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const viewMode = useViewMode((s) => s.mode);
+  const setViewMode = useViewMode((s) => s.setMode);
+  const mounted = useMounted();
+  // Tot hydratie tonen we het raster (voorkomt hydration-mismatch op de
+  // gepersisteerde voorkeur).
+  const showList = mounted && viewMode === "list";
 
   // Uitverkochte producten tonen we niet (geen voorraad in welke winkel dan ook).
   const visibleProducts = useMemo(
@@ -558,6 +568,38 @@ export function ProductListing({
                 </SheetContent>
               </Sheet>
 
+              {/* Weergave: raster / lijst */}
+              <div
+                role="group"
+                aria-label="Weergave"
+                className="hidden items-center rounded-md border border-input bg-card p-0.5 sm:flex"
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Rasterweergave"
+                  aria-pressed={!showList}
+                  className={cn(
+                    "grid h-8 w-8 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground",
+                    !showList && "bg-secondary text-foreground",
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-label="Lijstweergave"
+                  aria-pressed={showList}
+                  className={cn(
+                    "grid h-8 w-8 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground",
+                    showList && "bg-secondary text-foreground",
+                  )}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
+
               {/* Sort */}
               <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                 <SelectTrigger className="h-9 w-[170px] text-sm" aria-label="Sorteren">
@@ -625,7 +667,19 @@ export function ProductListing({
 
           {/* Results */}
           {sorted.length > 0 ? (
-            <ProductGrid products={sorted} listName={listName} />
+            showList ? (
+              <div className="flex flex-col gap-3">
+                {sorted.map((product) => (
+                  <ProductListRow
+                    key={product.id}
+                    product={product}
+                    listName={listName}
+                  />
+                ))}
+              </div>
+            ) : (
+              <ProductGrid products={sorted} listName={listName} />
+            )
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
               <p className="text-base font-bold">Geen producten gevonden</p>

@@ -32,16 +32,19 @@ export interface PriceInput {
 }
 
 export interface PriceView {
-  /** Hoofdbedrag dat groot getoond wordt. */
+  /** Hoofdbedrag dat groot getoond wordt (de KLUSR-/ProfPas-prijs). */
   amount: number;
-  /** Doorgestreepte referentie (hoger), of undefined. */
+  /** Doorgestreepte referentie = uitsluitend de adviesprijs (RRP), of undefined. */
   reference?: number;
-  /** Label bij de referentie ("Adviesprijs" / "Normaal"). */
+  /** Label bij de referentie (altijd "Adviesprijs" als die er is). */
   referenceLabel?: string;
   /** Pas-badge ("KLUSRPAS" / "ProfPas"), of undefined. */
   badge?: "KLUSRPAS" | "ProfPas";
   /** "incl. btw" of "excl. btw". */
   vatSuffix: "incl. btw" | "excl. btw";
+  /** Normale prijs (zonder account/als gast) — getoond náást de KLUSR-prijs. */
+  normalPrice?: number;
+  /** Besparing van de KLUSR-/ProfPas-prijs t.o.v. de normale prijs. */
   savings?: number;
   savingsPct?: number;
 }
@@ -64,22 +67,25 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
     };
   }
 
-  // Particulier (incl. btw)
+  // Particulier (incl. btw). Drie tiers:
+  //  - Adviesprijs (compareAtPrice)  → doorgestreepte referentie
+  //  - Normale prijs (price)         → wat een gast/zonder account betaalt
+  //  - KLUSR-prijs (kluspasPrice)    → wat een geregistreerde klant betaalt
   const member = kluspasPrice !== undefined && kluspasPrice < price;
   const amount = member ? kluspasPrice! : price;
-  // Referentie: een echte adviesprijs als die er is, anders de normale prijs
-  // (zonder pas) — dat laatste was eerder ten onrechte als "Adviesprijs" gelabeld.
-  const hasAdvies = compareAtPrice !== undefined && compareAtPrice > amount;
-  const reference = hasAdvies ? compareAtPrice! : member ? price : undefined;
+  // Doorstrepen = uitsluitend de adviesprijs (RRP), nooit de normale prijs.
+  const hasAdvies = compareAtPrice !== undefined && compareAtPrice > price;
 
   return {
     amount,
-    reference,
-    referenceLabel: hasAdvies ? "Adviesprijs" : reference ? "Normaal" : undefined,
+    reference: hasAdvies ? compareAtPrice! : undefined,
+    referenceLabel: hasAdvies ? "Adviesprijs" : undefined,
     badge: member ? "KLUSRPAS" : undefined,
     vatSuffix: "incl. btw",
-    savings: reference ? reference - amount : undefined,
-    savingsPct: reference ? Math.round(((reference - amount) / reference) * 100) : undefined,
+    // Toon de normale prijs apart wanneer de KLUSR-prijs lager is.
+    normalPrice: member ? price : undefined,
+    savings: member ? price - amount : undefined,
+    savingsPct: member ? Math.round(((price - amount) / price) * 100) : undefined,
   };
 }
 

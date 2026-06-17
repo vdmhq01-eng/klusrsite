@@ -273,7 +273,7 @@ export function CartView() {
 
             <ul className="mt-4 space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
               <li className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-primary" /> Voor 16:00 besteld, morgen in huis
+                <Truck className="h-4 w-4 text-primary" /> Voor 19:00 besteld, morgen in huis
               </li>
               <li className="flex items-center gap-2">
                 <RotateCcw className="h-4 w-4 text-primary" /> Gratis retouren in de winkel

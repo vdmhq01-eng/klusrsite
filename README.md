@@ -63,7 +63,7 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 
 ### Conversie & marketing
 Gratis‑verzending progressbar · Kluspasprijzen · schaarste ("Nog 4 op voorraad in
-Nijverdal") · urgentie ("Voor 16:00 besteld, morgen in huis") · social proof
+Nijverdal") · urgentie ("Voor 19:00 besteld, morgen in huis") · social proof
 (reviews) · cross‑sell ("vaak samen gekocht") · upsell (voordeliger per liter) ·
 exit‑intent popup (5% korting) · nieuwsbrief · recent bekeken · sticky add‑to‑cart ·
 trust badges · bundels.

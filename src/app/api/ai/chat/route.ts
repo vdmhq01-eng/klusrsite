@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { chat, type ChatMessage } from "@/lib/ai/client";
+import { logEvent } from "@/lib/store/analytics";
 
 export const runtime = "nodejs";
 
@@ -9,7 +10,7 @@ Richtlijnen:
 - Antwoord altijd in het Nederlands, kort en concreet (max ~120 woorden), praktisch en behulpzaam.
 - Geef productadvies passend bij verf, gereedschap, ijzerwaren, elektra, tuin, verlichting en vloeren.
 - Adviseer waar logisch ook benodigdheden (roller, kwast, tape, primer, schuurpapier).
-- Noem KLUSR-troeven waar relevant: advies van ex-schilders, op kleur gemengde verf, voor 16:00 besteld morgen in huis, gratis verzending vanaf €50.
+- Noem KLUSR-troeven waar relevant: advies van ex-schilders, op kleur gemengde verf, voor 19:00 besteld morgen in huis, gratis verzending vanaf €50.
 - Wees eerlijk over veiligheid (bijv. elektra: groep spanningsvrij maken, bij twijfel erkend installateur).
 - Verzin geen exacte prijzen of voorraad; verwijs voor actuele prijs/voorraad naar de productpagina of winkel.`;
 
@@ -31,6 +32,12 @@ export async function POST(req: Request) {
 
     if (messages.length === 0) {
       return NextResponse.json({ error: "Geen bericht ontvangen" }, { status: 400 });
+    }
+
+    // Registreer de laatste klantvraag (analytics — best-effort).
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUser?.content) {
+      void logEvent("chat", { question: lastUser.content.slice(0, 300) }).catch(() => {});
     }
 
     const system = context ? `${SYSTEM_PROMPT}\n\nContext: ${context}` : SYSTEM_PROMPT;

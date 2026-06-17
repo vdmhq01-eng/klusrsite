@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { subscribe } from "@/lib/mailchimp";
 import { sendWelcomeEmail } from "@/lib/email";
+import { addContact, AUDIENCES } from "@/lib/email/audiences";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,14 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
+
+    // Inschrijving als contact in de Resend-nieuwsbrief-audience (best-effort).
+    void addContact({
+      audience: AUDIENCES.NEWSLETTER,
+      email,
+      firstName,
+      lastName,
+    }).catch(() => {});
 
     // Branded welkomstmail (Resend; no-op zonder API-key).
     void sendWelcomeEmail({ email, firstName }).catch(() => {});

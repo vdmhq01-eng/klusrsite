@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, MapPin, Sparkles, PaintRoller, Store } from "lucide-react";
+import { ArrowRight, Sparkles, PaintRoller } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TopicImage } from "@/components/shared/topic-image";
-import { flagshipStore } from "@/lib/data/stores";
+import { HeroAiCard } from "./hero-ai-card";
 
 export function Hero() {
   return (
@@ -39,28 +39,8 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Flagship store card */}
-        <Link
-          href={`/winkels/${flagshipStore.slug}`}
-          className="group relative flex min-h-[200px] flex-col justify-end overflow-hidden rounded-2xl"
-        >
-          <TopicImage seed={flagshipStore.slug} keywords="hardware,store,paint" icon={Store} src="/generated/winkel-nijverdal.jpg" />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/70 to-transparent" />
-          <div className="relative p-6 text-white">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">
-              <MapPin className="h-3.5 w-3.5" />
-              Eerste filiaal
-            </span>
-            <h2 className="mt-3 text-2xl font-black">Nijverdal</h2>
-            <p className="mt-1 text-sm text-white/85">
-              {flagshipStore.address} · Kom langs voor advies en kleuradvies op maat.
-            </p>
-            <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold">
-              Plan je bezoek
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </div>
-        </Link>
+        {/* Klus-AI card */}
+        <HeroAiCard />
       </div>
     </section>
   );

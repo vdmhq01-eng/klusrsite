@@ -50,7 +50,12 @@ export default async function AccountPage() {
         </p>
       </div>
 
-      <AccountDashboard />
+      <AccountDashboard
+        user={{
+          name: session.user?.name ?? null,
+          email: session.user?.email ?? null,
+        }}
+      />
     </div>
   );
 }

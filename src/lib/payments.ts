@@ -1,4 +1,5 @@
 import createMollieClient, { type MollieClient } from "@mollie/api-client";
+import type { PaymentMethodInfo } from "@/types";
 
 /**
  * Mollie payments helper. When MOLLIE_API_KEY is missing the app runs in demo
@@ -6,7 +7,24 @@ import createMollieClient, { type MollieClient } from "@mollie/api-client";
  * thank-you flow is testable without credentials.
  */
 
-const API_KEY = process.env.MOLLIE_API_KEY;
+/**
+ * Maak de Mollie-sleutel robuust. Vangt twee veelgemaakte fouten op:
+ *  - een per ongeluk dubbel geplakte sleutel (live_x…live_x…), en
+ *  - omringende spaties/tekst.
+ * We pakken de éérste geldige test_/live_-sleutel (prefix + 30 alfanumerieke
+ * tekens). Zo voorkomen we de "Invalid Authorization header"-fout.
+ */
+function normalizeMollieKey(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  const m = trimmed.match(/(?:test|live)_[A-Za-z0-9]{30}/);
+  if (m && m[0] !== trimmed) {
+    console.warn("[mollie] MOLLIE_API_KEY is opgeschoond (dubbele/verkeerd geplakte waarde gedetecteerd).");
+  }
+  return m ? m[0] : trimmed;
+}
+
+const API_KEY = normalizeMollieKey(process.env.MOLLIE_API_KEY);
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
 let client: MollieClient | null = null;
@@ -21,13 +39,22 @@ function getClient(): MollieClient | null {
   return client;
 }
 
-/** Map our internal method ids to Mollie method ids. */
-const methodMap: Record<string, string | undefined> = {
+/**
+ * Aliassen voor enkele interne method-ids → Mollie. De checkout stuurt sinds de
+ * dynamische methodenlijst meestal al een echte Mollie-id mee; onbekende ids
+ * laten we dus ongewijzigd door (passthrough).
+ */
+const methodMap: Record<string, string> = {
   ideal: "ideal",
   bancontact: "bancontact",
   creditcard: "creditcard",
-  klarna: "klarnapaylater",
+  klarna: "klarna",
 };
+
+function toMollieMethod(method?: string): string | undefined {
+  if (!method) return undefined;
+  return methodMap[method] ?? method;
+}
 
 export interface CreatePaymentInput {
   orderId: string;
@@ -37,6 +64,14 @@ export interface CreatePaymentInput {
   description?: string;
   /** Basis-URL voor redirect/webhook (uit de request-origin); valt terug op SITE_URL. */
   baseUrl?: string;
+  /** Mollie Components card-token (creditcard ingebed op onze eigen pagina). */
+  cardToken?: string;
+  /** iDEAL-bank (issuer-id) — vooraf gekozen op onze eigen checkout. */
+  issuer?: string;
+  /** Factuuradres — vereist voor Klarna e.d. (pay-later). */
+  billingAddress?: Record<string, unknown>;
+  /** Order-regels — vereist voor Klarna e.d.; moeten exact optellen tot `amount`. */
+  lines?: unknown[];
 }
 
 export interface CreatePaymentResult {
@@ -60,16 +95,23 @@ export async function createPayment(
     };
   }
 
-  const payment = await mollie.payments.create({
+  const mollieMethod = toMollieMethod(input.method);
+  const params: Record<string, unknown> = {
     amount: { currency: "EUR", value },
     description: input.description ?? `KLUSR bestelling ${input.reference}`,
     redirectUrl: `${base}/bedankt?order=${input.orderId}`,
     webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
     metadata: { orderId: input.orderId, reference: input.reference },
-    ...(input.method && methodMap[input.method]
-      ? { method: methodMap[input.method] as never }
-      : {}),
-  });
+    ...(mollieMethod ? { method: mollieMethod } : {}),
+  };
+  // iDEAL: vooraf gekozen bank meesturen → klant gaat direct naar de juiste bank.
+  if (mollieMethod === "ideal" && input.issuer) params.issuer = input.issuer;
+  // Mollie Components: card-token meegeven bij een ingebedde creditcard-betaling.
+  if (input.cardToken) params.cardToken = input.cardToken;
+  // Factuuradres + order-regels (Klarna e.d.).
+  if (input.billingAddress) params.billingAddress = input.billingAddress;
+  if (input.lines && input.lines.length) params.lines = input.lines;
+  const payment = await mollie.payments.create(params as never);
 
   return {
     checkoutUrl: payment.getCheckoutUrl() ?? `${base}/bedankt?order=${input.orderId}`,
@@ -91,6 +133,62 @@ export async function getPaymentStatus(
   };
 }
 
+/** Officieel Mollie-logo (CDN) per method-id — als fallback wanneer de live
+ * methodenlijst (nog) geen image meegeeft. */
+const mollieIcon = (id: string) =>
+  `https://www.mollie.com/external/icons/payment-methods/${id}.svg`;
+
+/** Statische fallback-lijst (demo / Mollie onbereikbaar) met officiële logo's. */
+const FALLBACK_METHODS: PaymentMethodInfo[] = [
+  { id: "ideal", label: "iDEAL", image: mollieIcon("ideal") },
+  { id: "bancontact", label: "Bancontact", image: mollieIcon("bancontact") },
+  { id: "creditcard", label: "Creditcard", image: mollieIcon("creditcard") },
+  { id: "klarna", label: "Achteraf betalen met Klarna", image: mollieIcon("klarna") },
+];
+
+export interface PaymentMethodsResult {
+  /** True wanneer de lijst live uit Mollie komt (anders fallback). */
+  configured: boolean;
+  methods: PaymentMethodInfo[];
+}
+
+type RawMollieMethod = {
+  id: string;
+  description?: string;
+  image?: { svg?: string };
+  issuers?: { id: string; name: string; image?: { svg?: string } }[] | null;
+};
+
+/**
+ * Haal de in Mollie geactiveerde betaalmethoden op, inclusief officiële logo's
+ * en (voor iDEAL) de banklijst. Filtert op bedrag zodat methoden met een
+ * minimum/maximum (zoals Klarna) alleen verschijnen wanneer ze écht kunnen.
+ * Valt terug op een statische lijst zonder credentials of bij een fout.
+ */
+export async function listPaymentMethods(amount?: number): Promise<PaymentMethodsResult> {
+  const mollie = getClient();
+  if (!mollie) return { configured: false, methods: FALLBACK_METHODS };
+  try {
+    const params: Record<string, unknown> = { include: "issuers" };
+    if (amount && amount > 0) {
+      params.amount = { currency: "EUR", value: amount.toFixed(2) };
+    }
+    const list = (await mollie.methods.list(params as never)) as unknown as RawMollieMethod[];
+    const methods: PaymentMethodInfo[] = list.map((m) => ({
+      id: m.id,
+      label: m.description ?? m.id,
+      image: m.image?.svg ?? mollieIcon(m.id),
+      issuers: Array.isArray(m.issuers) && m.issuers.length
+        ? m.issuers.map((i) => ({ id: i.id, name: i.name, image: i.image?.svg }))
+        : undefined,
+    }));
+    return { configured: true, methods: methods.length ? methods : FALLBACK_METHODS };
+  } catch (err) {
+    console.error("[mollie] methods list failed", err);
+    return { configured: false, methods: FALLBACK_METHODS };
+  }
+}
+
 /** Translate a Mollie status to our internal OrderStatus. */
 export function mapMollieStatus(status: string) {
   switch (status) {
@@ -109,5 +207,52 @@ export function mapMollieStatus(status: string) {
       return "failed" as const;
     default:
       return "open" as const;
+  }
+}
+
+export interface MollieCheckResult {
+  ok: boolean;
+  configured: boolean;
+  status: number;
+  message: string;
+  /** Geactiveerde betaalmethoden (id's), indien beschikbaar. */
+  methods?: string[];
+  error?: string;
+}
+
+/**
+ * Controleer of de Mollie-koppeling werkt: valideert de API-sleutel en haalt de
+ * geactiveerde betaalmethoden op (mollie.methods.list). Maakt geen betaling aan.
+ */
+export async function checkMollie(): Promise<MollieCheckResult> {
+  const mollie = getClient();
+  if (!mollie) {
+    return {
+      ok: false,
+      configured: false,
+      status: 0,
+      message: "Mollie is niet geconfigureerd — zet MOLLIE_API_KEY in de omgeving.",
+    };
+  }
+  try {
+    const methods = await mollie.methods.list();
+    const ids = methods.map((m) => m.id);
+    return {
+      ok: true,
+      configured: true,
+      status: 200,
+      message: ids.length
+        ? `Mollie werkt. Actieve betaalmethoden: ${ids.join(", ")}.`
+        : "Mollie-sleutel werkt, maar er zijn nog géén betaalmethoden geactiveerd. Zet ze aan in je Mollie-dashboard.",
+      methods: ids,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      configured: true,
+      status: 0,
+      message: "De Mollie-sleutel werkt niet of het profiel is nog niet geactiveerd.",
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
 }

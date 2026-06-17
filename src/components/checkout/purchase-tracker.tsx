@@ -2,15 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import type { Order } from "@/types";
-import { useCart } from "@/lib/store/cart";
 import { trackEvent } from "@/lib/tracking";
 
 /**
- * Fires the GA4 `purchase` event once and clears the cart after a successful
- * order. Rendered on the thank-you page.
+ * Fires the GA4 `purchase` event once after a successful order. Rendered on the
+ * thank-you page. (Het legen van de winkelwagen doet <ClearCart/>.)
  */
 export function PurchaseTracker({ order }: { order: Order }) {
-  const clear = useCart((s) => s.clear);
   const fired = useRef(false);
 
   useEffect(() => {
@@ -31,9 +29,7 @@ export function PurchaseTracker({ order }: { order: Order }) {
         quantity: i.quantity,
       })),
     });
-
-    clear();
-  }, [order, clear]);
+  }, [order]);
 
   return null;
 }

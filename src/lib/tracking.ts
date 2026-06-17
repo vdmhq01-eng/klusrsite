@@ -26,6 +26,7 @@ export type TrackEventName =
   | "klusadvies_completed"
   | "color_picker_opened"
   | "color_selected"
+  | "kleurenkiezer_klus"
   | "ai_chat_started"
   | "ai_product_suggestion_clicked"
   | "save_for_later"

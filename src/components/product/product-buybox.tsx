@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
@@ -23,10 +24,12 @@ import { QuantityStepper } from "@/components/cart/quantity-stepper";
 import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
-import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import { baseStockByStore, paintBases } from "@/lib/paint-bases";
-import { isLightColor } from "@/lib/data/colors";
+import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
+
+/** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
+const WHITE_COLOR = { name: "100% wit", code: "RAL 9010", hex: "#FFFFFF", collection: "Wit" } as const;
+import { isLightColor, findColor } from "@/lib/data/colors";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
 import { usePricingMode } from "@/lib/store/pricing-mode";
@@ -34,7 +37,7 @@ import { priceView } from "@/lib/pricing";
 
 const usps = [
   { icon: Truck, label: "Gratis verzending vanaf €50" },
-  { icon: RotateCcw, label: "Gratis retouren in de winkel" },
+  { icon: RotateCcw, label: "Gratis retourneren binnen 30 dagen" },
   { icon: Sparkles, label: "Advies van ex-schilders" },
   { icon: CreditCard, label: "Achteraf betalen mogelijk" },
 ];
@@ -50,9 +53,17 @@ export function ProductBuybox({
   const [color, setColor] = useState<SelectedColor | undefined>();
   const [quantity, setQuantity] = useState(1);
 
+  // Voorkeuze van kleur via ?kleur=<code> (bijv. vanuit de Kleurenkiezer-funnel).
+  // Client-side gelezen zodat de productpagina statisch/ISR blijft.
+  useEffect(() => {
+    if (!product.colorMatchable) return;
+    const code = new URLSearchParams(window.location.search).get("kleur");
+    if (!code) return;
+    const found = findColor(code);
+    if (found) setColor(withBase(found));
+  }, [product.colorMatchable]);
+
   const addItem = useCart((s) => s.addItem);
-  const saveForLater = useCart((s) => s.saveForLater);
-  const openCart = useUI((s) => s.openCart);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const favoriteIds = useFavorites((s) => s.ids);
   const mounted = useMounted();
@@ -94,6 +105,22 @@ export function ProductBuybox({
     return addItem({ product, variant, quantity, color });
   }
 
+  const router = useRouter();
+
+  /** Direct afrekenen: leg in de winkelwagen en ga meteen naar de checkout
+   * (daar staan o.a. Apple Pay / Google Pay zodra die in Mollie actief zijn). */
+  function handleBuyNow() {
+    if (product.colorMatchable && !color) {
+      toast("Kies eerst een kleur", {
+        description: "Selecteer een kleur voordat je deze verf bestelt.",
+      });
+      return;
+    }
+    buildItem();
+    trackEvent("begin_checkout", { value: variant.kluspasPrice * quantity });
+    router.push("/checkout");
+  }
+
   function handleAdd() {
     if (product.colorMatchable && !color) {
       toast("Kies eerst een kleur", {
@@ -121,15 +148,8 @@ export function ProductBuybox({
     toast.success("Toegevoegd aan winkelwagen", {
       description: `${product.title} · ${variant.label}${color ? ` · ${color.name}` : ""}`,
     });
-    openCart();
   }
 
-  function handleSaveForLater() {
-    const item = buildItem();
-    saveForLater(item.key);
-    trackEvent("save_for_later", { item_id: product.id });
-    toast("Bewaard voor later", { description: product.title });
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -185,6 +205,16 @@ export function ProductBuybox({
           <p className="mt-1 text-sm font-semibold text-klusr-stock">
             Je bespaart {formatPrice(priceInfo.savings)}
             {priceInfo.savingsPct ? ` (${priceInfo.savingsPct}%)` : ""}
+            {priceInfo.badge === "KLUSRPAS" && " met je gratis KLUSR-account"}
+          </p>
+        )}
+        {priceInfo.normalPrice !== undefined && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Normale prijs{" "}
+            <span className="font-semibold text-foreground">
+              {formatPrice(priceInfo.normalPrice)}
+            </span>{" "}
+            <span className="text-xs">— zonder account</span>
           </p>
         )}
         {surcharge > 0 && (
@@ -302,16 +332,33 @@ export function ProductBuybox({
             </span>
           </div>
 
-          <ColorPickerDialog
-            value={color}
-            onConfirm={setColor}
-            trigger={
-              <Button variant={color ? "outline" : "default"} className="w-full gap-2 sm:w-auto">
-                <Palette className="h-4 w-4" />
-                {color ? "Kleur wijzigen" : "Kies je kleur"}
-              </Button>
-            }
-          />
+          {(() => {
+            const isWhite =
+              color?.hex?.toUpperCase() === WHITE_COLOR.hex && color?.code === WHITE_COLOR.code;
+            return (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={isWhite ? "default" : "outline"}
+                  className="gap-2"
+                  onClick={() => setColor(withBase({ ...WHITE_COLOR }))}
+                >
+                  <span className="h-4 w-4 rounded-full border border-black/20 bg-white shadow-inner" />
+                  100% wit
+                </Button>
+                <ColorPickerDialog
+                  value={color}
+                  onConfirm={setColor}
+                  trigger={
+                    <Button variant="outline" className="gap-2">
+                      <Palette className="h-4 w-4" />
+                      {color && !isWhite ? "Kleur wijzigen" : "Kies je kleur"}
+                    </Button>
+                  }
+                />
+              </div>
+            );
+          })()}
 
           {color ? (
             <div className="overflow-hidden rounded-xl border border-border">
@@ -359,30 +406,33 @@ export function ProductBuybox({
             In winkelwagen
           </Button>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={handleSaveForLater}>
-            <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
-            Bewaar voor later
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Favoriet"
-            onClick={() => {
-              toggleFavorite(product.id);
-              toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten");
-            }}
-          >
-            <Heart className={cn("h-5 w-5", isFavorite && "fill-primary text-primary")} />
-          </Button>
-        </div>
+        <Button
+          onClick={handleBuyNow}
+          size="lg"
+          className="w-full bg-klusr-black text-white hover:bg-klusr-black/90"
+        >
+          Direct afrekenen
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => {
+            toggleFavorite(product.id);
+            toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten", {
+              description: product.title,
+            });
+          }}
+        >
+          <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
+          {isFavorite ? "Bewaard in favorieten" : "Bewaar voor later"}
+        </Button>
       </div>
 
       {/* USPs */}
       <ul className="grid grid-cols-1 gap-2 rounded-lg border border-border bg-secondary/40 p-3 sm:grid-cols-2">
         {usps.map(({ icon: Icon, label }) => (
-          <li key={label} className="flex items-center gap-2 text-xs font-medium">
-            <Icon className="h-4 w-4 shrink-0 text-primary" />
+          <li key={label} className="flex items-start gap-2 text-xs font-medium">
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             {label}
           </li>
         ))}

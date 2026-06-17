@@ -1,13 +1,34 @@
 import type { CartItem, Order, OrderCustomer, OrderStatus } from "@/types";
+import {
+  isKvEnabled,
+  kvDel,
+  kvGetJSON,
+  kvSAdd,
+  kvSetJSON,
+  kvSetNX,
+  kvSMembers,
+} from "./kv";
 
 /**
- * In-memory order store for the demo. In production this would be a database.
- * A module-level Map persists for the lifetime of the server process.
+ * Orderstore met persistente opslag via KV (Upstash/Vercel KV) en een in-memory
+ * cache als fallback. Met KV blijven orders bewaard tussen serverless-instances
+ * en deploys — nodig voor betrouwbare bestelstatus, webhook-afhandeling en het
+ * admin-overzicht. Zonder KV draait alles in-memory (demo).
  *
- * A few seeded orders are added so the "Bestelstatus" page works out of the box.
+ * Een paar seeded orders blijven bestaan zodat de "Bestelstatus"-pagina out of
+ * the box werkt om te demonstreren.
  */
 
 const orders = new Map<string, Order>();
+
+const KEY = {
+  order: (id: string) => `order:${id}`,
+  ref: (reference: string) => `orderref:${reference.toUpperCase()}`,
+  mollie: (paymentId: string) => `ordermollie:${paymentId}`,
+  mailLock: (id: string) => `ordermail:${id}`,
+  email: (e: string) => `orders:email:${e.trim().toLowerCase()}`,
+  index: "order:index",
+};
 
 function generateId(): string {
   return "ord_" + Math.random().toString(36).slice(2, 10);
@@ -16,6 +37,29 @@ function generateId(): string {
 function generateReference(): string {
   const n = Math.floor(100000 + Math.random() * 900000);
   return `KLR-${n}`;
+}
+
+/** Schrijf een order weg naar de in-memory cache én (indien aan) naar KV. */
+async function persist(order: Order): Promise<void> {
+  orders.set(order.id, order);
+  if (!isKvEnabled()) return;
+  await kvSetJSON(KEY.order(order.id), order);
+  await kvSetJSON(KEY.ref(order.reference), order.id);
+  await kvSAdd(KEY.index, order.id);
+  if (order.customer.email) await kvSAdd(KEY.email(order.customer.email), order.id);
+  if (order.molliePaymentId) await kvSetJSON(KEY.mollie(order.molliePaymentId), order.id);
+}
+
+/** Laad een order op id: eerst cache, dan KV, dan seeded. */
+async function loadById(id: string): Promise<Order | undefined> {
+  const mem = orders.get(id);
+  if (mem) return mem;
+  const kv = await kvGetJSON<Order>(KEY.order(id));
+  if (kv) {
+    orders.set(kv.id, kv);
+    return kv;
+  }
+  return seededOrders.find((o) => o.id === id || o.reference === id);
 }
 
 export interface CreateOrderInput {
@@ -28,7 +72,7 @@ export interface CreateOrderInput {
   paymentMethod?: string;
 }
 
-export function createOrder(input: CreateOrderInput): Order {
+export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const id = generateId();
   const now = new Date();
   const delivery = new Date(now);
@@ -48,47 +92,74 @@ export function createOrder(input: CreateOrderInput): Order {
     createdAt: now.toISOString(),
     estimatedDelivery: delivery.toISOString(),
   };
-  orders.set(id, order);
+  await persist(order);
   return order;
 }
 
-export function getOrder(id: string): Order | undefined {
-  return orders.get(id) ?? seededOrders.find((o) => o.id === id || o.reference === id);
+export async function getOrder(id: string): Promise<Order | undefined> {
+  return loadById(id);
 }
 
-export function getOrderByReference(reference: string): Order | undefined {
+export async function getOrderByReference(reference: string): Promise<Order | undefined> {
   const ref = reference.trim().toUpperCase();
   for (const order of orders.values()) {
     if (order.reference.toUpperCase() === ref) return order;
   }
+  if (isKvEnabled()) {
+    const id = await kvGetJSON<string>(KEY.ref(ref));
+    if (id) {
+      const order = await loadById(id);
+      if (order) return order;
+    }
+  }
   return seededOrders.find((o) => o.reference.toUpperCase() === ref);
 }
 
-export function getOrderByMollieId(paymentId: string): Order | undefined {
+export async function getOrderByMollieId(paymentId: string): Promise<Order | undefined> {
   for (const order of orders.values()) {
     if (order.molliePaymentId === paymentId) return order;
+  }
+  if (isKvEnabled()) {
+    const id = await kvGetJSON<string>(KEY.mollie(paymentId));
+    if (id) return loadById(id);
   }
   return undefined;
 }
 
-export function setMolliePaymentId(orderId: string, molliePaymentId: string): void {
-  const order = orders.get(orderId);
-  if (order) order.molliePaymentId = molliePaymentId;
+export async function setMolliePaymentId(orderId: string, molliePaymentId: string): Promise<void> {
+  const order = await loadById(orderId);
+  if (!order) return;
+  order.molliePaymentId = molliePaymentId;
+  await persist(order);
 }
 
-export function updateOrderStatus(orderId: string, status: OrderStatus): Order | undefined {
-  const order = orders.get(orderId);
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderStatus,
+): Promise<Order | undefined> {
+  const order = await loadById(orderId);
   if (!order) return undefined;
   order.paymentStatus = status;
+  await persist(order);
   return order;
 }
 
 /**
- * Claim het versturen van de bestelbevestiging. Geeft exact één keer per order
- * `true` terug (synchroon check-and-set, dus geen dubbele mails bij meerdere
- * webhook-calls). Onbekende/seeded orders leveren `false`.
+ * Claim het versturen van de bestelbevestiging — exact één keer per order. Met
+ * KV is dit een atomic SET NX (veilig over instances heen); zonder KV een
+ * synchrone check-and-set in-memory. Onbekende orders leveren `false`.
  */
-export function claimConfirmationEmail(orderId: string): boolean {
+export async function claimConfirmationEmail(orderId: string): Promise<boolean> {
+  if (isKvEnabled()) {
+    const claimed = await kvSetNX(KEY.mailLock(orderId), new Date().toISOString());
+    if (!claimed) return false;
+    const order = await loadById(orderId);
+    if (order) {
+      order.confirmationSentAt = new Date().toISOString();
+      await persist(order);
+    }
+    return true;
+  }
   const order = orders.get(orderId);
   if (!order || order.confirmationSentAt) return false;
   order.confirmationSentAt = new Date().toISOString();
@@ -96,20 +167,75 @@ export function claimConfirmationEmail(orderId: string): boolean {
 }
 
 /** Geef de claim weer vrij (bv. na een mislukte verzending) zodat een retry mag. */
-export function releaseConfirmationEmail(orderId: string): void {
-  const order = orders.get(orderId);
-  if (order) order.confirmationSentAt = undefined;
+export async function releaseConfirmationEmail(orderId: string): Promise<void> {
+  if (isKvEnabled()) await kvDel(KEY.mailLock(orderId));
+  const order = orders.get(orderId) ?? (await loadById(orderId));
+  if (order) {
+    order.confirmationSentAt = undefined;
+    if (isKvEnabled()) await persist(order);
+  }
 }
 
-export function markChannable(
+export async function markChannable(
   orderId: string,
   status: NonNullable<Order["channableStatus"]>,
   channableOrderId?: string,
-): void {
-  const order = orders.get(orderId);
+): Promise<void> {
+  const order = await loadById(orderId);
   if (!order) return;
   order.channableStatus = status;
   if (channableOrderId) order.channableOrderId = channableOrderId;
+  await persist(order);
+}
+
+/** Orders van één klant (op e-mailadres), nieuwste eerst — voor "Mijn account". */
+export async function listOrdersByEmail(email: string): Promise<Order[]> {
+  const target = email.trim().toLowerCase();
+  if (!target) return [];
+  const byId = new Map<string, Order>();
+  if (isKvEnabled()) {
+    const ids = await kvSMembers(KEY.email(target));
+    const loaded = await Promise.all(ids.map((id) => loadById(id)));
+    for (const o of loaded) if (o) byId.set(o.id, o);
+  }
+  for (const o of orders.values()) {
+    if (o.customer.email.trim().toLowerCase() === target) byId.set(o.id, o);
+  }
+  for (const o of seededOrders) {
+    if (o.customer.email.trim().toLowerCase() === target && !byId.has(o.id)) byId.set(o.id, o);
+  }
+  return [...byId.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+/** Alle orders (KV + in-memory + seeded), nieuwste eerst — voor het admin-overzicht. */
+export async function listOrders(): Promise<Order[]> {
+  const byId = new Map<string, Order>();
+  if (isKvEnabled()) {
+    const ids = await kvSMembers(KEY.index);
+    const loaded = await Promise.all(ids.map((id) => loadById(id)));
+    for (const o of loaded) if (o) byId.set(o.id, o);
+  }
+  for (const o of orders.values()) byId.set(o.id, o);
+  const live = [...byId.values()];
+  const liveIds = new Set(live.map((o) => o.id));
+  return [...live, ...seededOrders.filter((o) => !liveIds.has(o.id))].sort((a, b) =>
+    a.createdAt < b.createdAt ? 1 : -1,
+  );
+}
+
+/** Markeer een order als verzonden en bewaar de PostNL-verzendgegevens. */
+export async function setShipped(
+  orderId: string,
+  shipment: NonNullable<Order["shipment"]>,
+): Promise<Order | undefined> {
+  const order = (await loadById(orderId)) ?? seededOrders.find((o) => o.id === orderId);
+  if (!order) return undefined;
+  order.shipment = shipment;
+  if (order.paymentStatus === "paid" || order.paymentStatus === "authorized") {
+    order.paymentStatus = "shipped";
+  }
+  await persist(order);
+  return order;
 }
 
 /** Seeded example orders for the bestelstatus lookup page. */
@@ -133,6 +259,42 @@ export const seededOrders: Order[] = [
     total: 95.4,
     kluspasSavings: 15,
     createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+    estimatedDelivery: new Date(Date.now() + 86400000).toISOString(),
+  },
+  {
+    id: "ord_demo456",
+    reference: "KLR-309184",
+    customer: {
+      email: "test@klus-r.nl",
+      firstName: "Jan",
+      lastName: "Bakker",
+      street: "Van den Bergsweg 3",
+      postalCode: "7442 CK",
+      city: "Nijverdal",
+      phone: "06 12345678",
+    },
+    items: [
+      {
+        key: "seed-1",
+        productId: "tilroy-demo",
+        variantId: "tilroy-demo-1",
+        title: "Histor Exterior Zijdeglans",
+        brand: "Histor",
+        image: "",
+        variantLabel: "Wit · 2,5 L",
+        slug: "histor-exterior-zijdeglans-demo",
+        quantity: 2,
+        price: 34.95,
+        kluspasPrice: 31.95,
+      },
+    ],
+    paymentStatus: "paid",
+    paymentMethod: "ideal",
+    subtotal: 69.9,
+    shipping: 0,
+    total: 69.9,
+    kluspasSavings: 6,
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
     estimatedDelivery: new Date(Date.now() + 86400000).toISOString(),
   },
 ];

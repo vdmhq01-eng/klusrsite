@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CreditCard,
   Heart,
   Info,
+  Loader2,
   Package,
+  Palette,
   PiggyBank,
+  RotateCcw,
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { seededOrders } from "@/lib/store/orders";
+import type { CartItem, Order } from "@/types";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -28,29 +32,60 @@ import {
   orderStatusLabel,
 } from "./order-status-meta";
 
-/** Demo account — there is no real authentication behind this page. */
+type LastColor = NonNullable<CartItem["selectedColor"]>;
+
+interface AccountData {
+  orders: Order[];
+  lastColor?: LastColor;
+  recentItems: CartItem[];
+  stats: { orderCount: number; totalSpent: number; totalSaved: number; openCount: number };
+}
+
+/** Demo-data voor de (nog niet gekoppelde) KLUSRPAS-loyaliteit. */
 const DEMO = {
-  firstName: "Demo",
-  lastName: "Klant",
-  email: "klant@voorbeeld.nl",
   phone: "06 - 12 34 56 78",
-  street: "Grotestraat 1",
-  postalCode: "7443 BR",
-  city: "Nijverdal",
+  street: "",
+  postalCode: "",
+  city: "",
   memberNumber: "KP 4815 2042",
-  memberSince: "maart 2025",
+  memberSince: "2025",
   spaartegoed: 12.5,
   jaarvoordeel: 87.4,
 };
 
-export function AccountDashboard() {
+export function AccountDashboard({
+  user,
+}: {
+  user: { name: string | null; email: string | null };
+}) {
   const mounted = useMounted();
   const favoriteCount = useFavorites((s) => s.ids.length);
   const favorites = mounted ? favoriteCount : 0;
 
-  const openOrders = seededOrders.filter(
-    (o) => !["delivered", "canceled", "failed", "expired"].includes(o.paymentStatus),
-  ).length;
+  const [data, setData] = useState<AccountData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/orders", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: AccountData | null) => {
+        if (active && d) setData(d);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const fullName = user.name?.trim() || "";
+  const firstName = fullName.split(" ")[0] || "klusser";
+  const lastName = fullName.split(" ").slice(1).join(" ");
+  const orders = data?.orders ?? [];
+  const lastColor = data?.lastColor;
+  const recentItems = data?.recentItems ?? [];
+  const openOrders = data?.stats.openCount ?? 0;
 
   return (
     <Tabs defaultValue="overzicht" className="w-full">
@@ -66,7 +101,7 @@ export function AccountDashboard() {
         <div className="flex flex-col gap-6">
           <div>
             <h2 className="text-2xl font-black tracking-tight">
-              Welkom terug, {DEMO.firstName}
+              Welkom terug, {firstName}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Fijn dat je er weer bent. Hier vind je je bestellingen, favorieten
@@ -121,7 +156,68 @@ export function AccountDashboard() {
             />
           </div>
 
-          <DemoNotice />
+          {/* Laatst gekochte kleur — snel opnieuw bestellen of laten mengen. */}
+          {lastColor && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Palette className="h-4 w-4 text-primary" />
+                  Je laatst gekochte kleur
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span
+                    className="h-12 w-12 shrink-0 rounded-lg border border-border shadow-inner"
+                    style={{ backgroundColor: lastColor.hex }}
+                    aria-hidden
+                  />
+                  <div>
+                    <p className="text-sm font-bold">{lastColor.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {lastColor.code}
+                      {lastColor.collection ? ` · ${lastColor.collection}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/mengverf">
+                    <RotateCcw className="h-4 w-4" />
+                    Opnieuw laten mengen
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Eerder gekocht — direct herbestellen. */}
+          {recentItems.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Eerder gekocht</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {recentItems.map((item) => (
+                    <Link
+                      key={item.productId}
+                      href={`/product/${item.slug}`}
+                      className="group flex items-center gap-2 rounded-lg border border-border p-2 transition-colors hover:border-primary/40 hover:bg-secondary/40"
+                    >
+                      <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-border bg-white">
+                        {item.image && (
+                          <Image src={item.image} alt={item.title} fill sizes="40px" className="object-cover" />
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{item.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <KluspasNote />
         </div>
       </TabsContent>
 
@@ -132,10 +228,14 @@ export function AccountDashboard() {
             <CardTitle>Mijn bestellingen</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {seededOrders.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Je bestellingen laden…
+              </div>
+            ) : orders.length === 0 ? (
               <EmptyOrders />
             ) : (
-              seededOrders.map((order) => (
+              orders.map((order) => (
                 <Link
                   key={order.id}
                   href={`/bestelstatus?ref=${encodeURIComponent(order.reference)}`}
@@ -172,12 +272,12 @@ export function AccountDashboard() {
 
       {/* ----------------------------------------------------------- Gegevens */}
       <TabsContent value="gegevens">
-        <ProfileForm />
+        <ProfileForm firstName={firstName} lastName={lastName} email={user.email ?? ""} />
       </TabsContent>
 
       {/* ------------------------------------------------------------ KLUSRPAS */}
       <TabsContent value="kluspas">
-        <KluspasPanel />
+        <KluspasPanel firstName={firstName} lastName={lastName} />
       </TabsContent>
     </Tabs>
   );
@@ -243,13 +343,14 @@ function ShortcutCard({
   );
 }
 
-function DemoNotice() {
+function KluspasNote() {
   return (
     <p className="flex items-start gap-2 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
       <Info className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
-        Dit is een demo-account ter illustratie. Er is geen echte login en de
-        getoonde gegevens zijn voorbeelddata.
+        Je bestellingen en laatst gekochte kleur worden bewaard bij je account.
+        De KLUSRPAS-spaargegevens hieronder zijn nog voorbeelddata totdat de
+        loyaliteit aan Tilroy is gekoppeld.
       </span>
     </p>
   );
@@ -277,11 +378,19 @@ function EmptyOrders() {
 
 /* ----------------------------------------------------------------- gegevens */
 
-function ProfileForm() {
+function ProfileForm({
+  firstName,
+  lastName,
+  email,
+}: {
+  firstName: string;
+  lastName: string;
+  email: string;
+}) {
   const [profile, setProfile] = useState({
-    firstName: DEMO.firstName,
-    lastName: DEMO.lastName,
-    email: DEMO.email,
+    firstName,
+    lastName,
+    email,
     phone: DEMO.phone,
     street: DEMO.street,
     postalCode: DEMO.postalCode,
@@ -375,7 +484,7 @@ const KLUSPAS_BENEFITS = [
   "Exclusieve ledenacties en vroege toegang tot aanbiedingen",
 ];
 
-function KluspasPanel() {
+function KluspasPanel({ firstName, lastName }: { firstName: string; lastName: string }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Visual KLUSRPAS card */}
@@ -397,7 +506,7 @@ function KluspasPanel() {
                 Pashouder
               </p>
               <p className="text-lg font-bold">
-                {DEMO.firstName} {DEMO.lastName}
+                {firstName} {lastName}
               </p>
             </div>
             <div className="text-right">

@@ -66,6 +66,8 @@ export interface Product {
   rating: number;
   reviewCount: number;
   reviews?: Review[];
+  /** EAN/GTIN — sterk signaal voor Google Shopping. */
+  gtin?: string;
   specifications: Specification[];
   faqs?: ProductFaq[];
   processingAdvice?: string;
@@ -95,6 +97,8 @@ export interface Category {
   seoTitle: string;
   seoDescription: string;
   subCategories?: { title: string; slug: string }[];
+  /** Optionele groepering van subcategorieën voor het mega-menu (SEO-structuur). */
+  subGroups?: { title: string; slug: string; subCategories: { title: string; slug: string }[] }[];
   /** Whether products in this category are paint (enables colour picker). */
   paint?: boolean;
 }
@@ -187,7 +191,20 @@ export interface OrderCustomer {
   street: string;
   postalCode: string;
   city: string;
+  /** ISO-landcode (NL, BE, …). Standaard NL. */
+  country?: string;
   phone?: string;
+  /** Zakelijke gegevens (alleen bij zakelijke bestellingen). */
+  company?: string;
+  cocNumber?: string;
+  vatNumber?: string;
+  /** Afwijkend factuuradres (optioneel). */
+  billing?: {
+    company?: string;
+    street: string;
+    postalCode: string;
+    city: string;
+  };
 }
 
 export interface Order {
@@ -209,6 +226,25 @@ export interface Order {
   channableOrderId?: string;
   /** Tijdstip waarop de bestelbevestiging is verstuurd (voorkomt dubbele mails). */
   confirmationSentAt?: string;
+  /** Verzending (PostNL-label). */
+  shipment?: {
+    carrier: "postnl";
+    barcode: string;
+    trackTrace?: string;
+    labelCreatedAt: string;
+  };
+}
+
+/** Betaalmethode zoals getoond op de checkout (uit Mollie of de fallback). */
+export interface PaymentMethodInfo {
+  /** Mollie method-id (bv. "ideal", "bancontact", "creditcard", "klarna"). */
+  id: string;
+  /** Weergavenaam (Mollie `description`). */
+  label: string;
+  /** Officieel logo (SVG-URL). */
+  image?: string;
+  /** iDEAL-banken (alleen aanwezig wanneer Mollie issuers teruggeeft). */
+  issuers?: { id: string; name: string; image?: string }[];
 }
 
 export interface KlushulpTask {

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession, signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +12,6 @@ import {
   Lock,
   ShieldCheck,
   Truck,
-  Store,
   RotateCcw,
   ArrowLeft,
   UserRound,
@@ -21,7 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ColorChip } from "@/components/cart/color-chip";
-import { PaymentMethods, type PaymentMethodId } from "./payment-methods";
+import { PaymentMethods } from "./payment-methods";
+import { MollieCard, type MollieCardHandle } from "./mollie-card";
+import type { PaymentMethodInfo } from "@/types";
 import {
   useCart,
   cartSummary,
@@ -29,6 +31,9 @@ import {
   shippingFor,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
+import { useReorderActive } from "@/lib/store/reorder";
+import { SHIPPING_COUNTRIES, shippingForCountry } from "@/lib/shipping";
+import { isBrievenbusOrder } from "@/lib/brievenbus";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
@@ -37,30 +42,208 @@ const schema = z.object({
   email: z.string().email("Vul een geldig e-mailadres in"),
   firstName: z.string().min(1, "Verplicht"),
   lastName: z.string().min(1, "Verplicht"),
-  street: z.string().min(3, "Vul je straat en huisnummer in"),
-  postalCode: z
-    .string()
-    .regex(/^\d{4}\s?[A-Za-z]{2}$/, "Bijv. 7443 BR"),
+  postalCode: z.string().min(3, "Vul je postcode in"),
+  houseNumber: z.string().min(1, "Verplicht"),
+  houseNumberAddition: z.string().optional(),
+  street: z.string().min(2, "Vul je straatnaam in"),
   city: z.string().min(1, "Verplicht"),
+  country: z.string().min(2).default("NL"),
   phone: z.string().optional(),
+  // Zakelijk (optioneel; alleen getoond/relevant in zakelijke modus).
+  companyName: z.string().optional(),
+  cocNumber: z.string().optional(),
+  vatNumber: z.string().optional(),
+  // Afwijkend factuuradres (optioneel).
+  billingDifferent: z.boolean().optional(),
+  billingCompany: z.string().optional(),
+  billingStreet: z.string().optional(),
+  billingPostalCode: z.string().optional(),
+  billingCity: z.string().optional(),
+  terms: z.boolean().refine((v) => v === true, {
+    message: "Ga akkoord met de algemene voorwaarden om te bestellen.",
+  }),
+  newsletter: z.boolean().optional(),
+}).superRefine((val, ctx) => {
+  // Nederlandse postcode strikt valideren (1234 AB); buitenland soepeler.
+  if (val.country === "NL" && !/^\d{4}\s?[A-Za-z]{2}$/.test(val.postalCode)) {
+    ctx.addIssue({ path: ["postalCode"], code: z.ZodIssueCode.custom, message: "Bijv. 7443 BR" });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
 
-export function CheckoutForm() {
+const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
+/** Fallback wanneer de methodenroute onverhoopt niet bereikbaar is. */
+const FALLBACK_METHODS: PaymentMethodInfo[] = [
+  { id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` },
+  { id: "bancontact", label: "Bancontact", image: `${MOLLIE_ICON}/bancontact.svg` },
+  { id: "creditcard", label: "Creditcard", image: `${MOLLIE_ICON}/creditcard.svg` },
+  { id: "klarna", label: "Achteraf betalen met Klarna", image: `${MOLLIE_ICON}/klarna.svg` },
+];
+
+export function CheckoutForm({
+  mollieProfile,
+  mollieTest,
+}: {
+  mollieProfile?: string;
+  mollieTest?: boolean;
+}) {
   const { items, kluspasActive } = useCart();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
+  const setMode = usePricingMode((s) => s.setMode);
+  // 15-min nabestelvenster → geen extra verzendkosten.
+  const { active: reorderFree } = useReorderActive();
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("ideal");
+  // Geen voorgekozen methode — de klant kiest bewust zelf.
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [issuer, setIssuer] = useState<string | null>(null);
+  const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
+  const [methodsLoading, setMethodsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const cardRef = useRef<MollieCardHandle>(null);
+
+  // Account-funnel: inloggen kan inline (geen redirect), of de klant rekent af
+  // als gast en kan met één vinkje een account aanmaken bij het bestellen.
+  const { data: session } = useSession();
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPw, setLoginPw] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [createAccount, setCreateAccount] = useState(false);
+  const [accountPw, setAccountPw] = useState("");
+
+  // Geactiveerde betaalmethoden (incl. officiële logo's + iDEAL-banken) ophalen.
+  useEffect(() => {
+    let active = true;
+    const total = cartSummary(items, mode, kluspasActive).grossTotal;
+    const qs = total > 0 ? `?amount=${total.toFixed(2)}` : "";
+    setMethodsLoading(true);
+    fetch(`/api/checkout/payment-methods${qs}`)
+      .then((r) => r.json())
+      .then((d: { methods?: PaymentMethodInfo[] }) => {
+        if (!active) return;
+        setMethods(d.methods?.length ? d.methods : FALLBACK_METHODS);
+        setMethodsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setMethods(FALLBACK_METHODS);
+        setMethodsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [items, mode, kluspasActive]);
+
+  // Billie is alleen zakelijk: deselecteer 'm als de klant naar particulier wisselt.
+  useEffect(() => {
+    if (mode !== "zakelijk" && paymentMethod === "billie") setPaymentMethod(null);
+  }, [mode, paymentMethod]);
+
+  function selectMethod(id: string) {
+    setPaymentMethod(id);
+    // Bank-keuze alleen relevant voor iDEAL.
+    if (id !== "ideal") setIssuer(null);
+  }
 
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
+    watch,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { terms: false, newsletter: false, country: "NL" },
+  });
+
+  // Vul contactgegevens voor zodra de klant is ingelogd (inline of al ingelogd).
+  useEffect(() => {
+    const email = session?.user?.email;
+    if (!email) return;
+    if (!getValues("email")) setValue("email", email);
+    const name = session.user?.name ?? "";
+    if (name) {
+      const [first, ...rest] = name.split(" ");
+      if (first && !getValues("firstName")) setValue("firstName", first);
+      if (rest.length && !getValues("lastName")) setValue("lastName", rest.join(" "));
+    }
+    setShowLogin(false);
+    setCreateAccount(false);
+  }, [session, setValue, getValues]);
+
+  // Inline inloggen zonder de checkout te verlaten.
+  async function handleLogin() {
+    if (!loginEmail || !loginPw) return;
+    setLoginBusy(true);
+    setLoginError(null);
+    const res = await signIn("credentials", {
+      redirect: false,
+      email: loginEmail,
+      password: loginPw,
+    });
+    setLoginBusy(false);
+    if (res?.error) {
+      setLoginError("Inloggen mislukt. Controleer je e-mailadres en wachtwoord.");
+    } else {
+      setShowLogin(false);
+    }
+  }
+
+  // "Winkelwagen-vergeten": zodra de klant een geldig e-mailadres invult, bewaren
+  // we de winkelwagen (debounced) zodat de cron later een herinnering kan sturen.
+  const watchedEmail = watch("email");
+  const watchedFirstName = watch("firstName");
+  useEffect(() => {
+    const email = (watchedEmail || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || items.length === 0) return;
+    const timer = setTimeout(() => {
+      const name = [watchedFirstName, getValues("lastName")].filter(Boolean).join(" ").trim();
+      fetch("/api/cart/remember", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: name || undefined,
+          items: items.map((i) => ({
+            title: i.title,
+            quantity: i.quantity,
+            price: kluspasActive ? i.kluspasPrice : i.price,
+            image: i.image,
+            slug: i.slug,
+          })),
+          total: cartSummary(items, mode, kluspasActive).grossTotal,
+        }),
+      }).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedEmail, watchedFirstName, items, mode, kluspasActive]);
+
+  // Postcode + huisnummer → straat + plaats automatisch invullen (PDOK).
+  async function lookupAddress() {
+    const postcode = (getValues("postalCode") || "").replace(/\s/g, "").toUpperCase();
+    const number = (getValues("houseNumber") || "").trim();
+    if (!/^\d{4}[A-Z]{2}$/.test(postcode) || !number) return;
+    setLookingUp(true);
+    try {
+      const res = await fetch(
+        `/api/address-lookup?postcode=${encodeURIComponent(postcode)}&number=${encodeURIComponent(number)}`,
+      );
+      const data = await res.json();
+      if (data.street) setValue("street", data.street, { shouldValidate: true });
+      if (data.city) setValue("city", data.city, { shouldValidate: true });
+    } catch {
+      /* laat de velden gewoon handmatig invulbaar */
+    } finally {
+      setLookingUp(false);
+    }
+  }
 
   if (!mounted) {
     return <div className="container-klusr py-16 text-center text-muted-foreground">Laden…</div>;
@@ -78,16 +261,128 @@ export function CheckoutForm() {
     );
   }
 
-  const summary = cartSummary(
-    items,
-    mode,
-    kluspasActive,
-    shippingMethod === "pickup" ? 0 : undefined,
-  );
+  const country = watch("country") || "NL";
+  // Landafhankelijke verzendkosten (gratis alleen NL/BE); afhalen of nabestel-
+  // venster = 0.
+  const grossSubtotalForShipping = cartSummary(items, mode, kluspasActive).grossSubtotal;
+  const brievenbus = isBrievenbusOrder(items);
+  const shippingOverride =
+    shippingMethod === "pickup" || reorderFree
+      ? 0
+      : shippingForCountry(grossSubtotalForShipping, country, { brievenbus });
+  const summary = cartSummary(items, mode, kluspasActive, shippingOverride);
+
+  // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
+  const billieSurcharge =
+    paymentMethod === "billie"
+      ? Math.round((0.35 + summary.total * 0.0349) * 100) / 100
+      : 0;
+  const payableTotal = Math.round((summary.total + billieSurcharge) * 100) / 100;
+
+  const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
+  const selectedMethod = methods.find((m) => m.id === paymentMethod);
+  // iDEAL met banklijst → eerst een bank kiezen voordat je kunt betalen.
+  const needsIssuer = paymentMethod === "ideal" && (selectedMethod?.issuers?.length ?? 0) > 0;
+  const canPay = Boolean(paymentMethod) && (!needsIssuer || Boolean(issuer));
 
   async function onSubmit(values: FormValues) {
+    if (!paymentMethod) {
+      setError("Kies eerst een betaalmethode.");
+      return;
+    }
+    if (needsIssuer && !issuer) {
+      setError("Kies eerst je bank voor iDEAL.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
+
+    // Optioneel: account aanmaken vanuit de checkout (blijft volledig in de funnel).
+    if (createAccount && !session) {
+      if (accountPw.length < 8) {
+        setError("Kies een wachtwoord van minimaal 8 tekens voor je account.");
+        setSubmitting(false);
+        return;
+      }
+      try {
+        const reg = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: values.email,
+            password: accountPw,
+            name: [values.firstName, values.lastName].filter(Boolean).join(" "),
+          }),
+        });
+        // 409 (bestaat al) of een mislukte registratie mag de bestelling nooit blokkeren.
+        if (reg.ok) {
+          await signIn("credentials", {
+            redirect: false,
+            email: values.email,
+            password: accountPw,
+          });
+        }
+      } catch {
+        /* account aanmaken is best-effort */
+      }
+    }
+
+    let cardToken: string | null = null;
+    if (useMollieComponents) {
+      cardToken = (await cardRef.current?.createToken()) ?? null;
+      if (!cardToken) {
+        setError("Controleer je kaartgegevens en probeer het opnieuw.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    // Straat + huisnummer (+ toevoeging) samenvoegen voor het order-adres.
+    const street = `${values.street} ${values.houseNumber}${
+      values.houseNumberAddition ? `-${values.houseNumberAddition}` : ""
+    }`.trim();
+    const customer = {
+      email: values.email,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      street,
+      postalCode: values.postalCode,
+      city: values.city,
+      country: values.country,
+      phone: values.phone,
+      ...(mode === "zakelijk" && values.companyName?.trim()
+        ? {
+            company: values.companyName.trim(),
+            cocNumber: values.cocNumber?.trim() || undefined,
+            vatNumber: values.vatNumber?.trim() || undefined,
+          }
+        : {}),
+      ...(values.billingDifferent && values.billingStreet?.trim()
+        ? {
+            billing: {
+              company: values.billingCompany?.trim() || undefined,
+              street: values.billingStreet.trim(),
+              postalCode: values.billingPostalCode?.trim() || "",
+              city: values.billingCity?.trim() || "",
+            },
+          }
+        : {}),
+    };
+
+    // Optioneel inschrijven voor de nieuwsbrief (demo-safe, fire-and-forget).
+    if (values.newsletter) {
+      void fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          source: "checkout",
+        }),
+      }).catch(() => {});
+    }
+
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
     trackEvent("add_payment_info", { payment_type: paymentMethod, value: summary.total });
 
@@ -96,18 +391,20 @@ export function CheckoutForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer: values,
+          customer,
           items,
           subtotal: summary.grossSubtotal,
           shipping: summary.grossShipping,
-          total: summary.grossTotal,
+          total: payableTotal,
+          surcharge: billieSurcharge,
           kluspasSavings: summary.savings,
           method: paymentMethod,
+          ...(issuer && paymentMethod === "ideal" ? { issuer } : {}),
+          ...(cardToken ? { cardToken } : {}),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Betaling aanmaken mislukt");
-      // Redirect to Mollie hosted checkout (or the thank-you page in demo mode).
       window.location.href = data.checkoutUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis");
@@ -128,34 +425,175 @@ export function CheckoutForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left: details */}
         <div className="space-y-6">
-          {/* Account of als gast */}
-          <div className="rounded-xl border border-border bg-secondary/40 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-2.5">
-                <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                <div>
-                  <p className="text-sm font-semibold">
-                    Reken af als gast — geen account nodig
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Vul hieronder je gegevens in en bestel direct. Liever een account voor je
-                    bestelhistorie en sneller afrekenen?
+          {/* Particulier of zakelijk bestellen */}
+          <div className="flex rounded-xl border border-border bg-secondary/40 p-1">
+            {(["particulier", "zakelijk"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  "flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                  mode === m
+                    ? "bg-card text-primary shadow-card"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m === "particulier" ? "Particulier" : "Zakelijk (excl. btw)"}
+              </button>
+            ))}
+          </div>
+
+          {reorderFree && (
+            <div className="flex items-center gap-2 rounded-xl border border-klusr-stock/30 bg-klusr-stock/10 p-3 text-sm font-medium text-klusr-stock">
+              <Truck className="h-4 w-4 shrink-0" />
+              Gratis verzending — je bestelt binnen 15 minuten na je vorige bestelling.
+            </div>
+          )}
+
+          {session?.user ? (
+            <div className="flex items-center gap-2.5 rounded-xl border border-klusr-stock/30 bg-klusr-stock/5 p-4">
+              <UserRound className="h-5 w-5 shrink-0 text-klusr-stock" />
+              <p className="text-sm">
+                Je bent ingelogd als{" "}
+                <strong>{session.user.email}</strong>. Je bestelling wordt aan je account gekoppeld.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-secondary/40 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-2.5">
+                  <UserRound className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold">
+                      Je rekent af als gast — supersnel, geen account nodig
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Vul je gegevens in en bestel direct. Onderaan maak je met één vinkje een
+                      account aan voor je bestelhistorie.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLogin((v) => !v)}
+                  className="shrink-0 text-left text-sm font-semibold text-primary hover:underline"
+                >
+                  Heb je al een account? Inloggen
+                </button>
+              </div>
+
+              {showLogin && (
+                <div className="mt-3 border-t border-border pt-3">
+                  <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                    <Input
+                      type="email"
+                      placeholder="E-mailadres"
+                      autoComplete="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Wachtwoord"
+                      autoComplete="current-password"
+                      value={loginPw}
+                      onChange={(e) => setLoginPw(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void handleLogin();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="dark" onClick={() => void handleLogin()} disabled={loginBusy}>
+                      {loginBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Inloggen
+                    </Button>
+                  </div>
+                  {loginError && <p className="mt-2 text-xs text-destructive">{loginError}</p>}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Wachtwoord vergeten of liever een inloglink?{" "}
+                    <Link href="/inloggen" className="font-semibold text-primary hover:underline">
+                      Ga naar inloggen
+                    </Link>
                   </p>
                 </div>
-              </div>
-              <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link href="/inloggen">Inloggen of account aanmaken</Link>
-              </Button>
+              )}
             </div>
-          </div>
+          )}
 
           <Section title="Contactgegevens" step={1}>
             <Field label="E-mailadres" error={errors.email?.message}>
               <Input type="email" placeholder="jij@voorbeeld.nl" {...register("email")} />
             </Field>
+
+            {!session && (
+              <div className="rounded-lg border border-border bg-background p-3">
+                <label className="flex items-start gap-2.5 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={createAccount}
+                    onChange={(e) => setCreateAccount(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-ring"
+                  />
+                  <span>
+                    <span className="font-semibold">Maak meteen een account aan</span> — bewaar je
+                    gegevens en bekijk later je bestellingen.{" "}
+                    <span className="text-muted-foreground">(optioneel)</span>
+                  </span>
+                </label>
+                {createAccount && (
+                  <div className="mt-3">
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="Kies een wachtwoord (min. 8 tekens)"
+                      value={accountPw}
+                      onChange={(e) => setAccountPw(e.target.value)}
+                    />
+                    {accountPw.length > 0 && accountPw.length < 8 && (
+                      <p className="mt-1 text-xs text-destructive">Minimaal 8 tekens.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {mode === "zakelijk" && (
+              <>
+                <Field label="Bedrijfsnaam" error={errors.companyName?.message}>
+                  <Input placeholder="Bedrijfsnaam B.V." {...register("companyName")} />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="KVK-nummer (optioneel)">
+                    <Input placeholder="12345678" {...register("cocNumber")} />
+                  </Field>
+                  <Field label="BTW-nummer (optioneel)">
+                    <Input placeholder="NL000000000B00" {...register("vatNumber")} />
+                  </Field>
+                </div>
+              </>
+            )}
           </Section>
 
           <Section title="Bezorgadres" step={2}>
+            <Field label="Land">
+              <select
+                {...register("country")}
+                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {SHIPPING_COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {country !== "NL" && country !== "BE" && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Buiten NL en BE gelden vaste verzendkosten (geen gratis verzending).
+                </p>
+              )}
+            </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Voornaam" error={errors.firstName?.message}>
                 <Input {...register("firstName")} />
@@ -164,49 +602,93 @@ export function CheckoutForm() {
                 <Input {...register("lastName")} />
               </Field>
             </div>
-            <Field label="Straat en huisnummer" error={errors.street?.message}>
-              <Input placeholder="Grotestraat 124" {...register("street")} />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
+
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Postcode" error={errors.postalCode?.message}>
-                <Input placeholder="7443 BR" {...register("postalCode")} />
+                <Input placeholder="7442 CK" {...register("postalCode", { onBlur: lookupAddress })} />
               </Field>
-              <Field label="Plaats" error={errors.city?.message}>
-                <Input placeholder="Nijverdal" {...register("city")} />
+              <Field label="Huisnr." error={errors.houseNumber?.message}>
+                <Input placeholder="3" {...register("houseNumber", { onBlur: lookupAddress })} />
+              </Field>
+              <Field label="Toevoeging">
+                <Input placeholder="A" {...register("houseNumberAddition")} />
               </Field>
             </div>
+
+            <Field
+              label={lookingUp ? "Straat (adres ophalen…)" : "Straat"}
+              error={errors.street?.message}
+            >
+              <Input placeholder="Wordt automatisch ingevuld" {...register("street")} />
+            </Field>
+            <Field label="Plaats" error={errors.city?.message}>
+              <Input placeholder="Wordt automatisch ingevuld" {...register("city")} />
+            </Field>
+
             <Field label="Telefoon (optioneel)" error={errors.phone?.message}>
               <Input type="tel" {...register("phone")} />
             </Field>
+
+            {/* Afwijkend factuuradres */}
+            <label className="mt-1 flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                {...register("billingDifferent")}
+                className="h-4 w-4 accent-primary"
+              />
+              Factuuradres wijkt af van het bezorgadres
+            </label>
+            {watch("billingDifferent") && (
+              <div className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-3">
+                <Field label="Bedrijfsnaam (optioneel)">
+                  <Input {...register("billingCompany")} />
+                </Field>
+                <Field label="Straat en huisnummer">
+                  <Input placeholder="Straatnaam 1" {...register("billingStreet")} />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Postcode">
+                    <Input placeholder="7442 CK" {...register("billingPostalCode")} />
+                  </Field>
+                  <Field label="Plaats">
+                    <Input {...register("billingCity")} />
+                  </Field>
+                </div>
+              </div>
+            )}
           </Section>
 
           <Section title="Verzendmethode" step={3}>
             <div className="space-y-2">
               <ShippingOption
-                active={shippingMethod === "standard"}
+                active
                 onClick={() => setShippingMethod("standard")}
                 icon={Truck}
                 title="Bezorgen"
-                hint="Voor 16:00 besteld, morgen in huis"
+                hint="Voor 19:00 besteld, morgen in huis"
                 price={
                   shippingFor(summary.grossSubtotal) === 0
                     ? "Gratis"
                     : formatPrice(shippingFor(summary.grossSubtotal))
                 }
               />
-              <ShippingOption
-                active={shippingMethod === "pickup"}
-                onClick={() => setShippingMethod("pickup")}
-                icon={Store}
-                title="Afhalen in de winkel"
-                hint="Gratis — klaar binnen 1 uur in Nijverdal"
-                price="Gratis"
-              />
             </div>
           </Section>
 
           <Section title="Betaalmethode" step={4}>
-            <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
+            <PaymentMethods
+              methods={mode === "zakelijk" ? methods : methods.filter((m) => m.id !== "billie")}
+              value={paymentMethod}
+              onChange={selectMethod}
+              issuer={issuer}
+              onIssuerChange={setIssuer}
+              loading={methodsLoading}
+            />
+            {useMollieComponents && (
+              <div className="mt-4">
+                <MollieCard ref={cardRef} profileId={mollieProfile!} testmode={Boolean(mollieTest)} />
+              </div>
+            )}
           </Section>
         </div>
 
@@ -226,9 +708,7 @@ export function CheckoutForm() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.title}</p>
                     <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
-                    {item.selectedColor && (
-                      <ColorChip color={item.selectedColor} className="mt-1" />
-                    )}
+                    {item.selectedColor && <ColorChip color={item.selectedColor} className="mt-1" />}
                   </div>
                   <span className="text-sm font-semibold">
                     {formatPrice(displayLine(item, mode, kluspasActive).main)}
@@ -265,32 +745,68 @@ export function CheckoutForm() {
                   <dd>{formatPrice(summary.vat)}</dd>
                 </div>
               )}
+              {billieSurcharge > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Billie-toeslag</dt>
+                  <dd>{formatPrice(billieSurcharge)}</dd>
+                </div>
+              )}
             </dl>
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">Totaal</span>
-              <span className="text-2xl font-black">{formatPrice(summary.total)}</span>
+              <span className="text-2xl font-black">{formatPrice(payableTotal)}</span>
             </div>
             {!summary.vatIncluded && (
               <p className="mt-1 text-xs text-muted-foreground">Incl. btw</p>
             )}
 
+            {/* Akkoord + nieuwsbrief */}
+            <div className="mt-4 space-y-2">
+              <label className="flex items-start gap-2 text-xs leading-snug">
+                <input type="checkbox" {...register("terms")} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
+                <span>
+                  Ik ga akkoord met de{" "}
+                  <Link href="/voorwaarden" target="_blank" className="font-medium text-primary hover:underline">
+                    algemene voorwaarden
+                  </Link>{" "}
+                  en het{" "}
+                  <Link href="/privacy" target="_blank" className="font-medium text-primary hover:underline">
+                    privacybeleid
+                  </Link>
+                  .
+                </span>
+              </label>
+              {errors.terms && (
+                <p className="text-xs font-medium text-primary">{errors.terms.message}</p>
+              )}
+              <label className="flex items-start gap-2 text-xs leading-snug">
+                <input type="checkbox" {...register("newsletter")} className="mt-0.5 h-4 w-4 shrink-0 accent-primary" />
+                <span>Houd me op de hoogte van klustips en KLUSRPAS-aanbiedingen (nieuwsbrief).</span>
+              </label>
+            </div>
+
             {error && (
-              <p className="mt-3 rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+              <p className="mt-3 rounded-md bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
                 {error}
               </p>
             )}
 
-            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting}>
+            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting || !canPay}>
               {submitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  Betaal {formatPrice(summary.total)}
+                  Betaal {formatPrice(payableTotal)}
                 </>
               )}
             </Button>
+            {!canPay && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {needsIssuer ? "Kies je bank om verder te gaan." : "Kies eerst een betaalmethode."}
+              </p>
+            )}
 
             <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-klusr-stock" />

@@ -6,6 +6,9 @@ import {
   releaseConfirmationEmail,
 } from "@/lib/store/orders";
 import { sendOrderConfirmation } from "@/lib/email";
+import { addContact, AUDIENCES } from "@/lib/email/audiences";
+import { clearPendingCart } from "@/lib/store/pending-cart";
+import { logEvent } from "@/lib/store/analytics";
 
 /**
  * Verwerk een betaalde order: schiet hem in Channable (die routeert naar Tilroy)
@@ -17,11 +20,11 @@ export async function fulfillPaidOrder(order: Order): Promise<void> {
 
   const result = await pushChannableOrder(order);
   if (result.demo) {
-    markChannable(order.id, "demo");
+    await markChannable(order.id, "demo");
   } else if (result.ok) {
-    markChannable(order.id, "sent", result.channableOrderId);
+    await markChannable(order.id, "sent", result.channableOrderId);
   } else {
-    markChannable(order.id, "failed");
+    await markChannable(order.id, "failed");
   }
 }
 
@@ -31,10 +34,33 @@ export async function fulfillPaidOrder(order: Order): Promise<void> {
  * een echte verzendfout geven we de claim vrij zodat een retry alsnog mag.
  */
 export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
-  if (!claimConfirmationEmail(order.id)) return;
+  // Betaald → geen "winkelwagen-vergeten" herinnering meer nodig.
+  void clearPendingCart(order.customer.email).catch(() => {});
+
+  if (!(await claimConfirmationEmail(order.id))) return;
+
+  // Conversie registreren — precies één keer per order (na de mail-claim).
+  void logEvent("conversion", { value: order.total, reference: order.reference }).catch(() => {});
+
+  // Koper als contact in de Resend-audiences zetten (klanten + zakelijk).
+  const c = order.customer;
+  void addContact({
+    audience: AUDIENCES.CUSTOMERS,
+    email: c.email,
+    firstName: c.firstName,
+    lastName: c.lastName,
+  }).catch(() => {});
+  if (c.company) {
+    void addContact({
+      audience: AUDIENCES.BUSINESS,
+      email: c.email,
+      firstName: c.firstName,
+      lastName: c.lastName,
+    }).catch(() => {});
+  }
 
   const result = await sendOrderConfirmation(order);
   if (!result.ok && !result.demo) {
-    releaseConfirmationEmail(order.id);
+    await releaseConfirmationEmail(order.id);
   }
 }

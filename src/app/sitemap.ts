@@ -4,7 +4,6 @@ import {
   getSubCategories,
   allProductSlugs,
   articles,
-  stores,
   klushulpTasks,
 } from "@/lib/data";
 
@@ -27,11 +26,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/", { priority: 1, changeFrequency: "daily" }),
     entry("/mengverf", { priority: 0.9 }),
     entry("/kleurkiezer", { priority: 0.9 }),
+    entry("/kleurenkiezer", { priority: 0.9 }),
+    entry("/kleuren", { priority: 0.8 }),
     entry("/kluspas", { priority: 0.7 }),
     entry("/zakelijk", { priority: 0.7 }),
     entry("/advies", { priority: 0.7 }),
     entry("/klushulp", { priority: 0.6 }),
-    entry("/winkels", { priority: 0.6 }),
     entry("/over-klusr", { priority: 0.5 }),
     entry("/werken-bij", { priority: 0.4 }),
     entry("/klantenservice", { priority: 0.5 }),
@@ -57,10 +57,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry(`/advies/${a.slug}`, { priority: 0.6, lastModified: new Date(a.date) }),
   );
 
-  const storePages: MetadataRoute.Sitemap = stores.map((s) =>
-    entry(`/winkels/${s.slug}`, { priority: 0.5 }),
-  );
-
   const klusPages: MetadataRoute.Sitemap = klushulpTasks.map((t) =>
     entry(`/klushulp/${t.slug}`, { priority: 0.5 }),
   );
@@ -70,7 +66,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...categoryPages,
     ...productPages,
     ...articlePages,
-    ...storePages,
     ...klusPages,
   ];
 }

@@ -46,7 +46,7 @@ export function ColorPickerDialog({ value, onConfirm, trigger }: ColorPickerDial
                 Kies je kleur
               </DialogPrimitive.Title>
               <p className="mt-1 text-xs text-muted-foreground">
-                Uit onze collecties of meng je eigen tint — wij mengen de verf exact.
+                Kies uit onze collecties — wij mengen de verf exact op kleur.
               </p>
             </div>
             <DialogPrimitive.Close

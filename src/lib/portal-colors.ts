@@ -12,7 +12,11 @@ import { colorCollections, type ColorCollection } from "@/lib/data/colors";
 const API_BASE = (
   process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app"
 ).replace(/\/+$/, "");
-const PUBLIC_COLORS_URL = `${API_BASE}/api/kleurenkiezer/public-colors`;
+// Eerst onze gecachete server-proxy (zelfde origin, klein + snel), dan de
+// volledige bron-feed, dan de lichtere public-colors, dan de gecureerde set.
+const PROXY_URL = "/api/colors";
+const FEED_URL = `${API_BASE}/api/kleurenkiezer/feed`;
+const FALLBACK_URL = `${API_BASE}/api/kleurenkiezer/public-colors`;
 
 interface PortalColor {
   name?: string;
@@ -31,14 +35,13 @@ function normalizeHex(h?: string): string {
 
 let cache: ColorCollection[] | null = null;
 
-export async function fetchPortalColors(): Promise<ColorCollection[]> {
-  if (cache) return cache;
+async function loadFrom(url: string): Promise<ColorCollection[] | null> {
   try {
-    const res = await fetch(PUBLIC_COLORS_URL, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error(`status ${res.status}`);
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) return null;
     const data = (await res.json()) as { colors?: PortalColor[] };
     const rows = Array.isArray(data?.colors) ? data.colors : [];
-    if (!rows.length) throw new Error("empty");
+    if (!rows.length) return null;
 
     const byId = new Map<string, ColorCollection>();
     for (const c of rows) {
@@ -56,9 +59,20 @@ export async function fetchPortalColors(): Promise<ColorCollection[]> {
       } as SelectedColor);
     }
     const collections = [...byId.values()].filter((c) => c.colors.length);
-    cache = collections.length ? collections : colorCollections;
+    // Grootste collecties eerst, voor vindbaarheid in de pillsbalk.
+    collections.sort((a, b) => b.colors.length - a.colors.length);
+    return collections.length ? collections : null;
   } catch {
-    cache = colorCollections;
+    return null;
   }
+}
+
+export async function fetchPortalColors(): Promise<ColorCollection[]> {
+  if (cache) return cache;
+  cache =
+    (await loadFrom(PROXY_URL)) ||
+    (await loadFrom(FEED_URL)) ||
+    (await loadFrom(FALLBACK_URL)) ||
+    colorCollections;
   return cache;
 }

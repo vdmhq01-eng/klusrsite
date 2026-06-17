@@ -1,22 +1,27 @@
 import type { Order } from "@/types";
 
 /**
- * Channable integratie.
+ * Channable integratie — Order Connection API v1.
  *
- * Channable zit als middleware tussen de KLUSR-webshop en Tilroy:
- *   - PRODUCTDATA + VOORRAAD worden uit Channable gehaald (project items).
- *   - ORDERS worden in Channable "ingeschoten"; Channable stuurt ze door naar
- *     Tilroy voor verwerking/fulfilment.
+ * BELANGRIJK over het ordermodel (zo werkt Channable écht):
+ *   - Channable ONTVANGT orders van marketplaces (bol.com, Amazon, …) en
+ *     routeert ze naar je backoffice (Tilroy). Je leest ze uit via GET /orders.
+ *   - Er is GÉÉN generiek "order aanmaken"-endpoint. Je kunt dus géén
+ *     willekeurige webshop-order in Channable "inschieten". De enige manier om
+ *     via de API een order te laten ontstaan is de Sandbox-only **test-order**
+ *     (POST /orders/test/{order_config_id}), die Channable voor je fabriceert.
+ *   - De schrijf-acties op bestaande orders zijn: shipment (verzending +
+ *     tracking terugkoppelen), cancellation, return-status en manual updates.
  *
- * Auth: Bearer token (CHANNABLE_TOKEN), company-/project-scoped.
- * Docs: https://api.channable.com/v1/docs
+ * Gevolg voor KLUSR: onze eigen webshop-orders gaan NIET via Channable naar
+ * Tilroy — dat is een aparte Tilroy-koppeling. Wat we hier wél doen:
+ *   1. fetchChannableItems()  — productdata + voorraad ophalen (project items).
+ *   2. fetchChannableOrders() — marketplace-orders ontvangen.
+ *   3. pushShipment()         — PostNL-tracking terugkoppelen aan de marketplace.
+ *   4. sendTestOrder()        — Sandbox test-order aanmaken om de koppeling te testen.
  *
- * Alles degradeert netjes: zonder credentials draait de webshop in demo-modus
- * (orders worden lokaal gelogd, productdata komt uit de gecommitte snapshot).
- *
- * NB: de exacte endpoint-paden/schema's kunnen per Channable-account verschillen;
- * ze zijn daarom volledig override-baar via env (CHANNABLE_ITEMS_URL /
- * CHANNABLE_ORDERS_URL).
+ * Auth: Bearer token, company-/project-scoped. Docs: https://api.channable.com/v1/docs
+ * Alles degradeert netjes: zonder credentials draait de webshop in demo-modus.
  */
 
 const BASE = process.env.CHANNABLE_API_BASE || "https://api.channable.com/v1";
@@ -24,25 +29,22 @@ const BASE = process.env.CHANNABLE_API_BASE || "https://api.channable.com/v1";
 const TOKEN = process.env.CHANNABLE_TOKEN || process.env.CHANNABLE_API_TOKEN;
 const COMPANY_ID = process.env.CHANNABLE_COMPANY_ID;
 const PROJECT_ID = process.env.CHANNABLE_PROJECT_ID;
+// Order Config ID van je Channable order-connectie (nodig voor test-orders;
+// te vinden in Channable onder Connections → de order-connectie → URL/instellingen).
+const ORDER_CONFIG_ID = process.env.CHANNABLE_ORDER_CONFIG_ID;
 
 export function isChannableConfigured(): boolean {
   return Boolean(TOKEN && COMPANY_ID);
 }
 
-/** Volledige configuratie voor het inschieten van orders (token + company + project). */
+/** Token + company + project — nodig voor het lezen/bijwerken van orders. */
 export function isChannableOrdersConfigured(): boolean {
   return Boolean(TOKEN && COMPANY_ID && PROJECT_ID);
 }
 
-/**
- * Kill-switch voor het inschieten van orders. Default AAN. Zet
- * CHANNABLE_ORDERS_ENABLED=false (of 0) om order-push tijdelijk te stoppen
- * zonder de credentials te verwijderen — handig om de webshop te testen zonder
- * dat test-orders in Tilroy belanden.
- */
-export function areOrdersEnabled(): boolean {
-  const v = process.env.CHANNABLE_ORDERS_ENABLED;
-  return v !== "false" && v !== "0";
+/** Volledig genoeg om een Sandbox test-order te kunnen aanmaken. */
+export function isTestOrderConfigured(): boolean {
+  return Boolean(TOKEN && COMPANY_ID && PROJECT_ID && ORDER_CONFIG_ID);
 }
 
 function authHeaders(): Record<string, string> {
@@ -53,6 +55,11 @@ function authHeaders(): Record<string, string> {
   };
 }
 
+/** Basis-URL voor alle order-endpoints (company-/project-scoped). */
+function ordersBase(): string {
+  return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/orders`;
+}
+
 function itemsUrl(offset: number, limit: number): string {
   if (process.env.CHANNABLE_ITEMS_URL) {
     const u = new URL(process.env.CHANNABLE_ITEMS_URL);
@@ -61,18 +68,6 @@ function itemsUrl(offset: number, limit: number): string {
     return u.toString();
   }
   return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/items?offset=${offset}&limit=${limit}`;
-}
-
-function ordersUrl(): string {
-  // Volledige override (accepteer CHANNABLE_ORDERS_URL én het alias CHANNABLE_ORDER_URL).
-  const override = process.env.CHANNABLE_ORDERS_URL || process.env.CHANNABLE_ORDER_URL;
-  if (override) return override;
-  const scope = PROJECT_ID
-    ? `companies/${COMPANY_ID}/projects/${PROJECT_ID}`
-    : `companies/${COMPANY_ID}`;
-  // Channable orders-endpoint eindigt op een slash:
-  // https://api.channable.com/v1/companies/{companyId}/projects/{projectId}/orders/
-  return `${BASE}/${scope}/orders/`;
 }
 
 /* --------------------------------------------------------------- products */
@@ -151,7 +146,116 @@ export async function fetchChannableItems(
   return out;
 }
 
-/* ----------------------------------------------------------------- orders */
+/* ------------------------------------------------------- inkomende orders */
+
+/**
+ * Lees marketplace-orders uit Channable (GET /orders). Dit is de juiste,
+ * inkomende richting: Channable verzamelt orders van de marketplaces en wij
+ * halen ze hier op. Retourneert de ruwe order-objecten (raw) zodat de admin ze
+ * kan tonen/verwerken. Lege lijst zonder credentials.
+ */
+export async function fetchChannableOrders(
+  { status, limit = 100 }: { status?: string; limit?: number } = {},
+): Promise<Record<string, unknown>[]> {
+  if (!isChannableOrdersConfigured()) return [];
+  try {
+    const u = new URL(ordersBase());
+    if (status) u.searchParams.set("status", status);
+    if (limit) u.searchParams.set("limit", String(limit));
+    const res = await fetch(u.toString(), {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      console.error("[channable] orders fetch failed", res.status, await res.text());
+      return [];
+    }
+    const body = await res.json();
+    return Array.isArray(body) ? body : (body.orders ?? body.data ?? body.results ?? []);
+  } catch (err) {
+    console.error("[channable] orders fetch error", err);
+    return [];
+  }
+}
+
+/* --------------------------------------------------------- verzending */
+
+export interface ShipmentInput {
+  /** Track & trace-code (bv. de PostNL-barcode). */
+  trackingCode: string;
+  /** Gestandaardiseerde Channable transporter-code (bv. "POSTNL"). */
+  transporter?: string;
+  /** Optioneel: alleen deze orderregels markeren als verzonden (anders de hele order). */
+  orderItemIds?: number[];
+}
+
+export interface ShipmentResult {
+  ok: boolean;
+  status: number;
+  configured: boolean;
+  message: string;
+  response?: unknown;
+}
+
+/**
+ * Koppel een verzending/tracking terug aan een Channable-order. Channable
+ * propageert dit naar de betreffende marketplace.
+ *
+ * POST /v1/companies/{companyId}/projects/{projectId}/orders/{orderId}/shipment
+ * Body: { tracking_code, transporter, order_item_ids? }
+ */
+export async function pushShipment(
+  orderId: string,
+  input: ShipmentInput,
+): Promise<ShipmentResult> {
+  if (!isChannableOrdersConfigured()) {
+    return {
+      ok: false,
+      status: 0,
+      configured: false,
+      message: "Channable is niet (volledig) geconfigureerd voor orders.",
+    };
+  }
+  const payload: Record<string, unknown> = {
+    tracking_code: input.trackingCode,
+    transporter: input.transporter ?? "POSTNL",
+  };
+  if (input.orderItemIds?.length) payload.order_item_ids = input.orderItemIds;
+
+  try {
+    const res = await fetch(`${ordersBase()}/${encodeURIComponent(orderId)}/shipment`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000),
+    });
+    const text = await res.text();
+    let parsed: unknown = text;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      /* houd platte tekst aan */
+    }
+    return {
+      ok: res.ok,
+      status: res.status,
+      configured: true,
+      message: res.ok
+        ? `Verzending teruggekoppeld aan Channable (tracking ${input.trackingCode}).`
+        : `Channable gaf een fout (HTTP ${res.status}) bij het terugkoppelen van de verzending.`,
+      response: parsed,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      configured: true,
+      message: `Verzending terugkoppelen mislukt: ${err instanceof Error ? err.message : "onbekende fout"}.`,
+    };
+  }
+}
+
+/* ----------------------------------------------------- webshop-fulfilment */
 
 export interface ChannableOrderResult {
   ok: boolean;
@@ -160,117 +264,37 @@ export interface ChannableOrderResult {
   error?: string;
 }
 
-/** Strip onze interne prefix om het kale Tilroy/Channable artikel-id te krijgen. */
-function tilroyId(variantId: string): string {
-  return variantId.replace(/^tilroy-/, "");
-}
-
 /**
- * "Schiet" een betaalde order in Channable; Channable routeert hem naar Tilroy.
- * In demo-modus (geen credentials) wordt de order alleen gelogd.
+ * No-op (bewust): Channable kent géén endpoint om een eigen webshop-order in te
+ * schieten — orders ontstaan in Channable alléén vanuit marketplaces. Onze
+ * webshop-orders blijven dus in de webshop-orderstore en gaan via een aparte
+ * Tilroy-koppeling de backoffice in (nog niet geïmplementeerd).
+ *
+ * We laten deze functie bestaan zodat de bestaande fulfilment-flow niet breekt;
+ * hij rapporteert "demo" (geen push) i.p.v. een misleidende fout.
  */
 export async function pushChannableOrder(order: Order): Promise<ChannableOrderResult> {
-  const payload = {
-    external_id: order.reference,
-    source: "klusr-webshop",
-    status: order.paymentStatus,
-    currency: "EUR",
-    placed_at: order.createdAt,
-    customer: {
-      email: order.customer.email,
-      first_name: order.customer.firstName,
-      last_name: order.customer.lastName,
-      phone: order.customer.phone,
-    },
-    shipping_address: {
-      first_name: order.customer.firstName,
-      last_name: order.customer.lastName,
-      street: order.customer.street,
-      postal_code: order.customer.postalCode,
-      city: order.customer.city,
-      country: "NL",
-    },
-    payment: {
-      method: order.paymentMethod,
-      mollie_payment_id: order.molliePaymentId,
-      status: order.paymentStatus,
-    },
-    totals: {
-      subtotal: order.subtotal,
-      shipping: order.shipping,
-      total: order.total,
-    },
-    lines: order.items.map((i) => ({
-      id: tilroyId(i.variantId),
-      sku: i.variantId,
-      title: i.title,
-      brand: i.brand,
-      quantity: i.quantity,
-      unit_price: i.kluspasPrice,
-      // Op-kleur-gemengde verf: kleur + basis voor Tilroy.
-      ...(i.selectedColor
-        ? {
-            color_code: i.selectedColor.code,
-            color_name: i.selectedColor.name,
-            paint_base: i.selectedColor.base?.label,
-          }
-        : {}),
-    })),
-  };
-
-  if (!isChannableConfigured()) {
-    console.info("[channable] demo mode — order would be pushed:", order.reference);
-    return { ok: true, demo: true };
-  }
-
-  if (!areOrdersEnabled()) {
-    console.info(
-      "[channable] order push disabled (CHANNABLE_ORDERS_ENABLED=false):",
-      order.reference,
-    );
-    return { ok: true, demo: true };
-  }
-
-  try {
-    const res = await fetch(ordersUrl(), {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("[channable] order push failed", res.status, text);
-      return { ok: false, demo: false, error: `${res.status}: ${text.slice(0, 200)}` };
-    }
-    const body = await res.json().catch(() => ({}));
-    return {
-      ok: true,
-      demo: false,
-      channableOrderId: body.id ? String(body.id) : undefined,
-    };
-  } catch (err) {
-    console.error("[channable] order push error", err);
-    return { ok: false, demo: false, error: err instanceof Error ? err.message : "unknown" };
-  }
+  console.info(
+    "[channable] webshop-order wordt niet naar Channable gepusht (Channable is inbound-only voor orders):",
+    order.reference,
+  );
+  return { ok: true, demo: true };
 }
 
 /* ------------------------------------------------------------ test-order */
 
 export interface SendTestOrderInput {
-  /** Optionele overrides voor het test-orderregel-item. */
-  sku?: string;
-  title?: string;
-  price?: number;
-  quantity?: number;
-  /** Optioneel e-mailadres voor de neppe testklant. */
-  email?: string;
+  /** Channable artikel-id (item_id) dat in je project bestaat. Verplicht. */
+  itemId?: string;
+  /** Landcode voor de test-order (default NL). */
+  country?: string;
 }
 
 export interface SendTestOrderResult {
   ok: boolean;
   /** HTTP-status van de Channable-respons (0 wanneer er geen call is gedaan). */
   status: number;
-  /** True wanneer de CHANNABLE_* secrets aanwezig zijn. */
+  /** True wanneer de CHANNABLE_* secrets (incl. ORDER_CONFIG_ID) aanwezig zijn. */
   configured: boolean;
   /** Mensvriendelijke melding (NL) voor de admin-UI. */
   message: string;
@@ -278,90 +302,61 @@ export interface SendTestOrderResult {
   response?: unknown;
 }
 
-const NOT_CONFIGURED_MESSAGE =
-  "Stel eerst de CHANNABLE_* secrets in (CHANNABLE_API_TOKEN, CHANNABLE_COMPANY_ID, CHANNABLE_PROJECT_ID).";
-
 /**
- * Stuur een duidelijk gemarkeerde TEST-order naar de Channable Orders-API.
+ * Maak een Sandbox **test-order** aan via Channable. Channable fabriceert dan
+ * zelf een order voor het opgegeven artikel, zodat je de volledige
+ * order-afhandeling (incl. doorzetten naar Tilroy) kunt testen.
  *
- * Endpoint (override-baar via CHANNABLE_ORDER_URL / CHANNABLE_ORDERS_URL):
- *   POST https://api.channable.com/v1/companies/{companyId}/projects/{projectId}/orders/
- *   Header: Authorization: Bearer <CHANNABLE_TOKEN | CHANNABLE_API_TOKEN>
+ * POST /v1/companies/{companyId}/projects/{projectId}/orders/test/{orderConfigId}
+ * Body: { country, item_id }
  *
- * Robuust: 10s timeout (AbortController), gooit NOOIT naar de caller en geeft
- * altijd een gestructureerd resultaat terug. Zonder credentials wordt er geen
- * call gedaan en krijg je een nette "stel secrets in"-melding.
- *
- * NB: het exacte order-schema kan per Channable-account verschillen. De payload
- * hieronder staat daarom als één duidelijk becommentarieerd object dat je
- * makkelijk kunt aanpassen; het endpoint is volledig override-baar via env.
+ * LET OP: dit werkt alléén op een Channable **Sandbox**-project en vereist een
+ * geldig CHANNABLE_ORDER_CONFIG_ID (de Order Config van je order-connectie) plus
+ * een item_id dat in dat project bestaat.
  */
 export async function sendTestOrder(
   input: SendTestOrderInput = {},
 ): Promise<SendTestOrderResult> {
   if (!isChannableOrdersConfigured()) {
-    return { ok: false, status: 0, configured: false, message: NOT_CONFIGURED_MESSAGE };
+    return {
+      ok: false,
+      status: 0,
+      configured: false,
+      message:
+        "Stel eerst de CHANNABLE_* secrets in (CHANNABLE_API_TOKEN, CHANNABLE_COMPANY_ID, CHANNABLE_PROJECT_ID).",
+    };
+  }
+  if (!ORDER_CONFIG_ID) {
+    return {
+      ok: false,
+      status: 0,
+      configured: false,
+      message:
+        "Zet CHANNABLE_ORDER_CONFIG_ID in de omgeving — dit is de Order Config-ID van je Channable order-connectie. De test-order werkt alleen op een Sandbox-project.",
+    };
+  }
+  const itemId = input.itemId?.trim();
+  if (!itemId) {
+    return {
+      ok: false,
+      status: 0,
+      configured: true,
+      message: "Vul een artikel-id (item_id) in dat in je Channable-project bestaat.",
+    };
   }
 
-  const now = new Date();
-  const reference = `KLUSR-TEST-${now.getTime()}`;
-  const line = {
-    sku: input.sku ?? "KLUSR-TEST-SKU",
-    title: input.title ?? "KLUSR Testproduct",
-    quantity: input.quantity ?? 1,
-    unit_price: input.price ?? 9.99,
-  };
-
-  // --- TEST-order payload (pas dit object aan op jouw Channable-schema) -------
-  // Bewust gemarkeerd als test: neppe klant "KLUSR Test", test_ref en is_test.
-  const payload = {
-    external_id: reference,
-    source: "klusr-webshop",
-    // Markeer als test waar de API dat toelaat (genegeerd als onbekend veld).
-    is_test: true,
-    test: true,
-    status: "paid",
-    currency: "EUR",
-    placed_at: now.toISOString(),
-    customer: {
-      email: input.email ?? "test@klus-r.nl",
-      first_name: "KLUSR",
-      last_name: "Test",
-      phone: "0600000000",
-    },
-    shipping_address: {
-      first_name: "KLUSR",
-      last_name: "Test",
-      street: "Teststraat 1",
-      postal_code: "1234 AB",
-      city: "Teststad",
-      country: "NL",
-    },
-    payment: {
-      method: "test",
-      status: "paid",
-    },
-    totals: {
-      subtotal: line.unit_price * line.quantity,
-      shipping: 0,
-      total: line.unit_price * line.quantity,
-    },
-    lines: [line],
-  };
-  // ---------------------------------------------------------------------------
+  const payload = { country: (input.country || "NL").toUpperCase(), item_id: itemId };
+  const url = `${ordersBase()}/test/${encodeURIComponent(ORDER_CONFIG_ID)}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-
+  const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
-    const res = await fetch(ordersUrl(), {
+    const res = await fetch(url, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
-
-    // Parse als JSON, val terug op platte tekst.
     const text = await res.text();
     let parsed: unknown = text;
     try {
@@ -375,7 +370,12 @@ export async function sendTestOrder(
         ok: false,
         status: res.status,
         configured: true,
-        message: `Channable gaf een fout terug (HTTP ${res.status}). Controleer de credentials en het order-schema.`,
+        message:
+          res.status === 404
+            ? "Channable kent dit order-config-id niet (404). Controleer CHANNABLE_ORDER_CONFIG_ID en of dit een Sandbox-project is."
+            : res.status === 401 || res.status === 403
+              ? "Geen toegang (401/403). Controleer het token en of het bij dit company-/project-id hoort."
+              : `Channable gaf een fout (HTTP ${res.status}) op de test-order.`,
         response: parsed,
       };
     }
@@ -384,7 +384,7 @@ export async function sendTestOrder(
       ok: true,
       status: res.status,
       configured: true,
-      message: `Testorder verstuurd naar Channable (referentie ${reference}).`,
+      message: `Test-order aangemaakt in Channable voor artikel ${itemId}. Channable verwerkt hem nu als marketplace-order.`,
       response: parsed,
     };
   } catch (err) {
@@ -394,7 +394,7 @@ export async function sendTestOrder(
       status: 0,
       configured: true,
       message: aborted
-        ? "Channable reageerde niet binnen 10 seconden (timeout)."
+        ? "Channable reageerde niet binnen 15 seconden (timeout)."
         : `Versturen naar Channable mislukt: ${err instanceof Error ? err.message : "onbekende fout"}.`,
     };
   } finally {

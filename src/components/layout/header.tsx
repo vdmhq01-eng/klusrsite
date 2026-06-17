@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Headphones, MapPin, User } from "lucide-react";
+import { Headphones, User } from "lucide-react";
 import { TopBar } from "./topbar";
 import { Logo } from "./logo";
 import { SearchBar } from "./search-bar";
@@ -43,7 +43,6 @@ export function Header() {
             </div>
 
             <div className="ml-auto flex items-center gap-4 lg:gap-6">
-              <HeaderAction href="/winkels" label="Winkels" icon={MapPin} />
               <HeaderAction href="/klantenservice" label="Klantenservice" icon={Headphones} />
               <AccountNav />
               <CartButton />

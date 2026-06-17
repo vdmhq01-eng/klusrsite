@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Sparkles,
@@ -129,11 +129,26 @@ export function AiContentManager() {
     }
   }
 
-  function approve(product: Product, type: ContentType) {
+  // Bewaar (publiceer) goedgekeurde content best-effort in de KV-store.
+  async function postPublish(productId: string, type: ContentType, content: string) {
+    try {
+      await fetch("/api/admin/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, type, content }),
+      });
+    } catch {
+      /* publiceren is best-effort */
+    }
+  }
+
+  async function approve(product: Product, type: ContentType) {
     const k = keyFor(product.id, type);
+    const content = suggestions[k]?.content;
     setSuggestions((prev) => ({ ...prev, [k]: { ...prev[k], status: "approved" } }));
-    toast.success("Suggestie goedgekeurd", {
-      description: `${CONTENT_META[type].short} voor ${product.title} is gemarkeerd als goedgekeurd. (Demo — niet gepubliceerd)`,
+    if (content) await postPublish(product.id, type, content);
+    toast.success("Gepubliceerd", {
+      description: `${CONTENT_META[type].short} voor ${product.title} is gepubliceerd.`,
     });
   }
 
@@ -145,24 +160,32 @@ export function AiContentManager() {
     });
   }
 
-  async function bulkGenerateDescriptions() {
-    const targets = items.filter((p) => missingTypes(p).includes("description"));
-    if (targets.length === 0) {
-      toast("Niets te genereren", {
-        description: "Er ontbreken geen productbeschrijvingen.",
-      });
+  // Generieke bulk-runner: genereert (en publiceert meteen) een lijst jobs.
+  async function runBulk(jobs: { product: Product; type: ContentType }[]) {
+    if (jobs.length === 0) {
+      toast("Niets te genereren", { description: "Geen producten in deze selectie." });
       return;
     }
-    setBulk({ running: true, done: 0, total: targets.length });
-    for (let i = 0; i < targets.length; i++) {
-      await generate(targets[i], "description");
+    setBulk({ running: true, done: 0, total: jobs.length });
+    for (let i = 0; i < jobs.length; i++) {
+      const { product, type } = jobs[i];
+      const state = await generate(product, type);
+      // Bulk publiceert meteen: keur goed en bewaar de gegenereerde tekst.
+      if (state.content && !state.error) {
+        const k = keyFor(product.id, type);
+        setSuggestions((prev) => ({ ...prev, [k]: { ...prev[k], status: "approved" } }));
+        await postPublish(product.id, type, state.content);
+      }
       setBulk((prev) => ({ ...prev, done: i + 1 }));
     }
     setBulk((prev) => ({ ...prev, running: false }));
-    toast.success("Bulk genereren voltooid", {
-      description: `${targets.length} beschrijving(en) gegenereerd. Beoordeel ze hieronder.`,
+    toast.success("Bulk voltooid", {
+      description: `${jobs.length} item(s) gegenereerd en gepubliceerd.`,
     });
   }
+
+  // "Alle items": elk product in de aandachtslijst krijgt (opnieuw) deze content.
+  const jobsForType = (type: ContentType) => items.map((product) => ({ product, type }));
 
   const seoTargets = items.filter((p) => missingTypes(p).includes("seo"));
   const faqTargets = items.filter((p) => missingTypes(p).includes("faqs"));
@@ -206,23 +229,33 @@ export function AiContentManager() {
             <p className="text-sm text-muted-foreground">
               {items.length} producten met ontbrekende of voorgestelde content.
             </p>
-            <Button
-              onClick={bulkGenerateDescriptions}
-              disabled={bulk.running}
-              variant="dark"
-            >
-              {bulk.running ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Bezig… {bulk.done}/{bulk.total}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Bulk genereren (beschrijvingen)
-                </>
-              )}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => runBulk(jobsForType("description"))}
+                disabled={bulk.running}
+                variant="dark"
+              >
+                {bulk.running ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Bezig… {bulk.done}/{bulk.total}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Bulk: beschrijvingen
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => runBulk([...jobsForType("seo"), ...jobsForType("faqs")])}
+                disabled={bulk.running}
+                variant="outline"
+              >
+                <Sparkles className="h-4 w-4" />
+                Bulk: SEO + FAQ (publiceert direct)
+              </Button>
+            </div>
           </div>
 
           {bulk.running && (
@@ -252,10 +285,29 @@ export function AiContentManager() {
 
         {/* SEO */}
         <TabsContent value="seo" className="mt-5">
-          <p className="mb-4 text-sm text-muted-foreground">
-            Genereer meta titel, meta beschrijving en SEO-tekst voor producten
-            zonder SEO-content.
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Genereer meta titel, meta beschrijving en SEO-tekst voor producten
+              zonder SEO-content.
+            </p>
+            <Button
+              onClick={() => runBulk(jobsForType("seo"))}
+              disabled={bulk.running}
+              variant="dark"
+            >
+              {bulk.running ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Bezig… {bulk.done}/{bulk.total}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Bulk SEO — alle items ({items.length}), publiceert direct
+                </>
+              )}
+            </Button>
+          </div>
           <div className="flex flex-col gap-4">
             {seoTargets.map((product) => (
               <ProductRow
@@ -274,9 +326,28 @@ export function AiContentManager() {
 
         {/* FAQ */}
         <TabsContent value="faq" className="mt-5">
-          <p className="mb-4 text-sm text-muted-foreground">
-            Genereer veelgestelde vragen voor producten zonder FAQ.
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Genereer veelgestelde vragen voor producten zonder FAQ.
+            </p>
+            <Button
+              onClick={() => runBulk(jobsForType("faqs"))}
+              disabled={bulk.running}
+              variant="dark"
+            >
+              {bulk.running ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Bezig… {bulk.done}/{bulk.total}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Bulk FAQ — alle items ({items.length}), publiceert direct
+                </>
+              )}
+            </Button>
+          </div>
           <div className="flex flex-col gap-4">
             {faqTargets.map((product) => (
               <ProductRow
@@ -451,15 +522,13 @@ function SuggestionPanel({
         </div>
       </div>
 
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-        {state.content}
-      </p>
+      <FormattedContent text={state.content ?? ""} />
 
       {!decided && (
         <div className="mt-3 flex gap-2">
           <Button size="sm" onClick={onApprove}>
             <Check className="h-4 w-4" />
-            Goedkeuren
+            Goedkeuren &amp; publiceren
           </Button>
           <Button size="sm" variant="outline" onClick={onReject}>
             <X className="h-4 w-4" />
@@ -469,4 +538,85 @@ function SuggestionPanel({
       )}
     </div>
   );
+}
+
+/** Inline **vet** en *cursief* binnen een tekstregel. */
+function renderInline(text: string, keyBase: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g).map((part, i) => {
+    const bold = part.match(/^\*\*([^*]+)\*\*$/);
+    if (bold) {
+      return (
+        <strong key={`${keyBase}-${i}`} className="font-semibold text-foreground">
+          {bold[1]}
+        </strong>
+      );
+    }
+    const em = part.match(/^\*([^*]+)\*$/);
+    if (em) {
+      return (
+        <em key={`${keyBase}-${i}`} className="italic">
+          {em[1]}
+        </em>
+      );
+    }
+    return <span key={`${keyBase}-${i}`}>{part}</span>;
+  });
+}
+
+/** Render de AI-markdown (kopjes, opsommingen, quotes, vet) netjes op. */
+function FormattedContent({ text }: { text: string }) {
+  const lines = text.split(/\n/).map((l) => l.trim());
+  const nodes: ReactNode[] = [];
+  let bullets: string[] = [];
+
+  const flush = () => {
+    if (!bullets.length) return;
+    nodes.push(
+      <ul key={`ul-${nodes.length}`} className="my-1.5 ml-4 list-disc space-y-1 text-sm text-foreground">
+        {bullets.map((b, i) => (
+          <li key={i}>{renderInline(b, `ul-${nodes.length}-${i}`)}</li>
+        ))}
+      </ul>,
+    );
+    bullets = [];
+  };
+
+  lines.forEach((line, i) => {
+    if (!line) {
+      flush();
+      return;
+    }
+    const bullet = line.match(/^[-*•]\s+(.*)$/);
+    if (bullet) {
+      bullets.push(bullet[1]);
+      return;
+    }
+    flush();
+    const quote = line.match(/^>\s?(.*)$/);
+    if (quote) {
+      nodes.push(
+        <p key={`q-${i}`} className="my-1.5 border-l-2 border-primary/40 pl-3 text-xs text-muted-foreground">
+          {renderInline(quote[1], `q-${i}`)}
+        </p>,
+      );
+      return;
+    }
+    const heading = line.match(/^#{1,6}\s+(.*)$/);
+    if (heading) {
+      nodes.push(
+        <p key={`h-${i}`} className="mt-2 text-sm font-bold text-foreground">
+          {heading[1]}
+        </p>,
+      );
+      return;
+    }
+    nodes.push(
+      <p key={`p-${i}`} className="my-1 text-sm leading-relaxed text-foreground">
+        {renderInline(line, `p-${i}`)}
+      </p>,
+    );
+  });
+
+  flush();
+  return <div className="space-y-0.5">{nodes}</div>;
 }

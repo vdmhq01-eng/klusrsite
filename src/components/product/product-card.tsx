@@ -10,6 +10,7 @@ import { StarRating } from "./star-rating";
 import { Price } from "./price";
 import { StockStatus } from "./stock-status";
 import { ProductBadges } from "./product-badges";
+import { CompareButton } from "./compare-button";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
@@ -79,20 +80,23 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
         className,
       )}
     >
-      {/* Badges + favorite */}
+      {/* Badges + favorite + vergelijk */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-2.5">
         <ProductBadges badges={product.badges} />
-        <button
-          type="button"
-          onClick={() => {
-            toggleFavorite(product.id);
-            toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten");
-          }}
-          aria-label="Bewaar als favoriet"
-          className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-primary"
-        >
-          <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
-        </button>
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              toggleFavorite(product.id);
+              toast(isFavorite ? "Verwijderd uit favorieten" : "Toegevoegd aan favorieten");
+            }}
+            aria-label="Bewaar als favoriet"
+            className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-primary"
+          >
+            <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
+          </button>
+          <CompareButton productId={product.id} />
+        </div>
       </div>
 
       <Link

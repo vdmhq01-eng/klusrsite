@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Tag } from "lucide-react";
@@ -9,6 +8,8 @@ import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
 import { CategoryIcon } from "@/components/shared/category-icon";
+import { TopicImage } from "@/components/shared/topic-image";
+import { categoryKeywords } from "@/lib/topic-images";
 
 interface CategoryPageProps {
   params: { slug: string };
@@ -31,7 +32,9 @@ export function generateMetadata({ params }: CategoryPageProps): Metadata {
       title: category.seoTitle,
       description: category.seoDescription,
       type: "website",
-      images: [{ url: category.image, width: 800, height: 600, alt: category.title }],
+      images: [
+        { url: `/generated/categorie-${category.slug}.jpg`, width: 1024, height: 1024, alt: category.title },
+      ],
     },
   };
 }
@@ -58,14 +61,11 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
       {/* Hero band */}
       <section className="container-klusr">
-        <div className="relative overflow-hidden rounded-2xl border border-border shadow-card">
-          <Image
-            src={category.image}
-            alt={category.title}
-            width={1320}
-            height={420}
-            priority
-            className="h-48 w-full object-cover sm:h-60 lg:h-72"
+        <div className="group relative h-48 overflow-hidden rounded-2xl border border-border shadow-card sm:h-60 lg:h-72">
+          <TopicImage
+            seed={`cat-${category.slug}`}
+            keywords={categoryKeywords(category.slug)}
+            src={`/generated/categorie-${category.slug}.jpg`}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-klusr-black/85 via-klusr-black/55 to-primary/30" />
           <div className="absolute inset-0 flex flex-col justify-center gap-3 p-6 sm:p-10">
@@ -144,7 +144,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             <p>
               Bij KLUSR vind je {category.title.toLowerCase()} van topmerken,
               scherp geprijsd en met deskundig advies van onze ex-schilders.
-              Voor 16:00 besteld is je bestelling morgen in huis, en met de
+              Voor 19:00 besteld is je bestelling morgen in huis, en met de
               gratis KLUSRPAS profiteer je altijd van extra voordeel op je hele
               klus.
             </p>

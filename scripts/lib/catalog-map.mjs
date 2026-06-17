@@ -86,22 +86,74 @@ function mapCategory(productType = "") {
   return "gereedschap";
 }
 
-function mapVerfSub(title, productType) {
-  const t = (title || "").toLowerCase();
-  if (/\bbeits\b/.test(t)) return "beits";
-  if (/\b(lijnolie|vloerolie|houtolie|teakolie|onderhoudsolie|hardwaxolie|olie)\b/.test(t))
-    return "houtolie";
-  if (/\b(primer|grondverf|grondlaag|voorstrijk|grond)\b/.test(t)) return "primer";
-  if (/\b(lak|trapverf|aqua|hoogglans|zijdeglans|zijdemat)\b/.test(t)) return "lak";
-  if (/\b(buiten|gevel|exterior)\b/.test(t)) return "buitenverf";
-  if (/\b(muur|latex|binnen|interior|saus)\b/.test(t)) return "binnenverf";
-  // Val terug op de diepere product_type-segmenten.
-  const deep = productType.split(">").slice(2).join(" ").toLowerCase();
-  if (deep.includes("beits")) return "beits";
-  if (deep.includes("primer") || deep.includes("grond")) return "primer";
-  if (deep.includes("lak")) return "lak";
-  if (deep.includes("buiten")) return "buitenverf";
-  return "binnenverf";
+export function mapVerfSub(title, productType) {
+  const t = `${title || ""} ${productType || ""}`.toLowerCase();
+  const has = (...words) => words.some((w) => t.includes(w));
+
+  // --- Speciale verf (zeer specifiek → eerst) ---
+  if (has("magneet")) return "magneetverf";
+  if (has("schoolbord", "krijtbord")) return "schoolbordverf";
+  if (has("radiator")) return "radiatorverf";
+  if (has("hittebestendig", "hittebest", "kachellak", "uitlaat")) return "hittebestendige-verf";
+  if (has("tegelverf", "tegellak") || (has("tegel") && has("verf"))) return "tegelverf";
+  if (has("spuitbus", "spuitverf", "spuitlak", "sprayverf", "spray", "aerosol")) return "spuitverf";
+
+  // --- Beton- & vloerverf ---
+  if (has("2-comp", "2 comp", "twee comp", "2k ", "epoxy", "vloercoating")) return "vloercoating-2k";
+  if (has("garage")) return "garageverf";
+  if (has("beton")) return "betonverf";
+
+  // --- Beits & olie ---
+  if (has("beits")) {
+    if (has("dekkend")) return "dekkende-beits";
+    return "transparante-beits";
+  }
+  if (has("houtolie", "teakolie", "hardwaxolie", "vloerolie", "onderhoudsolie", "lijnolie", "decking"))
+    return "transparante-beits";
+
+  // --- Voorstrijk & grondering (vóór primer/grond) ---
+  if (has("fixeer")) return "fixeergrond";
+  if (has("diepgrond", "diepprimer", "dieptegrond")) return "diepgrond";
+  if (has("voorstrijk")) return "voorstrijk";
+
+  // --- Grondverf & primers ---
+  if (has("primer", "grondverf", "grondlak", "grondlaag", "hechtgrond", "roestwerend", "grond ")) {
+    if (has("metaal", "metal", "roest", "ijzer", "staal", "zink")) return "grondverf-metaal";
+    if (has("isoleer", "isolerend", "vlekken", "nicotine", "anti-vlek", "aanslag")) return "isolerende-primer";
+    if (has("hecht")) return "hechtprimer";
+    if (has("hout", "mdf")) return "grondverf-hout";
+    return "multiprimer";
+  }
+
+  // --- Muurverf (vóór lak; "buiten" overlapt met lak) ---
+  if (has("plafond")) return "plafondverf";
+  if (has("muurverf", "muur", "latex", "sausverf", "saus", "wandverf", "muurlatex")) {
+    if (has("schrobvast", "reinigbaar", "afwasbaar", "wasbaar")) return "schrobvaste-verf";
+    if (has("buiten", "gevel", "exterior")) return "buitenmuurverf";
+    return "binnenmuurverf";
+  }
+  if (has("gevelverf", "gevel")) return "buitenmuurverf";
+  if (has("schrobvast", "reinigbaar")) return "schrobvaste-verf";
+
+  // --- Lakken ---
+  if (has("traplak")) return "traplak";
+  if (has("trapverf")) return "trapverf";
+  if (has("meubellak", "meubel")) return "meubellak";
+  if (has("deur", "kozijn")) return "deur-kozijnlak";
+  if (has("lak", "aqua", "hoogglans", "zijdeglans", "zijdemat", "halfmat", "grondlak", "watergedragen lak")) {
+    if (has("buiten", "exterior")) return "buitenlak";
+    return "binnenlak";
+  }
+
+  // --- Vloer/trap (na lak) ---
+  if (has("vloer")) return "vloerverf";
+  if (has("trap")) return "trapverf";
+
+  // --- Buiten/binnen fallback ---
+  const deep = (productType || "").split(">").slice(2).join(" ").toLowerCase();
+  if (deep.includes("lak")) return "binnenlak";
+  if (has("buiten", "gevel", "exterior")) return "buitenmuurverf";
+  return "binnenmuurverf";
 }
 
 // Onderhouds-/smeermiddelen die de feed soms onder verf zet — horen bij gereedschap.
@@ -375,11 +427,20 @@ function paintOndergrond(text = "", feat = {}) {
 }
 function paintGlansOf(title = "") {
   const t = title.toLowerCase();
+  // Nederlandse glansaanduidingen → Nederlands label.
   if (/hoogglans/.test(t)) return "Hoogglans";
   if (/zijdeglans/.test(t)) return "Zijdeglans";
   if (/zijdemat/.test(t)) return "Zijdemat";
   if (/halfmat/.test(t)) return "Halfmat";
+  // Engelse glansaanduidingen (o.a. Sikkens) blijven Engels, zodat ze als
+  // glans-variant kiesbaar zijn op de productpagina.
+  if (/high[\s-]*gloss/.test(t)) return "High Gloss";
+  if (/semi[\s-]*gloss/.test(t)) return "Semi-gloss";
+  if (/\beggshell\b/.test(t)) return "Eggshell";
   if (/\bsatin\b/.test(t)) return "Satin";
+  if (/\bsilk\b/.test(t)) return "Silk";
+  if (/\bmatte?\b/.test(t)) return "Matt";
+  if (/\bgloss\b/.test(t)) return "Gloss";
   if (/\bmat\b/.test(t)) return "Mat";
   return null;
 }
@@ -656,11 +717,30 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const title = cleanTitle(lead.title);
     if (!title) continue;
 
+    // Mengverf-vlag over de hele groep + "vaste-kleur-variant"-modus: een
+    // niet-mengverf verflijn die in meerdere vaste kleuren bestaat, toont die
+    // kleuren als varianten i.p.v. ze stil te laten samenvallen op maat.
+    const meng = category === "verf" && groupIsMengverf(group, featuresById, true);
+    const colorOf = (it) =>
+      featKleur(featuresById && featuresById.get(String(it.id)), it.color);
+    const colorVariant =
+      category === "verf" && !meng && new Set(group.map(colorOf).filter(Boolean)).size > 1;
+    const multiSize =
+      new Set(group.map((it) => cleanSizeLabel(variantLabel(it)))).size > 1;
+
     const seenLabels = new Set();
     const variants = [];
     const sortedGroup = [...group].sort((a, b) => sizeSortKey(a) - sizeSortKey(b));
     for (const it of sortedGroup) {
-      const label = cleanSizeLabel(variantLabel(it));
+      const sizeLabel = cleanSizeLabel(variantLabel(it));
+      let label = sizeLabel;
+      if (colorVariant) {
+        const kleur = colorOf(it);
+        if (kleur) {
+          label =
+            multiSize && sizeLabel !== "Standaard" ? `${cap(kleur)} · ${sizeLabel}` : cap(kleur);
+        }
+      }
       if (seenLabels.has(label)) continue;
       seenLabels.add(label);
       const st = stockMap.get(it.id);
@@ -679,6 +759,10 @@ export function buildCatalog(items, stockMap, opts = {}) {
     if (variants.length === 0) continue;
 
     const base = variants.reduce((a, b) => (b.price < a.price ? b : a), variants[0]);
+    // Adviesprijs (RRP) hoort bij de goedkoopste variant; alleen tonen als die
+    // écht boven de verkoopprijs ligt.
+    const baseSrc = group.reduce((a, b) => (b.price < a.price ? b : a), group[0]);
+    const adviesprijs = baseSrc.adviesprijs ? round2(baseSrc.adviesprijs) : 0;
     const leadStock = stockMap.get(lead.id);
     const totalStock =
       leadStock?.total ?? variants[0].stockByStore.reduce((s, x) => s + x.quantity, 0);
@@ -697,20 +781,33 @@ export function buildCatalog(items, stockMap, opts = {}) {
     const desc = stripHtml(lead.description).slice(0, 700);
     const hasDesc = desc.length > 120;
     const subCategory = subOverride ?? subCategoryFor(category, title, lead.productType);
-    const displayTitle =
+    // Rijke productattributen uit de feature-feed (per lead-SKU).
+    const feat = (featuresById && featuresById.get(String(lead.id))) || {};
+    let displayTitle =
       tidyDisplayTitle(
         category === "verf"
           ? paintCoreTitle(lead.title) || cleanProductTitle(lead.title) || title
           : dedupeWords(cleanProductTitle(dropBrandEcho(lead.title, lead.brand))) || title,
       ) || title;
-
-    // Rijke productattributen uit de feature-feed (per lead-SKU) + mengvlag (over
-    // de hele groep, want die staat vaak alleen op de gekleurde basissen).
-    const feat = (featuresById && featuresById.get(String(lead.id))) || {};
-    const meng = category === "verf" && groupIsMengverf(group, featuresById, category === "verf");
-    const sizeLabels = [...new Set(variants.map((v) => v.label).filter((l) => l && l !== "Standaard"))].sort(
-      (a, b) => sizeRank(a) - sizeRank(b),
-    );
+    if (category === "verf") {
+      // Trailing "Ral"/"Ral 9001"-ruis weg en glansgraad toevoegen als die mist.
+      displayTitle = displayTitle.replace(/\s+ral(\s+\d{3,4})?\s*$/i, "").trim();
+      const glans = featVal(feat, "glansgraad") || paintGlansOf(lead.title);
+      if (glans && !displayTitle.toLowerCase().includes(glans.toLowerCase())) {
+        displayTitle = `${displayTitle} ${cap(glans)}`.trim();
+      }
+    }
+    const sizeLabels = (
+      colorVariant
+        ? [
+            ...new Set(
+              group
+                .map((it) => cleanSizeLabel(variantLabel(it)))
+                .filter((l) => l && l !== "Standaard"),
+            ),
+          ]
+        : [...new Set(variants.map((v) => v.label).filter((l) => l && l !== "Standaard"))]
+    ).sort((a, b) => sizeRank(a) - sizeRank(b));
 
     products.push({
       id: `tilroy-${lead.id}`,
@@ -724,6 +821,8 @@ export function buildCatalog(items, stockMap, opts = {}) {
       images: [lead.image, lead.additionalImage].filter(Boolean),
       price: round2(base.price),
       kluspasPrice: round2(base.kluspasPrice),
+      compareAtPrice: adviesprijs > round2(base.price) ? adviesprijs : undefined,
+      gtin: lead.gtin || undefined,
       category,
       subCategory,
       badges: badges.length ? [...new Set(badges)].slice(0, 3) : undefined,

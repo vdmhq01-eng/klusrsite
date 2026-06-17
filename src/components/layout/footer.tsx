@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Facebook, Instagram, Youtube } from "lucide-react";
 import { Logo } from "./logo";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
-import { stores } from "@/lib/data/stores";
 import { navCategories } from "@/lib/data/categories";
 
 const serviceLinks = [
@@ -20,6 +19,7 @@ const aboutLinks = [
   { href: "/kluspas", label: "KLUSRPAS" },
   { href: "/zakelijk", label: "Zakelijk & ProfPas" },
   { href: "/mengverf", label: "Mengverf" },
+  { href: "/kleuren", label: "Alle kleuren & collecties" },
   { href: "/advies", label: "Advies & inspiratie" },
   { href: "/klushulp", label: "Klushulp AI" },
   { href: "/werken-bij", label: "Werken bij KLUSR" },
@@ -89,14 +89,6 @@ export function Footer() {
             </FooterLink>
           ))}
         </FooterColumn>
-
-        <FooterColumn title="Winkels">
-          {stores.map((s) => (
-            <FooterLink key={s.id} href={`/winkels/${s.slug}`}>
-              {s.city}
-            </FooterLink>
-          ))}
-        </FooterColumn>
       </div>
 
       {/* Bottom bar */}
@@ -115,6 +107,9 @@ export function Footer() {
             </Link>
             <Link href="/cookiebeleid" className="hover:text-white">
               Cookiebeleid
+            </Link>
+            <Link href="/toegankelijkheid" className="hover:text-white">
+              Toegankelijkheid
             </Link>
             <span className="hidden items-center gap-2 sm:flex">
               Veilig betalen via{" "}

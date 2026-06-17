@@ -1,6 +1,24 @@
 import type { Product, ProductVariant, Review, StoreStock } from "@/types";
 import { stores } from "./stores";
+import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
+import priceOverrides from "./price-overrides.generated.json";
+
+/** Adviesprijs/normale prijs per sku uit de prijsfeed (scripts/build-price-feed.mjs). */
+const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: number }>;
+
+/**
+ * Verrijkt een variant/product met de adviesprijs (RRP) uit de prijsfeed als
+ * doorgestreepte "van"-prijs — alleen wanneer die hoger is dan de verkoopprijs.
+ */
+function withAdviesPrice<T extends { id: string; price: number; compareAtPrice?: number }>(
+  v: T,
+): T {
+  const sku = v.id.replace(/^tilroy-/, "");
+  const o = PRICE_OVERRIDES[sku];
+  if (o?.a != null && o.a > v.price) return { ...v, compareAtPrice: o.a };
+  return v;
+}
 
 /**
  * Live productcatalogus uit de Tilroy/De Voordeelmarkt feeds (zie
@@ -72,19 +90,26 @@ function enrichDescription(p: Product): string {
     out.push("Deze verf mengen wij exact op de door jou gekozen kleur, klaar voor gebruik.");
   }
   out.push(
-    "Professionele kwaliteit, scherp geprijsd met je gratis KLUSRPAS en advies van ex-schilders. Voor 16:00 besteld morgen in huis, of gratis afhalen in een KLUSR-winkel.",
+    "Professionele kwaliteit, scherp geprijsd met je gratis KLUSRPAS en advies van ex-schilders. Voor 19:00 besteld morgen in huis, of gratis afhalen in een KLUSR-winkel.",
   );
   return out.join(" ");
 }
 
 const feedProducts = (
   ((feedData as { products?: unknown[] }).products ?? []) as unknown as Product[]
-).map((p) => ({
-  ...p,
-  images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
-  variants: sortVariants(p.variants ?? []),
-  description: enrichDescription(p),
-}));
+).map((p) => {
+  const variants = sortVariants((p.variants ?? []).map(withAdviesPrice));
+  // De productprijs toont de goedkoopste variant → spiegel diens adviesprijs.
+  const base = variants.find((v) => v.price === p.price) ?? variants[0];
+  const compareAtPrice = base?.compareAtPrice ?? withAdviesPrice(p).compareAtPrice;
+  return {
+    ...p,
+    images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
+    variants,
+    ...(compareAtPrice != null ? { compareAtPrice } : {}),
+    description: enrichDescription(p),
+  };
+});
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -160,7 +185,7 @@ const curatedProducts: Product[] = [
     compareAtPrice: 89.99,
     kluspasPrice: 74.95,
     category: "verf",
-    subCategory: "binnenverf",
+    subCategory: "binnenmuurverf",
     badges: ["BESTSELLER", "PRO KEUZE"],
     rating: 4.6,
     reviewCount: 42,
@@ -223,7 +248,7 @@ const curatedProducts: Product[] = [
     compareAtPrice: 47.99,
     kluspasPrice: 36.95,
     category: "verf",
-    subCategory: "binnenverf",
+    subCategory: "binnenmuurverf",
     badges: ["ACTIE"],
     rating: 4.5,
     reviewCount: 128,
@@ -260,7 +285,7 @@ const curatedProducts: Product[] = [
     compareAtPrice: 34.99,
     kluspasPrice: 27.5,
     category: "verf",
-    subCategory: "binnenverf",
+    subCategory: "binnenmuurverf",
     rating: 4.3,
     reviewCount: 86,
     reviews: reviews("histor-latex", 3, 4.3),
@@ -296,7 +321,7 @@ const curatedProducts: Product[] = [
     compareAtPrice: 52.99,
     kluspasPrice: 41.5,
     category: "verf",
-    subCategory: "buitenverf",
+    subCategory: "buitenmuurverf",
     badges: ["PRO KEUZE"],
     rating: 4.7,
     reviewCount: 54,
@@ -996,7 +1021,7 @@ const curatedProducts: Product[] = [
     compareAtPrice: 119.8,
     kluspasPrice: 89.95,
     category: "verf",
-    subCategory: "binnenverf",
+    subCategory: "binnenmuurverf",
     badges: ["BUNDEL", "ACTIE"],
     rating: 4.7,
     reviewCount: 49,
@@ -1149,6 +1174,17 @@ export interface SubCategory {
   count: number;
 }
 
+/**
+ * Rommel-subcategorieën uit de feed die we niet in de navigatie willen: merk-
+ * namen, "diversen/overig/toebehoren", de categorie zelf en feed-prefixen.
+ */
+const JUNK_SUB_RE =
+  /^(diversen|overig|overige|toebehoren|huishoudelijk|anza|euromat|zelfklevende-artikelen|non-paint|fitex-.+|interbosch-.+|overige-.+|alabastine-.+|.+-diversen|.+-toebehoren|.+-non-paint)$/i;
+
+function isJunkSub(slug: string, categorySlug: string): boolean {
+  return slug === categorySlug || JUNK_SUB_RE.test(slug);
+}
+
 const subsByCategory: Record<string, SubCategory[]> = (() => {
   const map = new Map<string, Map<string, number>>();
   for (const p of products) {
@@ -1160,15 +1196,29 @@ const subsByCategory: Record<string, SubCategory[]> = (() => {
   const out: Record<string, SubCategory[]> = {};
   for (const [cat, m] of map) {
     out[cat] = [...m.entries()]
+      .filter(([slug]) => !isJunkSub(slug, cat))
       .map(([slug, count]) => ({ slug, title: prettySubTitle(slug), count }))
       .sort((a, b) => b.count - a.count);
   }
   return out;
 })();
 
-/** Subcategorieën afgeleid uit de échte catalogus (slug + nette titel + aantal). */
+/**
+ * Subcategorieën van een categorie. Bron-van-waarheid is de taxonomie in
+ * categories.ts (zodat SEO-landingspagina's altijd geldige routes zijn, ook als
+ * de feed er nog geen producten voor heeft); aangevuld met subcategorieën die
+ * alleen uit de catalogus komen. Het aantal (`count`) komt uit de echte feed.
+ */
 export function getSubCategories(categorySlug: string): SubCategory[] {
-  return subsByCategory[categorySlug] ?? [];
+  const catalog = subsByCategory[categorySlug] ?? [];
+  const defined = categories.find((c) => c.slug === categorySlug)?.subCategories ?? [];
+  if (defined.length === 0) return catalog;
+
+  const seen = new Set(catalog.map((s) => s.slug));
+  const extras: SubCategory[] = defined
+    .filter((d) => !seen.has(d.slug))
+    .map((d) => ({ slug: d.slug, title: d.title, count: 0 }));
+  return [...catalog, ...extras];
 }
 
 export function getSubCategory(
@@ -1245,21 +1295,35 @@ export function getBestsellers(limit = 8): Product[] {
 /* ----------------------------------------------- glansgraad-varianten (verf) */
 
 const GLANS_LEVELS: { id: string; label: string; re: RegExp }[] = [
+  // Nederlands
   { id: "mat", label: "Mat", re: /\bmat\b/i },
   { id: "zijdemat", label: "Zijdemat", re: /zijdemat/i },
   { id: "halfmat", label: "Halfmat", re: /halfmat/i },
-  { id: "satin", label: "Satin", re: /\bsatin\b/i },
   { id: "zijdeglans", label: "Zijdeglans", re: /zijdeglans/i },
   { id: "hoogglans", label: "Hoogglans", re: /hoogglans/i },
   { id: "glans", label: "Glans", re: /\bglans\b/i },
+  // Engels (o.a. Sikkens) — blijft Engels, kiesbaar als glans-variant
+  { id: "matt", label: "Matt", re: /\bmatte?\b/i },
+  { id: "eggshell", label: "Eggshell", re: /\beggshell\b/i },
+  { id: "satin", label: "Satin", re: /\bsatin\b/i },
+  { id: "silk", label: "Silk", re: /\bsilk\b/i },
+  { id: "highgloss", label: "High Gloss", re: /high[\s-]*gloss/i },
+  { id: "semigloss", label: "Semi-gloss", re: /semi[\s-]*gloss/i },
+  { id: "gloss", label: "Gloss", re: /\bgloss\b/i },
 ];
 const GLANS_SPECIFICITY = [
   "zijdemat",
   "zijdeglans",
   "halfmat",
   "hoogglans",
+  "highgloss",
+  "semigloss",
+  "eggshell",
   "satin",
+  "silk",
+  "matt",
   "mat",
+  "gloss",
   "glans",
 ];
 

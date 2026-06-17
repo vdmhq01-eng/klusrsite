@@ -19,6 +19,10 @@ interface ChatPanelProps {
   initialAssistantMessage?: string;
   className?: string;
   compact?: boolean;
+  /** Vraag die automatisch wordt verstuurd zodra het paneel opent. */
+  autoSendMessage?: string | null;
+  /** Aangeroepen nadat de auto-vraag is verstuurd (om de pending-state te wissen). */
+  onAutoSent?: () => void;
 }
 
 const defaultSuggestions = [
@@ -33,6 +37,8 @@ export function ChatPanel({
   initialAssistantMessage = "Hoi! Ik ben de KLUSR assistent. Waarmee kan ik je helpen?",
   className,
   compact = false,
+  autoSendMessage,
+  onAutoSent,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", content: initialAssistantMessage },
@@ -41,10 +47,21 @@ export function ChatPanel({
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const autoSentRef = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
+
+  // Stuur een vooraf ingevulde vraag (bv. vanuit de hero) één keer automatisch in.
+  useEffect(() => {
+    if (autoSendMessage && !autoSentRef.current) {
+      autoSentRef.current = true;
+      send(autoSendMessage);
+      onAutoSent?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSendMessage]);
 
   async function send(text: string) {
     const content = text.trim();

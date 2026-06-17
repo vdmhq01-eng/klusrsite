@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, ChevronRight, MapPin, Headphones, User, CreditCard } from "lucide-react";
+import { Menu, ChevronRight, Headphones, User, CreditCard, Palette } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/sheet";
 import { Logo } from "./logo";
 import { navCategories } from "@/lib/data/categories";
+import { getSubCategories } from "@/lib/data/products";
+import { cn } from "@/lib/utils";
 
 const quickLinks = [
-  { href: "/winkels", label: "Winkels", icon: MapPin },
   { href: "/kluspas", label: "KLUSRPAS", icon: CreditCard },
   { href: "/klantenservice", label: "Klantenservice", icon: Headphones },
   { href: "/account", label: "Mijn account", icon: User },
@@ -22,6 +23,8 @@ const quickLinks = [
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const close = () => setOpen(false);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -34,7 +37,7 @@ export function MobileMenu() {
       <SheetContent side="left" className="flex w-[88%] max-w-sm flex-col p-0">
         <SheetHeader className="border-b border-border">
           <SheetTitle asChild>
-            <Logo onClick={() => setOpen(false)} />
+            <Logo onClick={close} />
           </SheetTitle>
         </SheetHeader>
 
@@ -44,18 +47,78 @@ export function MobileMenu() {
               Assortiment
             </p>
             <ul>
-              {navCategories.map((cat) => (
-                <li key={cat.slug}>
-                  <Link
-                    href={`/categorie/${cat.slug}`}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-between rounded-md px-3 py-3 text-sm font-semibold hover:bg-secondary"
-                  >
-                    {cat.title}
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                </li>
-              ))}
+              {navCategories.map((cat) => {
+                const subs = getSubCategories(cat.slug);
+                const isOpen = expanded === cat.slug;
+                if (subs.length === 0) {
+                  return (
+                    <li key={cat.slug}>
+                      <Link
+                        href={`/categorie/${cat.slug}`}
+                        onClick={close}
+                        className="flex items-center justify-between rounded-md px-3 py-3 text-sm font-semibold hover:bg-secondary"
+                      >
+                        {cat.title}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={cat.slug}>
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(isOpen ? null : cat.slug)}
+                      aria-expanded={isOpen}
+                      className="flex w-full items-center justify-between rounded-md px-3 py-3 text-left text-sm font-semibold hover:bg-secondary"
+                    >
+                      {cat.title}
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 text-muted-foreground transition-transform",
+                          isOpen && "rotate-90",
+                        )}
+                      />
+                    </button>
+                    {isOpen && (
+                      <ul className="mb-1 ml-4 border-l border-border pl-2">
+                        {cat.slug === "verf" && (
+                          <li>
+                            <Link
+                              href="/kleurenkiezer"
+                              onClick={close}
+                              className="mb-1 flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm font-bold text-primary hover:bg-primary/10"
+                            >
+                              <Palette className="h-4 w-4" />
+                              Kleurenkiezer
+                            </Link>
+                          </li>
+                        )}
+                        <li>
+                          <Link
+                            href={`/categorie/${cat.slug}`}
+                            onClick={close}
+                            className="block rounded-md px-3 py-2 text-sm font-semibold text-primary hover:bg-secondary"
+                          >
+                            Bekijk alles
+                          </Link>
+                        </li>
+                        {subs.slice(0, 14).map((sub) => (
+                          <li key={sub.slug}>
+                            <Link
+                              href={`/categorie/${cat.slug}/${sub.slug}`}
+                              onClick={close}
+                              className="block rounded-md px-3 py-2 text-sm text-foreground hover:bg-secondary"
+                            >
+                              {sub.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
 
             <p className="px-3 pb-1 pt-4 text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -66,7 +129,7 @@ export function MobileMenu() {
                 <li key={href}>
                   <Link
                     href={href}
-                    onClick={() => setOpen(false)}
+                    onClick={close}
                     className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium hover:bg-secondary"
                   >
                     <Icon className="h-4 w-4 text-muted-foreground" />

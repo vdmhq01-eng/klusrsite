@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { TrailerIcon } from "@/components/shared/trailer-icon";
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,7 @@ import {
   displayLine,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
+import { useReorderActive } from "@/lib/store/reorder";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
@@ -33,14 +35,17 @@ export function CartDrawer() {
   const { items, kluspasActive, updateQuantity, removeItem, addItem } = useCart();
   const mounted = useMounted();
   const mode = usePricingMode((s) => s.mode);
+  const { active: reorderFree } = useReorderActive();
 
-  const summary = cartSummary(items, mode, kluspasActive);
+  const summary = cartSummary(items, mode, kluspasActive, reorderFree ? 0 : undefined);
   const subtotal = mounted
     ? summary.vatIncluded
       ? summary.grossSubtotal
       : summary.subtotalRegular - summary.savings
     : 0;
   const savings = mounted ? summary.savings : 0;
+  const shipping = mounted ? summary.shipping : 0;
+  const total = subtotal + shipping;
 
   // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
   // drawer opens, so the catalogus stays out of the global bundle.
@@ -63,7 +68,7 @@ export function CartDrawer() {
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
+            <TrailerIcon className="h-5 w-5 text-primary" />
             Winkelwagen ({items.length})
           </SheetTitle>
         </SheetHeader>
@@ -71,7 +76,7 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-secondary">
-              <ShoppingCart className="h-7 w-7 text-muted-foreground" />
+              <TrailerIcon className="h-7 w-7 text-muted-foreground" />
             </div>
             <div>
               <p className="font-semibold">Je winkelwagen is leeg</p>
@@ -177,11 +182,29 @@ export function CartDrawer() {
                   <span className="font-bold text-primary">-{formatPrice(savings)}</span>
                 </div>
               )}
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
                   Subtotaal{!summary.vatIncluded && " (excl. btw)"}
                 </span>
-                <span className="text-lg font-extrabold">{formatPrice(subtotal)}</span>
+                <span className="font-semibold">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between text-sm">
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <TrailerIcon className="h-4 w-4" />
+                  Verzendkosten
+                </span>
+                {shipping === 0 ? (
+                  <span className="font-semibold text-klusr-stock">Gratis</span>
+                ) : (
+                  <span className="font-semibold">{formatPrice(shipping)}</span>
+                )}
+              </div>
+              <Separator className="my-2.5" />
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold">
+                  Totaal{!summary.vatIncluded && " (excl. btw)"}
+                </span>
+                <span className="text-lg font-extrabold">{formatPrice(total)}</span>
               </div>
               <Button
                 asChild

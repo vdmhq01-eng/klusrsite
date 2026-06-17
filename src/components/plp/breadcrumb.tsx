@@ -62,11 +62,18 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
  */
 export function BreadcrumbJsonLd({
   items,
-  baseUrl = "",
+  baseUrl,
 }: {
   items: BreadcrumbItem[];
   baseUrl?: string;
 }) {
+  // `item` moet een absolute URL zijn — anders meldt Search Console
+  // "Invalid URL in field id". Val terug op de canonieke site-URL.
+  const base = (
+    baseUrl ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://www.klus-r.nl"
+  ).replace(/\/$/, "");
   const trail: BreadcrumbItem[] = [{ label: "Home", href: "/" }, ...items];
 
   const jsonLd = {
@@ -76,7 +83,7 @@ export function BreadcrumbJsonLd({
       "@type": "ListItem",
       position: index + 1,
       name: item.label,
-      ...(item.href ? { item: `${baseUrl}${item.href}` } : {}),
+      ...(item.href ? { item: `${base}${item.href}` } : {}),
     })),
   };
 

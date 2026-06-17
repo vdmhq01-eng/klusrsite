@@ -37,14 +37,29 @@ const bodySchema = z.object({
     street: z.string().min(1),
     postalCode: z.string().min(1),
     city: z.string().min(1),
+    country: z.string().optional(),
     phone: z.string().optional(),
+    company: z.string().optional(),
+    cocNumber: z.string().optional(),
+    vatNumber: z.string().optional(),
+    billing: z
+      .object({
+        company: z.string().optional(),
+        street: z.string(),
+        postalCode: z.string(),
+        city: z.string(),
+      })
+      .optional(),
   }),
   items: z.array(cartItemSchema).min(1),
   subtotal: z.number(),
   shipping: z.number(),
   total: z.number(),
+  surcharge: z.number().optional(),
   kluspasSavings: z.number(),
   method: z.string().optional(),
+  issuer: z.string().optional(),
+  cardToken: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -62,7 +77,7 @@ export async function POST(req: Request) {
     const data = parsed.data;
 
     // 1. Persist the order (status "open").
-    const order = createOrder({
+    const order = await createOrder({
       customer: data.customer,
       items: data.items,
       subtotal: data.subtotal,
@@ -83,21 +98,91 @@ export async function POST(req: Request) {
         }
       })();
 
+    // Factuuradres: het afwijkende factuuradres als dat is ingevuld, anders het
+    // bezorgadres. organizationName (bedrijfsnaam) is verplicht voor Billie (B2B).
+    const bill = data.customer.billing;
+    const orgName = bill?.company || data.customer.company;
+    const billingAddress = {
+      ...(orgName ? { organizationName: orgName } : {}),
+      givenName: data.customer.firstName,
+      familyName: data.customer.lastName,
+      email: data.customer.email,
+      streetAndNumber: bill?.street || data.customer.street,
+      postalCode: bill?.postalCode || data.customer.postalCode,
+      city: bill?.city || data.customer.city,
+      country: (data.customer.country || "NL").toUpperCase().slice(0, 2),
+    };
+
+    // Order-regels voor pay-later (Klarna): moeten exact optellen tot het totaal.
+    // Alleen voor pay-later meesturen, zodat iDEAL/kaart nooit kan breken.
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    let lines: unknown[] | undefined;
+    if (/klarna|riverty|in3|billie|afterpay/i.test(data.method ?? "")) {
+      const sumK = data.items.reduce((s, i) => s + r2(i.kluspasPrice) * i.quantity, 0);
+      const sumN = data.items.reduce((s, i) => s + r2(i.price) * i.quantity, 0);
+      const useK = Math.abs(r2(sumK) - r2(data.subtotal)) <= Math.abs(r2(sumN) - r2(data.subtotal));
+      const vat = (tot: number) => r2(tot - r2(tot / 1.21));
+      const all = data.items.map((i) => {
+        const u = useK ? r2(i.kluspasPrice) : r2(i.price);
+        const tot = r2(u * i.quantity);
+        return {
+          type: "physical",
+          description: (i.title || "Artikel").slice(0, 100),
+          quantity: i.quantity,
+          unitPrice: { currency: "EUR", value: u.toFixed(2) },
+          totalAmount: { currency: "EUR", value: tot.toFixed(2) },
+          vatRate: "21.00",
+          vatAmount: { currency: "EUR", value: vat(tot).toFixed(2) },
+        };
+      });
+      const sumItems = all.reduce((s, l) => s + Number(l.totalAmount.value), 0);
+      const surcharge = r2(data.surcharge || 0);
+      const ship = r2(data.total - sumItems - surcharge);
+      if (ship > 0) {
+        all.push({
+          type: "shipping_fee",
+          description: "Verzendkosten",
+          quantity: 1,
+          unitPrice: { currency: "EUR", value: ship.toFixed(2) },
+          totalAmount: { currency: "EUR", value: ship.toFixed(2) },
+          vatRate: "21.00",
+          vatAmount: { currency: "EUR", value: vat(ship).toFixed(2) },
+        });
+      }
+      if (surcharge > 0) {
+        all.push({
+          type: "surcharge",
+          description: "Betaaltoeslag (Billie)",
+          quantity: 1,
+          unitPrice: { currency: "EUR", value: surcharge.toFixed(2) },
+          totalAmount: { currency: "EUR", value: surcharge.toFixed(2) },
+          vatRate: "0.00",
+          vatAmount: { currency: "EUR", value: "0.00" },
+        });
+      }
+      const linesSum = r2(all.reduce((s, l) => s + Number(l.totalAmount.value), 0));
+      if (Math.abs(linesSum - r2(data.total)) < 0.005) lines = all;
+    }
+
     const payment = await createPayment({
       orderId: order.id,
       reference: order.reference,
       amount: data.total,
       method: data.method,
+      issuer: data.issuer,
       baseUrl: origin,
+      cardToken: data.cardToken,
+      billingAddress,
+      lines,
     });
 
     if (payment.molliePaymentId) {
-      setMolliePaymentId(order.id, payment.molliePaymentId);
+      await setMolliePaymentId(order.id, payment.molliePaymentId);
     }
 
     // In demo mode there is no webhook, so mark as paid and fulfil right away.
     if (payment.demo) {
-      updateOrderStatus(order.id, "paid");
+      await updateOrderStatus(order.id, "paid");
       const paidOrder = { ...order, paymentStatus: "paid" as const };
       // Push the paid order to Channable → Tilroy (demo-safe).
       void fulfillPaidOrder(paidOrder).catch(() => {});
@@ -116,8 +201,10 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[api/checkout/create-payment]", err);
+    // Toon de echte (Mollie) reden zodat fouten te diagnosticeren zijn.
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Betaling aanmaken mislukt. Probeer het opnieuw." },
+      { error: `Betaling aanmaken mislukt: ${detail}` },
       { status: 500 },
     );
   }
