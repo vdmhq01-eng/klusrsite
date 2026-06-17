@@ -4,6 +4,7 @@ import Script from "next/script";
 import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/tracking";
+import { trackVisit } from "@/lib/visitor-id";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-TQSG438L";
 
@@ -48,11 +49,20 @@ function PageViewTracker() {
 
   useEffect(() => {
     const query = searchParams.toString();
+    const path = pathname + (query ? `?${query}` : "");
     trackEvent("page_view", {
-      page_path: pathname + (query ? `?${query}` : ""),
+      page_path: path,
       page_title: typeof document !== "undefined" ? document.title : undefined,
     });
+    // Eigen server-analytics: paginaweergave + unieke bezoeker + live.
+    trackVisit({ type: "pageview", path });
   }, [pathname, searchParams]);
+
+  // Houd de "live bezoekers" vers met een heartbeat zolang het tabblad open is.
+  useEffect(() => {
+    const id = setInterval(() => trackVisit({ type: "heartbeat" }), 50_000);
+    return () => clearInterval(id);
+  }, []);
 
   return null;
 }

@@ -13,6 +13,8 @@ import {
   TrendingUp,
   Search,
   MessageCircle,
+  Eye,
+  Radio,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -280,9 +282,13 @@ interface InsightsData {
   total: number;
   searchCount: number;
   chatCount: number;
+  pageviews: number;
   conversions: number;
   revenue: number;
+  visitorsToday: number;
+  live: number;
   topSearches: { query: string; count: number }[];
+  topViewed: { title: string; count: number }[];
   recentChats: { question: string; ts: number }[];
 }
 
@@ -291,11 +297,20 @@ function Insights() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/analytics", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setData(d))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let active = true;
+    const load = () =>
+      fetch("/api/admin/analytics", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => active && d && setData(d))
+        .catch(() => {})
+        .finally(() => active && setLoading(false));
+    load();
+    // Live-aantal + cijfers elke 15s verversen.
+    const id = setInterval(load, 15_000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
   }, []);
 
   if (loading) return <p className="text-sm text-muted-foreground">Inzichten laden…</p>;
@@ -304,10 +319,30 @@ function Insights() {
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-klusr-stock/10 text-klusr-stock">
+              <Radio className="h-5 w-5" />
+              {data.live > 0 && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 animate-ping rounded-full bg-klusr-stock" />
+              )}
+            </span>
+            <div>
+              <p className="text-2xl font-black tabular-nums">{data.live}</p>
+              <p className="text-xs text-muted-foreground">Live bezoekers nu</p>
+            </div>
+          </CardContent>
+        </Card>
+        <StatCard icon={Users} label="Bezoekers vandaag" value={String(data.visitorsToday)} />
+        <StatCard icon={Eye} label="Paginaweergaven" value={String(data.pageviews)} />
+        <StatCard icon={ShoppingBag} label="Conversies" value={String(data.conversions)} />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Search} label="Zoekopdrachten" value={String(data.searchCount)} />
         <StatCard icon={MessageCircle} label="Chat-vragen" value={String(data.chatCount)} />
-        <StatCard icon={ShoppingBag} label="Conversies" value={String(data.conversions)} />
         <StatCard icon={Euro} label="Omzet (events)" value={formatPrice(data.revenue)} />
+        <StatCard icon={TrendingUp} label="Events totaal" value={String(data.total)} />
       </div>
 
       <Card>
@@ -324,6 +359,25 @@ function Insights() {
             ))}
             {data.topSearches.length === 0 && (
               <li className="py-3 text-center text-muted-foreground">Nog geen zoekdata.</li>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Meest bekeken producten</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="divide-y divide-border text-sm">
+            {data.topViewed.map((p, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 py-1.5">
+                <span className="truncate">{p.title}</span>
+                <span className="shrink-0 font-semibold">{p.count}×</span>
+              </li>
+            ))}
+            {data.topViewed.length === 0 && (
+              <li className="py-3 text-center text-muted-foreground">Nog geen productweergaven.</li>
             )}
           </ul>
         </CardContent>
@@ -348,7 +402,9 @@ function Insights() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Laatste ~1000 events (zoeken, chat, conversie), bewaard in KV. Zet KV aan voor persistentie.
+        Live ververst elke 15s. Bezoekers/weergaven o.b.v. anonieme bezoeker-id; eigen verkeer
+        filter je met <code>INTERNAL_IPS</code> in de omgeving. Events in KV (zet KV aan voor
+        persistentie over deploys).
       </p>
     </div>
   );
