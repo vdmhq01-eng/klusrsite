@@ -137,14 +137,18 @@ function StatCard({
 function Overview({ orders, onGo }: { orders: Order[]; onGo: (s: SectionId) => void }) {
   const stats = useMemo(() => {
     const paid = orders.filter(isPaid);
-    const omzet = paid.reduce((s, o) => s + o.total, 0);
-    const klanten = new Set(orders.map((o) => o.customer.email.toLowerCase())).size;
+    // Omzet = betaalde orders minus eventuele (deel)terugbetalingen.
+    const omzet = paid.reduce((s, o) => s + o.total - (o.refundedAmount ?? 0), 0);
+    // Klanten = unieke e-mails van échte (betaalde) orders.
+    const klanten = new Set(paid.map((o) => o.customer.email.toLowerCase())).size;
     const open = orders.filter(isOpen).length;
+    const refunded = orders.filter((o) => o.paymentStatus === "refunded").length;
     return {
       omzet,
-      orders: orders.length,
+      orders: paid.length,
       klanten,
       open,
+      refunded,
       gem: paid.length ? omzet / paid.length : 0,
     };
   }, [orders]);
@@ -155,7 +159,12 @@ function Overview({ orders, onGo }: { orders: Order[]; onGo: (s: SectionId) => v
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Euro} label="Omzet (betaald)" value={formatPrice(stats.omzet)} />
-        <StatCard icon={ShoppingBag} label="Orders" value={String(stats.orders)} hint={`${stats.open} openstaand`} />
+        <StatCard
+          icon={ShoppingBag}
+          label="Orders (betaald)"
+          value={String(stats.orders)}
+          hint={`${stats.open} openstaand${stats.refunded ? ` · ${stats.refunded} terugbetaald` : ""}`}
+        />
         <StatCard icon={Users} label="Klanten" value={String(stats.klanten)} />
         <StatCard icon={TrendingUp} label="Gem. orderwaarde" value={formatPrice(stats.gem)} />
       </div>

@@ -123,13 +123,26 @@ export async function createPayment(
 /** Fetch a Mollie payment's status (used by the webhook). */
 export async function getPaymentStatus(
   paymentId: string,
-): Promise<{ status: string; orderId?: string } | null> {
+): Promise<{
+  status: string;
+  orderId?: string;
+  mode?: string;
+  amount?: number;
+  amountRefunded?: number;
+} | null> {
   const mollie = getClient();
   if (!mollie) return null;
   const payment = await mollie.payments.get(paymentId);
+  const toNum = (m: { value?: string } | null | undefined) =>
+    m?.value != null ? Number(m.value) : undefined;
   return {
     status: payment.status,
     orderId: (payment.metadata as { orderId?: string } | null)?.orderId,
+    mode: (payment as { mode?: string }).mode,
+    amount: toNum(payment.amount as { value?: string } | undefined),
+    amountRefunded: toNum(
+      (payment as { amountRefunded?: { value?: string } }).amountRefunded,
+    ),
   };
 }
 
