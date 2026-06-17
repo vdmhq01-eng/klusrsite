@@ -16,6 +16,7 @@ import { ReorderUpsell } from "@/components/checkout/reorder-upsell";
 import { GoogleCustomerReviews } from "@/components/checkout/google-customer-reviews";
 import { getOrder } from "@/lib/store/orders";
 import { formatPrice, formatDate } from "@/lib/utils";
+import { t } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "Bedankt voor je bestelling",
@@ -39,14 +40,13 @@ export default async function ThankYouPage({
           <span className="grid h-16 w-16 place-items-center rounded-full bg-klusr-stock text-white">
             <CheckCircle2 className="h-9 w-9" />
           </span>
-          <h1 className="mt-4 text-3xl font-black">Bedankt voor je bestelling!</h1>
+          <h1 className="mt-4 text-3xl font-black">{t("checkout.thanks.title")}</h1>
           <p className="mt-2 text-muted-foreground">
-            We hebben je bestelling ontvangen en gaan er direct mee aan de slag.
+            {t("checkout.thanks.text")}
             {order && (
               <>
-                {" "}
-                Een bevestiging is verstuurd naar{" "}
-                <strong className="text-foreground">{order.customer.email}</strong>.
+                {t("checkout.thanks.confirmationSentPre")}
+                <strong className="text-foreground">{order.customer.email}</strong>{t("checkout.thanks.confirmationSentPost")}
               </>
             )}
           </p>
@@ -73,11 +73,11 @@ export default async function ThankYouPage({
             <div className="mt-8 rounded-xl border border-border bg-card p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs uppercase text-muted-foreground">Bestelnummer</p>
+                  <p className="text-xs uppercase text-muted-foreground">{t("checkout.thanks.orderNumber")}</p>
                   <p className="text-lg font-black">{order.reference}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs uppercase text-muted-foreground">Besteldatum</p>
+                  <p className="text-xs uppercase text-muted-foreground">{t("checkout.thanks.orderDate")}</p>
                   <p className="font-semibold">{formatDate(order.createdAt)}</p>
                 </div>
               </div>
@@ -104,21 +104,21 @@ export default async function ThankYouPage({
               <Separator className="my-4" />
               <dl className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Subtotaal</dt>
+                  <dt className="text-muted-foreground">{t("checkout.thanks.subtotal")}</dt>
                   <dd>{formatPrice(order.subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Verzendkosten</dt>
+                  <dt className="text-muted-foreground">{t("checkout.thanks.shipping")}</dt>
                   <dd>
                     {order.shipping === 0 ? (
-                      <span className="text-klusr-stock">Gratis</span>
+                      <span className="text-klusr-stock">{t("checkout.thanks.free")}</span>
                     ) : (
                       formatPrice(order.shipping)
                     )}
                   </dd>
                 </div>
                 <div className="flex justify-between text-base font-black">
-                  <dt>Totaal betaald</dt>
+                  <dt>{t("checkout.thanks.totalPaid")}</dt>
                   <dd>{formatPrice(order.total)}</dd>
                 </div>
               </dl>
@@ -126,7 +126,7 @@ export default async function ThankYouPage({
               {order.estimatedDelivery && (
                 <div className="mt-4 flex items-center gap-2 rounded-lg bg-klusr-stock/10 p-3 text-sm font-medium text-klusr-stock">
                   <Truck className="h-4 w-4" />
-                  Verwachte bezorging: {formatDate(order.estimatedDelivery)}
+                  {t("checkout.thanks.expectedDelivery", { date: formatDate(order.estimatedDelivery) })}
                 </div>
               )}
             </div>
@@ -136,20 +136,20 @@ export default async function ThankYouPage({
 
             {/* Next steps */}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <NextStep icon={Mail} title="Bevestiging" hint="Check je inbox" />
-              <NextStep icon={Package} title="Wordt ingepakt" hint="Vandaag nog" />
-              <NextStep icon={Truck} title="Onderweg" hint="Volg je pakket" />
+              <NextStep icon={Mail} title={t("checkout.thanks.step.confirmation.title")} hint={t("checkout.thanks.step.confirmation.hint")} />
+              <NextStep icon={Package} title={t("checkout.thanks.step.packing.title")} hint={t("checkout.thanks.step.packing.hint")} />
+              <NextStep icon={Truck} title={t("checkout.thanks.step.onTheWay.title")} hint={t("checkout.thanks.step.onTheWay.hint")} />
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="flex-1">
                 <Link href={`/bestelstatus?ref=${order.reference}`}>
-                  Volg je bestelling
+                  {t("checkout.thanks.trackOrder")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="flex-1">
-                <Link href="/">Verder winkelen</Link>
+                <Link href="/">{t("checkout.thanks.continueShopping")}</Link>
               </Button>
             </div>
             <p className="mt-3 text-center text-sm">
@@ -157,14 +157,14 @@ export default async function ThankYouPage({
                 href={`/factuur/${order.id}`}
                 className="font-semibold text-primary hover:underline"
               >
-                Download je factuur (PDF)
+                {t("checkout.thanks.downloadInvoice")}
               </Link>
             </p>
 
             {/* Address */}
             <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm">
               <p className="mb-1 flex items-center gap-1.5 font-semibold">
-                <MapPin className="h-4 w-4 text-primary" /> Bezorgadres
+                <MapPin className="h-4 w-4 text-primary" /> {t("checkout.thanks.deliveryAddress")}
               </p>
               <p className="text-muted-foreground">
                 {order.customer.firstName} {order.customer.lastName}
@@ -178,11 +178,10 @@ export default async function ThankYouPage({
         ) : (
           <div className="mt-8 rounded-xl border border-border bg-card p-6 text-center">
             <p className="text-muted-foreground">
-              We konden de bestelgegevens niet laden, maar je betaling is in goede orde
-              ontvangen. Je ontvangt een bevestiging per e-mail.
+              {t("checkout.thanks.loadError")}
             </p>
             <Button asChild className="mt-4">
-              <Link href="/">Terug naar home</Link>
+              <Link href="/">{t("checkout.thanks.backHome")}</Link>
             </Button>
           </div>
         )}
