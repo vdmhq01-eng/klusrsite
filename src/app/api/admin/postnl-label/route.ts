@@ -16,7 +16,10 @@ export async function POST(req: Request) {
     );
   }
   try {
-    const { orderId } = (await req.json().catch(() => ({}))) as { orderId?: string };
+    const { orderId, brievenbus } = (await req.json().catch(() => ({}))) as {
+      orderId?: string;
+      brievenbus?: boolean;
+    };
     const order = orderId ? await getOrder(orderId) : undefined;
     if (!order) {
       return NextResponse.json(
@@ -25,7 +28,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await createLabel(order);
+    const result = await createLabel(order, { brievenbus: Boolean(brievenbus) });
 
     // Bij succes de order als verzonden markeren + verzendgegevens bewaren.
     if (result.ok && result.barcode) {

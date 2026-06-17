@@ -33,6 +33,7 @@ import {
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
 import { SHIPPING_COUNTRIES, shippingForCountry } from "@/lib/shipping";
+import { isBrievenbusOrder } from "@/lib/brievenbus";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
@@ -264,10 +265,11 @@ export function CheckoutForm({
   // Landafhankelijke verzendkosten (gratis alleen NL/BE); afhalen of nabestel-
   // venster = 0.
   const grossSubtotalForShipping = cartSummary(items, mode, kluspasActive).grossSubtotal;
+  const brievenbus = isBrievenbusOrder(items);
   const shippingOverride =
     shippingMethod === "pickup" || reorderFree
       ? 0
-      : shippingForCountry(grossSubtotalForShipping, country);
+      : shippingForCountry(grossSubtotalForShipping, country, { brievenbus });
   const summary = cartSummary(items, mode, kluspasActive, shippingOverride);
 
   // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.

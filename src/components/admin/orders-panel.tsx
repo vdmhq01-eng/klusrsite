@@ -12,8 +12,10 @@ import {
   AlertTriangle,
   FileText,
   ListChecks,
+  Mailbox,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
+import { isBrievenbusOrder } from "@/lib/brievenbus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -58,6 +60,8 @@ export function OrdersPanel() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, LabelResult>>({});
+  // Per order: keuze brievenbuspakje (default = heuristiek; medewerker kan overrulen).
+  const [bbChoice, setBbChoice] = useState<Record<string, boolean>>({});
 
   async function load() {
     setLoading(true);
@@ -77,13 +81,13 @@ export function OrdersPanel() {
     load();
   }, []);
 
-  async function makeLabel(order: Order) {
+  async function makeLabel(order: Order, brievenbus: boolean) {
     setBusy(order.id);
     try {
       const res = await fetch("/api/admin/postnl-label", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id }),
+        body: JSON.stringify({ orderId: order.id, brievenbus }),
       });
       const result = (await res.json()) as LabelResult;
       setResults((r) => ({ ...r, [order.id]: result }));
@@ -173,6 +177,8 @@ export function OrdersPanel() {
             <tbody>
               {orders.map((o) => {
                 const res = results[o.id];
+                const bbSuggested = isBrievenbusOrder(o.items);
+                const bb = bbChoice[o.id] ?? bbSuggested;
                 return (
                   <tr key={o.id} className={cn("border-b border-border align-top", needsLabel(o) && "bg-primary/5")}>
                     <td className="py-3 pr-3">
@@ -242,15 +248,31 @@ export function OrdersPanel() {
                           </p>
                         </div>
                       ) : (o.paymentStatus === "paid" || o.paymentStatus === "authorized") ? (
-                        <div className="space-y-1">
-                          <Button size="sm" variant="dark" onClick={() => makeLabel(o)} disabled={busy === o.id}>
+                        <div className="space-y-1.5">
+                          <label
+                            className={cn(
+                              "flex w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium",
+                              bb ? "border-primary/40 bg-primary/5 text-primary" : "border-border text-muted-foreground",
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={bb}
+                              onChange={(e) => setBbChoice((c) => ({ ...c, [o.id]: e.target.checked }))}
+                              className="h-3.5 w-3.5"
+                            />
+                            <Mailbox className="h-3.5 w-3.5" />
+                            Brievenbuspakje
+                            {bbSuggested && <span className="text-muted-foreground">· voorgesteld</span>}
+                          </label>
+                          <Button size="sm" variant="dark" onClick={() => makeLabel(o, bb)} disabled={busy === o.id}>
                             {busy === o.id ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" /> Bezig…
                               </>
                             ) : (
                               <>
-                                <Truck className="h-4 w-4" /> Maak PostNL-label
+                                <Truck className="h-4 w-4" /> Maak {bb ? "brievenbus" : "PostNL"}-label
                               </>
                             )}
                           </Button>

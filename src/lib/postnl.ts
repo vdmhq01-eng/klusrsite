@@ -84,7 +84,10 @@ async function generateBarcode(): Promise<string | null> {
   }
 }
 
-export async function createLabel(order: Order): Promise<LabelResult> {
+export async function createLabel(
+  order: Order,
+  opts?: { brievenbus?: boolean },
+): Promise<LabelResult> {
   const c = order.customer;
 
   if (!isPostNLConfigured()) {
@@ -145,7 +148,7 @@ export async function createLabel(order: Order): Promise<LabelResult> {
           ],
           Barcode: barcode,
           Dimension: { Weight: "2000" },
-          ProductCodeDelivery: "3085",
+          ProductCodeDelivery: opts?.brievenbus ? "2928" : "3085",
           Reference: order.reference,
         },
       ],
