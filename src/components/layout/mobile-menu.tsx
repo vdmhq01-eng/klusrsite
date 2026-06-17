@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, ChevronRight, Headphones, User, CreditCard } from "lucide-react";
+import { Menu, ChevronRight, Headphones, User, CreditCard, Palette } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -82,6 +82,18 @@ export function MobileMenu() {
                     </button>
                     {isOpen && (
                       <ul className="mb-1 ml-4 border-l border-border pl-2">
+                        {cat.slug === "verf" && (
+                          <li>
+                            <Link
+                              href="/kleurenkiezer"
+                              onClick={close}
+                              className="mb-1 flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm font-bold text-primary hover:bg-primary/10"
+                            >
+                              <Palette className="h-4 w-4" />
+                              Kleurenkiezer
+                            </Link>
+                          </li>
+                        )}
                         <li>
                           <Link
                             href={`/categorie/${cat.slug}`}

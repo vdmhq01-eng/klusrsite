@@ -28,11 +28,18 @@ interface Line {
   refs: { ref: string; qty: number }[];
 }
 
+// Net geplaatste orders 15 min "vasthouden" — de klant kan nog bijbestellen
+// zonder extra verzendkosten, dus nog niet picken.
+const ORDER_HOLD_MS = 15 * 60 * 1000;
+
 export default async function LooplijstPage() {
-  const orders = (await listOrders()).filter(
+  const now = Date.now();
+  const open = (await listOrders()).filter(
     (o) =>
       (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment,
   );
+  const orders = open.filter((o) => now - new Date(o.createdAt).getTime() >= ORDER_HOLD_MS);
+  const heldCount = open.length - orders.length;
 
   // Items over alle openstaande orders samenvoegen.
   const map = new Map<string, Line>();
@@ -119,9 +126,19 @@ export default async function LooplijstPage() {
           </div>
         </div>
 
+        {heldCount > 0 && (
+          <p className="mt-5 rounded-lg bg-amber-500/10 p-3 text-xs font-medium text-amber-700">
+            {heldCount} order(s) staan nog in het 15-minuten nabestelvenster en zijn bewust niet
+            opgenomen — de klant kan nog bijbestellen zonder extra verzendkosten. Ververs straks
+            opnieuw.
+          </p>
+        )}
+
         {lines.length === 0 ? (
           <p className="mt-10 text-center text-neutral-500">
-            Geen openstaande orders om te picken.
+            {heldCount > 0
+              ? "Alle openstaande orders zitten nog in het nabestelvenster."
+              : "Geen openstaande orders om te picken."}
           </p>
         ) : (
           <div className="mt-8 space-y-7">

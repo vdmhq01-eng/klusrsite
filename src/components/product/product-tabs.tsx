@@ -38,8 +38,8 @@ export function ProductTabs({ product }: { product: Product }) {
           <p>{product.description}</p>
           <ul className="grid gap-2 sm:grid-cols-2">
             {product.highlights.map((h) => (
-              <li key={h} className="flex items-center gap-2 text-foreground">
-                <Check className="h-4 w-4 shrink-0 text-klusr-stock" strokeWidth={3} />
+              <li key={h} className="flex items-start gap-2 text-foreground">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-klusr-stock" strokeWidth={3} />
                 {h}
               </li>
             ))}

@@ -45,6 +45,13 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 const needsLabel = (o: Order) =>
   (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment;
 
+// Net geplaatste orders 15 min vasthouden (nabestelvenster) — nog niet picken/labelen.
+const ORDER_HOLD_MS = 15 * 60 * 1000;
+const isHeld = (o: Order) =>
+  needsLabel(o) && Date.now() - new Date(o.createdAt).getTime() < ORDER_HOLD_MS;
+const holdMinutesLeft = (o: Order) =>
+  Math.max(1, Math.ceil((new Date(o.createdAt).getTime() + ORDER_HOLD_MS - Date.now()) / 60000));
+
 export function OrdersPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [postnlConfigured, setPostnlConfigured] = useState(true);
@@ -226,6 +233,13 @@ export function OrdersPanel() {
                               Download label <Download className="h-3 w-3" />
                             </a>
                           )}
+                        </div>
+                      ) : isHeld(o) ? (
+                        <div className="text-xs text-amber-600">
+                          <p className="font-semibold">Wacht op nabestelling</p>
+                          <p className="text-muted-foreground">
+                            nog ~{holdMinutesLeft(o)} min · nog niet picken
+                          </p>
                         </div>
                       ) : (o.paymentStatus === "paid" || o.paymentStatus === "authorized") ? (
                         <div className="space-y-1">

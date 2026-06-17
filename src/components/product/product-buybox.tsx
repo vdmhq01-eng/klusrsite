@@ -431,8 +431,8 @@ export function ProductBuybox({
       {/* USPs */}
       <ul className="grid grid-cols-1 gap-2 rounded-lg border border-border bg-secondary/40 p-3 sm:grid-cols-2">
         {usps.map(({ icon: Icon, label }) => (
-          <li key={label} className="flex items-center gap-2 text-xs font-medium">
-            <Icon className="h-4 w-4 shrink-0 text-primary" />
+          <li key={label} className="flex items-start gap-2 text-xs font-medium">
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             {label}
           </li>
         ))}
