@@ -49,7 +49,8 @@ export function localizeProduct(product: Product | undefined): Product | undefin
   };
 }
 
-function localizeMany(list: Product[]): Product[] {
+/** Lokaliseer een lijst producten (bv. zoekresultaten of een categorie). */
+export function localizeProducts(list: Product[]): Product[] {
   if (!i18nEnabled() || getLocale() === "nl") return list;
   return list.map((p) => localizeProduct(p) as Product);
 }
@@ -65,9 +66,9 @@ export function getLocalizedProductById(id: string): Product | undefined {
 }
 
 export function getLocalizedProductsByCategory(categorySlug: string): Product[] {
-  return localizeMany(getProductsByCategory(categorySlug));
+  return localizeProducts(getProductsByCategory(categorySlug));
 }
 
 export function getLocalizedProductsBySubCategory(sub: string): Product[] {
-  return localizeMany(getProductsBySubCategory(sub));
+  return localizeProducts(getProductsBySubCategory(sub));
 }
