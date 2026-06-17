@@ -109,3 +109,9 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+/* Sonner-sluitknop (X) altijd zichtbaar — standaard verschijnt 'ie pas bij
+   hover, waardoor hij op mobiel onzichtbaar is. */
+[data-sonner-toast] [data-close-button] {
+  opacity: 1 !important;
+}
