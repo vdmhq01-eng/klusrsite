@@ -585,15 +585,23 @@ export function shippingConfirmationEmail(order: Order): { subject: string; html
       </tr>
     </table>
 
-    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">
-      Hoi ${esc(c.firstName)}, goed nieuws — je bestelling is zojuist met PostNL verzonden.
-      ${delivery ? `Verwachte bezorging: <strong>${esc(delivery)}</strong>.` : "Je pakket is hard op weg naar je toe."}
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">
+      Hoi ${esc(c.firstName)}, goed nieuws — je bestelling is zojuist met PostNL verzonden${delivery ? "" : " en hard op weg naar je toe"}.
     </p>
+
+    ${
+      delivery
+        ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr>` +
+          `<td style="padding:12px 16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;font-size:15px;color:${C.text};">` +
+          `&#128666;&nbsp; Verwachte bezorging: <strong style="color:${C.green};">${esc(delivery)}</strong>` +
+          `</td></tr></table>`
+        : ""
+    }
 
     ${trackBox}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-      ${button("Volg je pakket (Track &amp; Trace)", trackUrl)}
+      ${button("Volg je pakket", trackUrl)}
     </td></tr></table>
 
     <div style="height:24px;"></div>

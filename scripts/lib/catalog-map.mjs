@@ -174,12 +174,34 @@ function subCategoryFor(category, title, productType) {
 const cleanTitle = (t = "") => t.replace(/\s+/g, " ").trim();
 
 /**
+ * Groothandel-ruis. "Partijhandel" (en het losse "Partij" dat er soms voor
+ * staat) is geen merk maar een inkoopkanaal en hoort niet in de klanttitel:
+ * "Partijhandel Partij kwast groot" → "Kwast groot". Alleen titels die de ruis
+ * bevatten worden aangepast (eerste letter weer als hoofdletter); alle andere
+ * titels blijven byte-identiek.
+ */
+export function stripWholesaleNoise(title = "") {
+  const cleaned = title.replace(/\bpartij(?:handel)?\b/gi, " ").replace(/\s+/g, " ").trim();
+  if (cleaned === title.trim()) return title;
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned;
+}
+
+const WHOLESALE_BRANDS = new Set(["partijhandel", "partij"]);
+
+/** Normaliseer niet-echte "merken" (groothandelskanalen) naar Onbekend. */
+export function cleanBrand(brand = "") {
+  const b = (brand || "").trim();
+  if (!b || WHOLESALE_BRANDS.has(b.toLowerCase())) return "Onbekend";
+  return b;
+}
+
+/**
  * Verwijder feed-template-ruis uit titels: sterren-ratings ("5*") en alles na
  * de eerste pipe ("… 5* | 20 | FSC Houten Steel 20" → "…"). De maat-/attribuut-
  * tokens achter de pipe zitten al in de variant-labels.
  */
 function stripTemplateNoise(title = "") {
-  let s = title.replace(/\s*\d\s*[\*★]/g, " ");
+  let s = stripWholesaleNoise(title).replace(/\s*\d\s*[\*★]/g, " ");
   const pipe = s.indexOf("|");
   if (pipe > 0) s = s.slice(0, pipe);
   return s.replace(/\s+/g, " ").trim();
@@ -693,6 +715,7 @@ export function buildCatalog(items, stockMap, opts = {}) {
   // schroeven in tientallen maten) tot één product met maatvarianten.
   const groups = new Map();
   for (const item of items) {
+    item.brand = cleanBrand(item.brand); // groothandelskanaal ("Partijhandel") is geen merk
     const key = groupKey(item);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(item);
