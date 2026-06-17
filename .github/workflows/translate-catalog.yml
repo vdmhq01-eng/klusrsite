@@ -1,0 +1,68 @@
+name: Vertaal catalogus (EN/FR/DE)
+
+# Eénklik-vertaling van de productcatalogus naar Engels, Frans en Duits met
+# Claude (Sonnet 4.6) via de Batch-API. Draai 'm via tabblad "Actions" →
+# "Vertaal catalogus" → "Run workflow".
+#
+# Eénmalig instellen: Settings → Secrets and variables → Actions → New
+# repository secret → naam ANTHROPIC_API_KEY, waarde = je Claude-API-key.
+#
+# De vertalingen worden automatisch teruggezet in de map
+# src/lib/data/i18n/ en naar de branch gecommit. Incrementeel: alleen nieuwe
+# of gewijzigde producten worden (opnieuw) vertaald.
+
+on:
+  workflow_dispatch:
+    inputs:
+      locales:
+        description: "Talen (kommagescheiden)"
+        required: false
+        default: "en,fr,de"
+      limit:
+        description: "Aantal producten (0 = alles; zet bv. 20 voor een goedkope testrun)"
+        required: false
+        default: "0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: translate-catalog
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Vertaal de catalogus
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          I18N_LOCALES: ${{ github.event.inputs.locales }}
+          I18N_LIMIT: ${{ github.event.inputs.limit }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY-secret ontbreekt. Voeg 'm toe via Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          node scripts/translate-catalog.mjs
+
+      - name: Commit vertalingen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/data/i18n/
+          if git diff --staged --quiet; then
+            echo "Geen wijzigingen — niets te committen."
+          else
+            git commit -m "Vertaal catalogus: overlays bijgewerkt (EN/FR/DE)"
+            git push
+          fi
