@@ -258,6 +258,12 @@ export function AiContentManager() {
             </div>
           </div>
 
+          <p className="mb-4 text-xs text-muted-foreground">
+            Grote runs (de hele catalogus) kun je ook op de achtergrond draaien
+            via de GitHub Action &ldquo;Genereer content (SEO/FAQ)&rdquo; — dan
+            hoeft dit tabblad niet open te blijven.
+          </p>
+
           {bulk.running && (
             <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-secondary">
               <div
