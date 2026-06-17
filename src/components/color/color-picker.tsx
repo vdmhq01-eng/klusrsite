@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Search, Pipette, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import type { SelectedColor } from "@/types";
 import { colorCollections, popularColors2026, allColors, isLightColor } from "@/lib/data/colors";
 import { fetchPortalColors } from "@/lib/portal-colors";
@@ -34,9 +34,6 @@ export function ColorPicker({
   const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<SelectedColor | undefined>(value);
-  const [customHex, setCustomHex] = useState(value?.hex ?? "#C90000");
-  const [codeInput, setCodeInput] = useState("");
-  const [codeError, setCodeError] = useState<string | null>(null);
 
   // Live kleuren uit de portal (Gamma/AkzoNobel/RAL); terugval op gecureerde set.
   useEffect(() => {
@@ -111,30 +108,6 @@ export function ColorPicker({
       color_name: enriched.name,
       paint_base: enriched.base?.id,
     });
-  }
-
-  /** Zoek een kleur op zijn code (bv. "RAL 9005", "ral9005", "9005"). */
-  function applyCode() {
-    const norm = (s: string) => s.toUpperCase().replace(/\s+/g, "");
-    const target = norm(codeInput);
-    if (!target) return;
-    const found =
-      allColors.find((c) => norm(c.code) === target) ||
-      // ook "9005" → "RAL9005" toestaan
-      (/^\d{3,4}$/.test(target) ? allColors.find((c) => norm(c.code) === `RAL${target}`) : undefined);
-    if (found) {
-      pick(found);
-      setCodeError(null);
-      setCodeInput("");
-    } else {
-      setCodeError("Onbekende code — probeer bijvoorbeeld RAL 9005.");
-    }
-  }
-
-  function applyCustom() {
-    const hex = customHex.startsWith("#") ? customHex : `#${customHex}`;
-    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
-    pick({ name: "Eigen kleur", code: hex.toUpperCase(), hex, collection: "Op maat" });
   }
 
   function openCollection(id: string) {
@@ -345,56 +318,6 @@ export function ColorPicker({
           </div>
         )}
 
-        {/* Eigen kleur mengen */}
-        <div className="mt-5 rounded-xl border border-dashed border-border bg-secondary/30 p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-            <Pipette className="h-4 w-4 text-primary" />
-            Eigen kleur mengen
-          </p>
-
-          {/* Kleurcode invoeren (bv. RAL 9005) */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              value={codeInput}
-              onChange={(e) => {
-                setCodeInput(e.target.value);
-                setCodeError(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  applyCode();
-                }
-              }}
-              placeholder="Kleurcode, bv. RAL 9005"
-              className="min-w-0 flex-1 uppercase"
-            />
-            <Button variant="outline" onClick={applyCode}>
-              Zoek code
-            </Button>
-          </div>
-          {codeError && <p className="mt-1 text-xs text-destructive">{codeError}</p>}
-
-          <p className="mb-1 mt-3 text-xs text-muted-foreground">Of kies een eigen tint:</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="color"
-              value={customHex}
-              onChange={(e) => setCustomHex(e.target.value)}
-              className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-border bg-card"
-              aria-label="Kleurkiezer"
-            />
-            <Input
-              value={customHex}
-              onChange={(e) => setCustomHex(e.target.value)}
-              placeholder="#C90000"
-              className="min-w-0 flex-1 font-mono uppercase"
-            />
-            <Button variant="outline" onClick={applyCustom}>
-              Toepassen
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Onderbalk: gekozen kleur + bevestigen (mobiel-vriendelijk) */}
@@ -433,7 +356,7 @@ export function ColorPicker({
           </div>
         ) : (
           <p className="py-1 text-center text-sm text-muted-foreground">
-            Kies hierboven een kleur of meng je eigen tint.
+            Kies hierboven een kleur om verder te gaan.
           </p>
         )}
       </div>

@@ -39,8 +39,8 @@ export function KleurkiezerClient({ colorProducts }: KleurkiezerClientProps) {
           Vind jouw perfecte kleur
         </h1>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Kies uit onze collecties of meng je eigen kleur. Bekijk hoe de kleur op
-          je muur staat en bestel verf die wij exact op jouw kleur mengen.
+          Kies uit onze kleurcollecties en bekijk hoe de kleur op je muur staat.
+          Bestel verf die wij exact op jouw kleur mengen.
         </p>
       </section>
 
