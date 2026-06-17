@@ -7,6 +7,16 @@ import { navCategories } from "@/lib/data/categories";
 import { getSubCategories } from "@/lib/data/products";
 import { cn } from "@/lib/utils";
 
+/**
+ * Kortere labels in de hoofdnav zodat lange categorienamen niet over twee regels
+ * afbreken (de volledige titel blijft op de categoriepagina staan).
+ */
+const NAV_SHORT: Record<string, string> = {
+  "afbouw-fijnbouw": "Afbouw",
+  reiniging: "Reiniging",
+  "vloeren-raam": "Vloeren",
+};
+
 export function MainNav() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
 
@@ -31,14 +41,14 @@ export function MainNav() {
                 <Link
                   href={`/categorie/${cat.slug}`}
                   className={cn(
-                    "inline-flex items-center gap-1 px-3 py-3 text-sm font-semibold transition-colors hover:text-primary",
+                    "inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-3 text-sm font-semibold transition-colors hover:text-primary xl:px-3",
                     isActie && "text-primary",
                     openSlug === cat.slug && "text-primary",
                   )}
                 >
-                  {isActie && <Tag className="h-4 w-4" />}
-                  {cat.title}
-                  {hasSub && <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
+                  {isActie && <Tag className="h-4 w-4 shrink-0" />}
+                  {NAV_SHORT[cat.slug] ?? cat.title}
+                  {hasSub && <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />}
                 </Link>
               </li>
             );
