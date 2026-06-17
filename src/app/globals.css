@@ -45,6 +45,9 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     text-rendering: optimizeLegibility;
+    /* Geen horizontaal meeschuiven op mobiel: te brede elementen worden
+       weggesneden i.p.v. de hele pagina breder te maken. clip breekt geen sticky. */
+    overflow-x: clip;
   }
   /* Hide scrollbar utility for horizontal scrollers */
   .no-scrollbar::-webkit-scrollbar {
