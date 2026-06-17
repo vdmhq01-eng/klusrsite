@@ -1204,10 +1204,24 @@ const subsByCategory: Record<string, SubCategory[]> = (() => {
 })();
 
 /**
+ * Subcategorie-slugs die we bewust NIET in de navigatie tonen omdat een andere,
+ * gevulde subcategorie ze al dekt (voorkomt dubbele menu-namen). De producten
+ * blijven gewoon vindbaar onder de dekkende subcategorie.
+ */
+const REDUNDANT_SUBS = new Set(["led-lampen", "armaturen", "buitenverlichting"]);
+
+const normSubTitle = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
  * Subcategorieën van een categorie. Bron-van-waarheid is de taxonomie in
  * categories.ts (zodat SEO-landingspagina's altijd geldige routes zijn, ook als
  * de feed er nog geen producten voor heeft); aangevuld met subcategorieën die
  * alleen uit de catalogus komen. Het aantal (`count`) komt uit de echte feed.
+ *
+ * Lege (gedefinieerde) subcategorieën worden onderdrukt zodra hun titel
+ * (bijna) samenvalt met een gevulde subcategorie — anders zie je dubbele
+ * menunamen zoals "Schildersgereedschap" náást "Schildersgereedschap &
+ * schuurpapier". Unieke, nog lege SEO-leaves (bv. Traplak) blijven staan.
  */
 export function getSubCategories(categorySlug: string): SubCategory[] {
   const catalog = subsByCategory[categorySlug] ?? [];
@@ -1215,8 +1229,17 @@ export function getSubCategories(categorySlug: string): SubCategory[] {
   if (defined.length === 0) return catalog;
 
   const seen = new Set(catalog.map((s) => s.slug));
+  const catalogTitles = catalog.map((s) => normSubTitle(s.title)).filter((t) => t.length >= 5);
+  const duplicatesCatalogTitle = (title: string): boolean => {
+    const n = normSubTitle(title);
+    if (n.length < 5) return false;
+    return catalogTitles.some((c) => c === n || c.includes(n) || n.includes(c));
+  };
+
   const extras: SubCategory[] = defined
-    .filter((d) => !seen.has(d.slug))
+    .filter(
+      (d) => !seen.has(d.slug) && !REDUNDANT_SUBS.has(d.slug) && !duplicatesCatalogTitle(d.title),
+    )
     .map((d) => ({ slug: d.slug, title: d.title, count: 0 }));
   return [...catalog, ...extras];
 }

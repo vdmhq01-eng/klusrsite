@@ -101,7 +101,9 @@ export function mapVerfSub(title, productType) {
   // --- Beton- & vloerverf ---
   if (has("2-comp", "2 comp", "twee comp", "2k ", "epoxy", "vloercoating")) return "vloercoating-2k";
   if (has("garage")) return "garageverf";
-  if (has("beton")) return "betonverf";
+  // Echte betonverf, maar niet de muur-/structuurverf die "beton" in de
+  // feed-categorie heeft (die hoort bij muurverf, zie blok hieronder).
+  if (has("beton") && !has("muurverf", "spacktex", "isotex")) return "betonverf";
 
   // --- Beits & olie ---
   if (has("beits")) {
