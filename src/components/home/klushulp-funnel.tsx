@@ -39,7 +39,7 @@ export function KlushulpFunnel({
             <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           </div>
         )}
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+        <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 no-scrollbar sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7">
           {tasks.map((task) => (
             <Link
               key={task.id}
@@ -47,7 +47,7 @@ export function KlushulpFunnel({
               onClick={() =>
                 trackEvent("klusadvies_started", { task: task.slug, source: "funnel" })
               }
-              className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card"
+              className="group flex shrink-0 basis-20 flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card sm:basis-auto"
             >
               <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
                 <CategoryIcon name={task.icon} className="h-6 w-6" />

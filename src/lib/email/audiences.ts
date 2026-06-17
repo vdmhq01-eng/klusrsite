@@ -114,3 +114,22 @@ export async function addContact(input: {
     /* een marketing-sync mag nooit een flow breken */
   }
 }
+
+/**
+ * Voeg (best-effort) een nieuwsbrief-inschrijving toe aan de
+ * "KLUSR Nieuwsbrief"-audience. Handige wrapper voor sync-jobs zoals de
+ * dagelijkse VDM→Resend-import.
+ */
+export async function addNewsletterSubscriber(input: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<void> {
+  await addContact({
+    audience: AUDIENCES.NEWSLETTER,
+    email: input.email,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    unsubscribed: false,
+  });
+}

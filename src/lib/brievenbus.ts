@@ -9,7 +9,7 @@
  */
 
 const ELIGIBLE =
-  /schuurpapier|schuurstrook|schuurvel|schuurlinnen|schuurgaas|schuurspons|schilderstape|afplaktape|plakband|\btape\b|maskeerpapier|stofdoek|microvezeldoek/i;
+  /schuurpapier|schuurstrook|schuurvel|schuurlinnen|schuurgaas|schuurspons|schilderstape|afplaktape|plakband|\btape\b|maskeerpapier|stofdoek|microvezeldoek|schroe(?:f|ven)|plug(?:gen)?|bout(?:en)?|moer(?:en)?|sluitring|veerring|borgring|spijker(?:s)?|draadnagel|kabelbinder|tie-?wrap|tiewrap|klittenband|staalkabel|staaldraad|spankabel|spanband|spanset|ophanghaak|ophangoog|oogbout|zaagblad|breekmes|reservemes|afbreekmes/i;
 
 const INELIGIBLE =
   /\bml\b|liter|\b\d+\s?l\b|\brol\b|roller|kwast|emmer|blik|\bverf\b|beits|\blak\b|primer|grondverf|plamuur|spaan|kuip|pot|bus\b/i;

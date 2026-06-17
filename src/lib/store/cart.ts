@@ -5,6 +5,8 @@ import { persist } from "zustand/middleware";
 import type { CartItem, Product, ProductVariant, SelectedColor } from "@/types";
 import { exVat, profGrossPrice } from "@/lib/pricing";
 import type { PricingMode } from "@/lib/store/pricing-mode";
+import { isBrievenbusOrder } from "@/lib/brievenbus";
+import { BRIEVENBUS_PRICE } from "@/lib/shipping";
 
 const FREE_SHIPPING_THRESHOLD = 50;
 const SHIPPING_COST = 4.95;
@@ -181,6 +183,15 @@ export function shippingFor(subtotal: number): number {
   return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
 }
 
+/** Verzendkosten voor de winkelwagen: past het voordelige brievenbuspakje-tarief
+ *  toe als de héle inhoud daarvoor in aanmerking komt (kleine, platte artikelen
+ *  zoals schroeven, pluggen, staalkabel, schuurpapier). Gratis verzending wint. */
+function shippingForCart(items: CartItem[], subtotal: number): number {
+  const base = shippingFor(subtotal);
+  if (base <= 0) return base;
+  return isBrievenbusOrder(items) ? Math.min(base, BRIEVENBUS_PRICE.NL ?? base) : base;
+}
+
 export function freeShippingProgress(subtotal: number): {
   remaining: number;
   percent: number;
@@ -247,7 +258,7 @@ export function cartSummary(
 ): CartSummary {
   if (mode === "zakelijk") {
     const grossSubtotal = items.reduce((s, i) => s + profGrossPrice(i.price) * i.quantity, 0);
-    const grossShipping = shippingOverride ?? shippingFor(grossSubtotal);
+    const grossShipping = shippingOverride ?? shippingForCart(items, grossSubtotal);
     const grossTotal = grossSubtotal + grossShipping;
     const regularEx = items.reduce((s, i) => s + exVat(i.price) * i.quantity, 0);
     const subtotalEx = exVat(grossSubtotal);
@@ -266,7 +277,7 @@ export function cartSummary(
   }
 
   const grossSubtotal = cartSubtotal(items, kluspasActive);
-  const grossShipping = shippingOverride ?? shippingFor(grossSubtotal);
+  const grossShipping = shippingOverride ?? shippingForCart(items, grossSubtotal);
   const grossTotal = grossSubtotal + grossShipping;
   return {
     vatIncluded: true,
