@@ -15,10 +15,14 @@ import {
   PanelTop,
   Sparkles,
   Info,
+  SlidersHorizontal,
+  Plus,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { Product, SelectedColor } from "@/types";
 import { colorCollections, isLightColor } from "@/lib/data/colors";
 import { withBase } from "@/lib/paint-bases";
+import { useCart } from "@/lib/store/cart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn, formatPrice } from "@/lib/utils";
@@ -48,6 +52,13 @@ function matchesKlus(product: Product, klus: Klus): boolean {
   return klus.include.some((k) => hay.includes(k));
 }
 
+const hay = (p: Product) => `${p.category} ${p.subCategory ?? ""} ${p.title}`.toLowerCase();
+const appliesOutside = (p: Product) => /buiten|gevel|tuin/.test(hay(p));
+const appliesInside = (p: Product) =>
+  /binnen|plafond|latex|muurverf/.test(hay(p)) || !appliesOutside(p);
+
+type Toepassing = "alle" | "binnen" | "buiten";
+
 /** Goedkoopste prijs per liter-variant + eventuele basistoeslag. */
 function fromPrice(product: Product, color: SelectedColor): number {
   const cheapest = Math.min(...product.variants.map((v) => v.kluspasPrice));
@@ -56,13 +67,18 @@ function fromPrice(product: Product, color: SelectedColor): number {
 
 interface Props {
   colorProducts: Product[];
+  accessories?: Product[];
 }
 
-export function KleurenkiezerFunnel({ colorProducts }: Props) {
+export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
   const [color, setColor] = useState<SelectedColor | null>(null);
   const [klus, setKlus] = useState<Klus | null>(null);
+  const [toepassing, setToepassing] = useState<Toepassing>("alle");
+  const [brand, setBrand] = useState<string>("alle");
+
+  const addItem = useCart((s) => s.addItem);
 
   const collection =
     colorCollections.find((c) => c.id === activeCollection) ?? colorCollections[0];
@@ -76,8 +92,16 @@ export function KleurenkiezerFunnel({ colorProducts }: Props) {
 
   function pickKlus(k: Klus) {
     setKlus(k);
+    setToepassing("alle");
+    setBrand("alle");
     trackEvent("kleurenkiezer_klus", { klus: k.id });
     setStep(3);
+  }
+
+  function addAccessory(p: Product) {
+    addItem({ product: p, variant: p.variants[0], quantity: 1 });
+    trackEvent("add_to_cart", { item_id: p.id, source: "kleurenkiezer_bijverkoop" });
+    toast.success("Toegevoegd aan winkelwagen", { description: p.title });
   }
 
   const matches = useMemo(() => {
@@ -85,6 +109,24 @@ export function KleurenkiezerFunnel({ colorProducts }: Props) {
     const filtered = colorProducts.filter((p) => matchesKlus(p, klus));
     return filtered.length > 0 ? filtered : colorProducts;
   }, [klus, colorProducts]);
+
+  // Merken in de huidige resultaten (voor het merk-filter).
+  const brands = useMemo(
+    () => Array.from(new Set(matches.map((p) => p.brand).filter(Boolean))).sort(),
+    [matches],
+  );
+
+  // Toepassing- + merkfilter op de resultaten.
+  const filteredMatches = useMemo(
+    () =>
+      matches.filter((p) => {
+        if (toepassing === "binnen" && !appliesInside(p)) return false;
+        if (toepassing === "buiten" && !appliesOutside(p)) return false;
+        if (brand !== "alle" && p.brand !== brand) return false;
+        return true;
+      }),
+    [matches, toepassing, brand],
+  );
 
   const usedFallback = klus
     ? colorProducts.filter((p) => matchesKlus(p, klus)).length === 0
@@ -284,7 +326,7 @@ export function KleurenkiezerFunnel({ colorProducts }: Props) {
                 {color.name} <span className="font-medium text-muted-foreground">· {color.code}</span>
               </p>
               <p className="text-sm text-muted-foreground">
-                {matches.length} verfsoort{matches.length === 1 ? "" : "en"} voor{" "}
+                {filteredMatches.length} verfsoort{filteredMatches.length === 1 ? "" : "en"} voor{" "}
                 {klus.label.toLowerCase()} — op kleur gemengd
               </p>
             </div>
@@ -298,8 +340,82 @@ export function KleurenkiezerFunnel({ colorProducts }: Props) {
             </div>
           )}
 
+          {/* Filters: toepassing (binnen/buiten) + merk */}
+          <div className="mb-5 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+              <SlidersHorizontal className="h-4 w-4" />
+              Filter
+            </span>
+            {([
+              { id: "alle", label: "Alle" },
+              { id: "binnen", label: "Binnen" },
+              { id: "buiten", label: "Buiten" },
+            ] as const).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setToepassing(t.id)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                  toepassing === t.id
+                    ? "bg-foreground text-background"
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/70",
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+            {brands.length > 1 && (
+              <>
+                <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+                <button
+                  type="button"
+                  onClick={() => setBrand("alle")}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                    brand === "alle"
+                      ? "bg-primary text-white"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/70",
+                  )}
+                >
+                  Alle merken
+                </button>
+                {brands.map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBrand(b)}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                      brand === b
+                        ? "bg-primary text-white"
+                        : "bg-secondary text-muted-foreground hover:bg-secondary/70",
+                    )}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+
+          {filteredMatches.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              Geen verf gevonden met deze filters.{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setToepassing("alle");
+                  setBrand("alle");
+                }}
+                className="font-semibold text-primary hover:underline"
+              >
+                Filters wissen
+              </button>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {matches.map((p) => (
+            {filteredMatches.map((p) => (
               <Card key={p.id} className="flex flex-col overflow-hidden">
                 <div className="relative aspect-square bg-secondary/30">
                   {p.images[0] && (
@@ -355,6 +471,46 @@ export function KleurenkiezerFunnel({ colorProducts }: Props) {
               </Card>
             ))}
           </div>
+          )}
+
+          {/* Bijverkoop — vergeet je gereedschap niet */}
+          {accessories.length > 0 && (
+            <div className="mt-10">
+              <h3 className="text-lg font-extrabold tracking-tight">Vergeet je gereedschap niet</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Met het juiste materiaal verft het sneller en strakker.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {accessories.map((a) => (
+                  <div key={a.id} className="flex flex-col rounded-xl border border-border bg-card p-3">
+                    <Link
+                      href={`/product/${a.slug}`}
+                      className="relative mb-2 block aspect-square overflow-hidden rounded-lg bg-secondary/30"
+                    >
+                      {a.images[0] && (
+                        <Image
+                          src={a.images[0]}
+                          alt={a.title}
+                          fill
+                          sizes="160px"
+                          className="object-contain p-2"
+                        />
+                      )}
+                    </Link>
+                    <p className="line-clamp-2 text-sm font-semibold leading-snug">{a.title}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-sm font-black">
+                        {formatPrice(Math.min(...a.variants.map((v) => v.kluspasPrice)))}
+                      </span>
+                      <Button size="sm" variant="outline" onClick={() => addAccessory(a)}>
+                        <Plus className="h-4 w-4" /> In mandje
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             type="button"

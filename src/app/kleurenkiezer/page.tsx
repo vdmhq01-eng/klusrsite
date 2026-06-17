@@ -14,8 +14,32 @@ export const metadata: Metadata = {
   },
 };
 
+// Bijverkoop: één gevarieerd item per gereedschapstype ("vergeet je gereedschap
+// niet") — voorkomt 5x hetzelfde schuurpapier.
+const ACCESSORY_GROUPS: RegExp[] = [
+  /kwast/i,
+  /roller|verfrol|radiatorrol/i,
+  /verfbak|inzetbak|inzetpot|bakje/i,
+  /afplak|schilderstape|tape/i,
+  /afdek|folie/i,
+  /schuur/i,
+  /plamuur|spaan|menghulp/i,
+];
+
 export default function KleurenkiezerPage() {
   const colorProducts = products.filter((p) => p.colorMatchable === true);
 
-  return <KleurenkiezerFunnel colorProducts={colorProducts} />;
+  const seen = new Set<string>();
+  const accessories = ACCESSORY_GROUPS.map((re) =>
+    products.find((p) => {
+      if (p.colorMatchable || p.variants.length === 0) return false;
+      const key = p.title.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      if (!re.test(`${p.title} ${p.category} ${p.subCategory ?? ""}`)) return false;
+      seen.add(key);
+      return true;
+    }),
+  ).filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  return <KleurenkiezerFunnel colorProducts={colorProducts} accessories={accessories} />;
 }
