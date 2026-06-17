@@ -329,11 +329,13 @@ for (const c of campaigns) {
 }
 
 // Negatives-bestand
-const negCols = ["Campaign", "Negative Keyword", "Match Type"];
+// Ads Editor verwacht de tekstkolom "Keyword" (niet "Negative Keyword"), anders
+// blijft de zoekwoordtekst leeg bij import.
+const negCols = ["Campaign", "Keyword", "Match Type"];
 const negLines = [negCols.join(",")];
 for (const c of campaigns) {
   for (const n of NEGATIVES) {
-    negLines.push(row({ Campaign: c.name, "Negative Keyword": n, "Match Type": "Phrase" }, negCols));
+    negLines.push(row({ Campaign: c.name, Keyword: n, "Match Type": "Phrase" }, negCols));
   }
 }
 

@@ -29,7 +29,9 @@ opnieuw om te wijzigen.
    klik **Keep / Process**. Daarna **Post / Push** om naar Google te sturen.
 4. Uitsluitingszoekwoorden: ga naar **Keywords, Negative**, kies
    **Make multiple changes → Add/update multiple negative keywords**, en plak de
-   inhoud van `negative-keywords.csv` (kolommen *Campaign* en *Negative Keyword*).
+   inhoud van `negative-keywords.csv` (kolommen *Campaign*, *Keyword*, *Match Type*).
+   De tekstkolom heet bewust **Keyword** — zo vult Ads Editor de zoekwoordtekst
+   correct in (een kolom *Negative Keyword* laat de tekst leeg).
 
 > Tip: importeer eerst in een **concept/draft** of op een testaccount als je het
 > resultaat eerst wilt bekijken.
