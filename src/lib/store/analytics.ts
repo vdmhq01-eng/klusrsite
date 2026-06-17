@@ -10,8 +10,6 @@ import {
   kvLPush,
   kvLTrim,
   kvLRange,
-  kvGetJSON,
-  kvSetJSON,
   kvSAdd,
   kvSRem,
   kvSMembers,
@@ -36,10 +34,6 @@ const KEY = "analytics:events";
 const MAX = 1000;
 const mem: AnalyticsEvent[] = [];
 
-const PRESENCE_KEY = "analytics:presence";
-const PRESENCE_TTL = 5 * 60 * 1000; // entries ouder dan 5 min weggooien
-const LIVE_WINDOW = 2 * 60 * 1000; // "live" = gezien in de laatste 2 min
-const memPresence = new Map<string, number>();
 const memVisitors = new Map<string, Set<string>>();
 
 // Live sessies (huidige pagina + afreken-vlag) per bezoeker, kortlevend.
@@ -48,7 +42,10 @@ const SESSION_INDEX_KEY = "analytics:sessions"; // set met actieve bezoeker-id's
 const sessionKey = (vid: string) => `presence:session:${vid}`;
 const CHECKOUT_PATH = "/checkout"; // de afrekenpagina (winkelwagen → "Verder naar afrekenen")
 const MAX_SESSIONS = 50;
-const memSessions = new Map<string, { path: string; ts: number; checkout: boolean }>();
+const memSessions = new Map<
+  string,
+  { path: string; ts: number; checkout: boolean; ip?: string }
+>();
 
 // IP-uitsluiting: eigen/intern verkeer telt niet mee in rapportages en live.
 const EXCLUDED_IPS_KEY = "analytics:excluded-ips";
@@ -109,6 +106,11 @@ export async function isExcludedIp(ip: string): Promise<boolean> {
   return custom.includes(ip);
 }
 
+/** Alle uitgesloten IP's (env + admin-lijst) als set — voor read-time filtering. */
+async function getExcludedSet(): Promise<Set<string>> {
+  return new Set<string>([...ENV_EXCLUDED_IPS, ...(await getCustomExcludedIps())]);
+}
+
 /** Env-IP's (read-only) + door admin toegevoegde IP's (KV). */
 export async function listExcludedIps(): Promise<{ env: string[]; custom: string[] }> {
   return { env: [...ENV_EXCLUDED_IPS], custom: await getCustomExcludedIps() };
@@ -142,53 +144,31 @@ export async function removeExcludedIp(ip: string): Promise<void> {
 /* Aanwezigheid (live)                                                 */
 /* ------------------------------------------------------------------ */
 
-/** Markeer een bezoeker als (nu) aanwezig — voedt het live-aantal. */
-async function touchPresence(visitorId: string): Promise<void> {
-  const now = Date.now();
-  try {
-    let presence: Record<string, number> = {};
-    if (isKvEnabled()) presence = (await kvGetJSON<Record<string, number>>(PRESENCE_KEY)) ?? {};
-    else presence = Object.fromEntries(memPresence);
-    presence[visitorId] = now;
-    // Oude entries opruimen zodat het object klein blijft.
-    for (const [id, ts] of Object.entries(presence)) {
-      if (now - ts > PRESENCE_TTL) delete presence[id];
-    }
-    if (isKvEnabled()) await kvSetJSON(PRESENCE_KEY, presence);
-    else {
-      memPresence.clear();
-      for (const [id, ts] of Object.entries(presence)) memPresence.set(id, ts);
-    }
-  } catch {
-    /* best-effort */
-  }
-}
-
-/** Aantal bezoekers dat in de laatste 2 minuten actief was. */
+/** Aantal live bezoekers nu = aantal actieve sessies (excl. uitgesloten IP's). */
 export async function getLiveCount(): Promise<number> {
-  const now = Date.now();
-  try {
-    const presence = isKvEnabled()
-      ? (await kvGetJSON<Record<string, number>>(PRESENCE_KEY)) ?? {}
-      : Object.fromEntries(memPresence);
-    return Object.values(presence).filter((ts) => now - ts < LIVE_WINDOW).length;
-  } catch {
-    return 0;
-  }
+  return (await getLiveSessions()).length;
 }
 
 interface SessionRecord {
   path: string;
   ts: number;
   checkout: boolean;
+  /** IP van de bezoeker — alleen serverside; om live op het laatste moment te
+   *  filteren wanneer een IP later wordt uitgesloten. Kort bewaard via de TTL. */
+  ip?: string;
 }
 
 /**
  * Werk de live-sessie van een bezoeker bij: huidige pagina + afreken-vlag, met
  * korte TTL. Houdt daarnaast een index-set bij zodat we sessies kunnen oplijsten.
  */
-async function touchSession(visitorId: string, path?: string): Promise<void> {
-  const rec: SessionRecord = { path: path || "/", ts: Date.now(), checkout: isCheckoutPath(path) };
+async function touchSession(visitorId: string, path?: string, ip?: string): Promise<void> {
+  const rec: SessionRecord = {
+    path: path || "/",
+    ts: Date.now(),
+    checkout: isCheckoutPath(path),
+    ip,
+  };
   try {
     if (isKvEnabled()) {
       await kvSetEx(sessionKey(visitorId), JSON.stringify(rec), SESSION_TTL_S);
@@ -212,6 +192,7 @@ export async function getLiveSessions(): Promise<
 > {
   const now = Date.now();
   try {
+    const excluded = await getExcludedSet();
     if (!isKvEnabled()) {
       const out: { path: string; secondsAgo: number; checkout: boolean }[] = [];
       for (const [vid, rec] of memSessions) {
@@ -219,6 +200,7 @@ export async function getLiveSessions(): Promise<
           memSessions.delete(vid);
           continue;
         }
+        if (rec.ip && excluded.has(rec.ip)) continue; // sinds kort uitgesloten IP
         out.push({
           path: rec.path,
           secondsAgo: Math.floor((now - rec.ts) / 1000),
@@ -247,6 +229,7 @@ export async function getLiveSessions(): Promise<
           stale.push(vid);
           return;
         }
+        if (rec.ip && excluded.has(rec.ip)) return; // sinds kort uitgesloten IP
         out.push({
           path: rec.path,
           secondsAgo: Math.floor((now - rec.ts) / 1000),
@@ -281,15 +264,15 @@ async function getVisitorsToday(): Promise<number> {
 export async function recordVisit(input: {
   visitorId?: string;
   path?: string;
+  ip?: string;
   productId?: string;
   title?: string;
   logType?: "pageview" | "view_item" | null;
 }): Promise<void> {
-  const { visitorId, path, productId, title, logType } = input;
+  const { visitorId, path, ip, productId, title, logType } = input;
   try {
     if (visitorId) {
-      await touchPresence(visitorId);
-      await touchSession(visitorId, path);
+      await touchSession(visitorId, path, ip);
       if (isKvEnabled()) {
         await kvSAdd(dayKey(), visitorId);
       } else {
