@@ -110,6 +110,36 @@ export const categories: Category[] = [
     seoTitle: "Afbouw & fijnbouw | Plamuur, kit & vulmiddel | KLUSR",
     seoDescription:
       "Afbouwmaterialen voor een perfecte afwerking: plamuur, stuc, kit, vulmiddel en gereedschap. Bestel eenvoudig online bij KLUSR.",
+    subGroups: [
+      {
+        title: "Wand & afwerking",
+        slug: "wand-afwerking",
+        subCategories: [
+          { title: "Behang", slug: "behang" },
+          { title: "Glasweefselbehang", slug: "glasweefselbehang" },
+          { title: "Stuc & gips", slug: "stuc" },
+        ],
+      },
+      {
+        title: "Vullen, kitten & lijmen",
+        slug: "vullen-kitten-lijmen",
+        subCategories: [
+          { title: "Plamuur & vulmiddel", slug: "plamuur" },
+          { title: "Lijmen, kitten & vulmiddelen", slug: "lijmen-kitten-en-vulmiddelen" },
+          { title: "Kit & purschuim", slug: "kit" },
+        ],
+      },
+      {
+        title: "Gereedschap & toebehoren",
+        slug: "gereedschap-toebehoren",
+        subCategories: [
+          { title: "Gereedschap", slug: "gereedschap" },
+          { title: "Schuurmateriaal", slug: "schuren" },
+          { title: "Emmers & speciekuipen", slug: "bouwemmers-en-speciekuipen" },
+          { title: "Horren", slug: "horren" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "Plamuur & vulmiddel", slug: "plamuur" },
       { title: "Kit & purschuim", slug: "kit" },
@@ -127,6 +157,26 @@ export const categories: Category[] = [
     seoTitle: "IJzerwaren & bevestiging | Schroeven, pluggen & beslag | KLUSR",
     seoDescription:
       "IJzerwaren bij KLUSR: schroeven, pluggen, beslag, sloten en scharnieren. Professionele kwaliteit, scherp geprijsd.",
+    subGroups: [
+      {
+        title: "Bevestigen",
+        slug: "bevestigen",
+        subCategories: [
+          { title: "Bevestigingsmaterialen", slug: "bevestigingsmaterialen" },
+          { title: "Schroeven & bouten", slug: "schroeven" },
+          { title: "Pluggen", slug: "pluggen" },
+        ],
+      },
+      {
+        title: "Hang- & sluitwerk",
+        slug: "hang-sluitwerk",
+        subCategories: [
+          { title: "Hang- & sluitwerk", slug: "ijzerwaren-hang-en-sluitwerk" },
+          { title: "Beslag & scharnieren", slug: "beslag" },
+          { title: "Sloten", slug: "sloten" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "Schroeven & bouten", slug: "schroeven" },
       { title: "Pluggen", slug: "pluggen" },
@@ -145,6 +195,34 @@ export const categories: Category[] = [
     seoTitle: "Elektra & schakelmateriaal | Stopcontacten & kabel | KLUSR",
     seoDescription:
       "Elektra bij KLUSR: stopcontacten, schakelaars, kabel en installatiemateriaal. Met duidelijke uitleg en advies.",
+    subGroups: [
+      {
+        title: "Installatie & schakelen",
+        slug: "installatie-schakelen",
+        subCategories: [
+          { title: "Schakelaars & stopcontacten", slug: "schakelmateriaal" },
+          { title: "Installatiemateriaal", slug: "installatiemateriaal" },
+          { title: "Kabel & draad", slug: "kabel" },
+          { title: "Verdeel & groepenkast", slug: "verdeelkast" },
+        ],
+      },
+      {
+        title: "Verlengen & stroom",
+        slug: "verlengen-stroom",
+        subCategories: [
+          { title: "Verlengkabels & contactdozen", slug: "verlengkabels-en-tafelcontactdozen" },
+          { title: "Batterijen", slug: "batterijen" },
+          { title: "Overig elektra", slug: "overig-electra" },
+        ],
+      },
+      {
+        title: "Veiligheid",
+        slug: "veiligheid",
+        subCategories: [
+          { title: "Brandbeveiliging", slug: "brandbeveiliging" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "Schakelaars & stopcontacten", slug: "schakelmateriaal" },
       { title: "Kabel & draad", slug: "kabel" },
@@ -162,6 +240,43 @@ export const categories: Category[] = [
     seoTitle: "Gereedschap kopen | Hand- & elektrisch gereedschap | KLUSR",
     seoDescription:
       "Gereedschap bij KLUSR: boormachines, accuschroevendraaiers, handgereedschap en schildersgereedschap van topmerken.",
+    subGroups: [
+      {
+        title: "Handgereedschap",
+        slug: "handgereedschap-groep",
+        subCategories: [
+          { title: "Handgereedschap", slug: "handgereedschap" },
+          { title: "Meetgereedschap", slug: "meetgereedschap" },
+        ],
+      },
+      {
+        title: "Elektrisch gereedschap",
+        slug: "elektrisch-gereedschap-groep",
+        subCategories: [
+          { title: "Elektrisch gereedschap", slug: "elektrisch-gereedschap" },
+          { title: "Accessoires elektrisch gereedschap", slug: "acc-elektrisch-gereedschap" },
+          { title: "Stationair gereedschap", slug: "stationair-gereedschap" },
+        ],
+      },
+      {
+        title: "Schilderen & schuren",
+        slug: "schilderen-schuren",
+        subCategories: [
+          { title: "Schildersgereedschap & schuurpapier", slug: "schildersger-en-schuurpapier" },
+          { title: "Schildersgereedschap", slug: "schildersgereedschap" },
+          { title: "Verdunningsmiddelen", slug: "verdunningsmiddelen" },
+        ],
+      },
+      {
+        title: "Werkplaats & onderhoud",
+        slug: "werkplaats-onderhoud",
+        subCategories: [
+          { title: "Werkkleding", slug: "werkkleding" },
+          { title: "Onderhoud & smeermiddelen", slug: "onderhoud-smeermiddelen" },
+          { title: "Licht & lampjes", slug: "licht-en-lampjes" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "Schildersgereedschap", slug: "schildersgereedschap" },
       { title: "Elektrisch gereedschap", slug: "elektrisch-gereedschap" },
@@ -179,6 +294,24 @@ export const categories: Category[] = [
     seoTitle: "Tuin & buiten | Tuinverf, beits & gereedschap | KLUSR",
     seoDescription:
       "Alles voor je tuin bij KLUSR: tuinhoutbeits, buitenverf, tuingereedschap en bevestiging voor buiten.",
+    subGroups: [
+      {
+        title: "Tuinonderhoud",
+        slug: "tuinonderhoud",
+        subCategories: [
+          { title: "Tuinhoutbeits", slug: "tuinhoutbeits" },
+          { title: "Bestrating & onderhoud", slug: "bestrating" },
+        ],
+      },
+      {
+        title: "Tuingereedschap",
+        slug: "tuingereedschap-groep",
+        subCategories: [
+          { title: "Tuingereedschap", slug: "hand-tuingereedschap" },
+          { title: "Kruiwagens", slug: "kruiwagens" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "Tuinhoutbeits", slug: "tuinhoutbeits" },
       { title: "Tuingereedschap", slug: "tuingereedschap" },
@@ -195,6 +328,25 @@ export const categories: Category[] = [
     seoTitle: "Verlichting kopen | LED-lampen & armaturen | KLUSR",
     seoDescription:
       "Verlichting bij KLUSR: LED-lampen, armaturen, spots en buitenverlichting. Energiezuinig en sfeervol.",
+    subGroups: [
+      {
+        title: "Lampen & lichtbronnen",
+        slug: "lampen-lichtbronnen",
+        subCategories: [
+          { title: "LED-lampen", slug: "led-lampen" },
+          { title: "Lichtbronnen & zaklampen", slug: "lichtbronnen-en-zaklampen" },
+        ],
+      },
+      {
+        title: "Armaturen & buiten",
+        slug: "armaturen-buiten",
+        subCategories: [
+          { title: "Armaturen", slug: "armaturen" },
+          { title: "Buitenverlichting", slug: "buitenverlichting" },
+          { title: "Werkverlichting", slug: "werkverlichting" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "LED-lampen", slug: "led-lampen" },
       { title: "Armaturen", slug: "armaturen" },
@@ -211,6 +363,32 @@ export const categories: Category[] = [
     seoTitle: "Vloeren & raamdecoratie | Laminaat, PVC & gordijnen | KLUSR",
     seoDescription:
       "Vloeren en raamdecoratie bij KLUSR: laminaat, PVC-vloeren, ondervloer, plinten en raamdecoratie.",
+    subGroups: [
+      {
+        title: "Vloeren",
+        slug: "vloeren",
+        subCategories: [
+          { title: "Laminaat", slug: "laminaat" },
+          { title: "Laminaat & PVC", slug: "laminaat-pvc" },
+        ],
+      },
+      {
+        title: "Ondervloer & plinten",
+        slug: "ondervloer-plinten",
+        subCategories: [
+          { title: "Ondervloeren", slug: "ondervloeren" },
+          { title: "Ondervloer & plinten", slug: "ondervloer" },
+          { title: "Plinten", slug: "plinten" },
+        ],
+      },
+      {
+        title: "Raamdecoratie",
+        slug: "raamdecoratie-groep",
+        subCategories: [
+          { title: "Raamdecoratie", slug: "raamdecoratie" },
+        ],
+      },
+    ],
     subCategories: [
       { title: "Laminaat & PVC", slug: "laminaat-pvc" },
       { title: "Ondervloer & plinten", slug: "ondervloer" },
