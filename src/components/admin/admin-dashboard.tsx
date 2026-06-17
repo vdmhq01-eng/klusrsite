@@ -19,6 +19,8 @@ import {
   ShieldOff,
   Plus,
   Trash2,
+  RotateCcw,
+  MapPin,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -134,39 +136,127 @@ function StatCard({
   );
 }
 
+type Period = "vandaag" | "week" | "maand" | "alles" | "eigen";
+const PERIODS: { id: Period; label: string }[] = [
+  { id: "vandaag", label: "Vandaag" },
+  { id: "week", label: "Deze week" },
+  { id: "maand", label: "Deze maand" },
+  { id: "alles", label: "Alles" },
+  { id: "eigen", label: "Eigen periode" },
+];
+
 function Overview({ orders, onGo }: { orders: Order[]; onGo: (s: SectionId) => void }) {
+  const [period, setPeriod] = useState<Period>("alles");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const range = useMemo(() => {
+    const now = new Date();
+    const sod = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    if (period === "vandaag") return { start: sod(now), end: Infinity };
+    if (period === "week") {
+      const dow = (now.getDay() + 6) % 7; // maandag = 0
+      return { start: sod(new Date(now.getTime() - dow * 86400000)), end: Infinity };
+    }
+    if (period === "maand")
+      return { start: new Date(now.getFullYear(), now.getMonth(), 1).getTime(), end: Infinity };
+    if (period === "eigen")
+      return {
+        start: from ? new Date(`${from}T00:00:00`).getTime() : -Infinity,
+        end: to ? new Date(`${to}T23:59:59`).getTime() : Infinity,
+      };
+    return { start: -Infinity, end: Infinity };
+  }, [period, from, to]);
+
+  const periodOrders = useMemo(
+    () =>
+      orders.filter((o) => {
+        const t = new Date(o.createdAt).getTime();
+        return t >= range.start && t <= range.end;
+      }),
+    [orders, range],
+  );
+
   const stats = useMemo(() => {
-    const paid = orders.filter(isPaid);
+    const paid = periodOrders.filter(isPaid);
     // Omzet = betaalde orders minus eventuele (deel)terugbetalingen.
     const omzet = paid.reduce((s, o) => s + o.total - (o.refundedAmount ?? 0), 0);
     // Klanten = unieke e-mails van échte (betaalde) orders.
     const klanten = new Set(paid.map((o) => o.customer.email.toLowerCase())).size;
-    const open = orders.filter(isOpen).length;
-    const refunded = orders.filter((o) => o.paymentStatus === "refunded").length;
+    const open = periodOrders.filter(isOpen).length;
+    const terugbetaald = periodOrders.reduce((s, o) => s + (o.refundedAmount ?? 0), 0);
+    const refundedCount = periodOrders.filter(
+      (o) => o.paymentStatus === "refunded" || (o.refundedAmount ?? 0) > 0,
+    ).length;
     return {
       omzet,
       orders: paid.length,
       klanten,
       open,
-      refunded,
+      terugbetaald,
+      refundedCount,
       gem: paid.length ? omzet / paid.length : 0,
     };
-  }, [orders]);
+  }, [periodOrders]);
 
-  const recent = orders.slice(0, 6);
+  const recent = periodOrders.slice(0, 6);
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Periodekiezer */}
+      <div className="flex flex-wrap items-center gap-2">
+        {PERIODS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setPeriod(p.id)}
+            className={cn(
+              "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+              period === p.id
+                ? "bg-klusr-black text-white"
+                : "bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+        {period === "eigen" && (
+          <div className="flex items-center gap-2 text-sm">
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="rounded-md border border-border bg-card px-2 py-1"
+              aria-label="Van"
+            />
+            <span className="text-muted-foreground">t/m</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="rounded-md border border-border bg-card px-2 py-1"
+              aria-label="Tot en met"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard icon={Euro} label="Omzet (betaald)" value={formatPrice(stats.omzet)} />
         <StatCard
           icon={ShoppingBag}
           label="Orders (betaald)"
           value={String(stats.orders)}
-          hint={`${stats.open} openstaand${stats.refunded ? ` · ${stats.refunded} terugbetaald` : ""}`}
+          hint={`${stats.open} openstaand`}
         />
         <StatCard icon={Users} label="Klanten" value={String(stats.klanten)} />
         <StatCard icon={TrendingUp} label="Gem. orderwaarde" value={formatPrice(stats.gem)} />
+        <StatCard
+          icon={RotateCcw}
+          label="Terugbetaald"
+          value={formatPrice(stats.terugbetaald)}
+          hint={stats.refundedCount ? `${stats.refundedCount} order(s)` : "—"}
+        />
       </div>
 
       <Card>
@@ -312,11 +402,14 @@ interface LiveSession {
   path: string;
   secondsAgo: number;
   checkout: boolean;
+  source?: string;
+  cart?: { count: number; value: number };
 }
 
 interface LiveData {
   count: number;
   sessions: LiveSession[];
+  herkomst?: { source: string; count: number }[];
 }
 
 /** Maak een pad leesbaar voor de owner ("/" → "Home"). */
@@ -349,6 +442,7 @@ function LiveSessionsCard() {
 
   const count = data?.count ?? 0;
   const sessions = data?.sessions ?? [];
+  const herkomst = data?.herkomst ?? [];
 
   return (
     <Card>
@@ -365,30 +459,76 @@ function LiveSessionsCard() {
       </CardHeader>
       <CardContent>
         <ul className="divide-y divide-border text-sm">
-          {sessions.map((s, i) => (
-            <li key={i} className="flex items-center justify-between gap-3 py-2">
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="truncate font-medium">{prettyPath(s.path)}</span>
-                {s.checkout && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-                    <ShoppingCart className="h-3 w-3" /> Rekent af
+          {sessions.map((s, i) => {
+            // Mandje zonder afrekenpagina + al even op de pagina = mogelijk "aan
+            // het afhaken"; markeer dat zodat de owner het mandje opmerkt.
+            const dropping = !!s.cart && s.cart.count > 0 && !s.checkout;
+            return (
+              <li key={i} className="flex items-start justify-between gap-3 py-2">
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate font-medium">{prettyPath(s.path)}</span>
+                    {s.checkout && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                        <ShoppingCart className="h-3 w-3" /> Rekent af
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                {s.secondsAgo} sec geleden
-              </span>
-            </li>
-          ))}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{s.source || "Direct"}</span>
+                    </span>
+                    {s.cart && s.cart.count > 0 && (
+                      <span
+                        className={cn(
+                          "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                          dropping
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-secondary text-secondary-foreground",
+                        )}
+                      >
+                        <ShoppingCart className="h-3 w-3" /> {s.cart.count} in mandje ·{" "}
+                        {formatPrice(s.cart.value)}
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {s.secondsAgo} sec geleden
+                </span>
+              </li>
+            );
+          })}
           {sessions.length === 0 && (
             <li className="py-3 text-center text-muted-foreground">
               Op dit moment geen actieve bezoekers.
             </li>
           )}
         </ul>
+
+        {/* Herkomst vandaag: top-bronnen met aantallen uit de dagaggregatie. */}
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" /> Herkomst vandaag
+          </p>
+          {herkomst.length > 0 ? (
+            <ul className="space-y-1 text-sm">
+              {herkomst.map((h) => (
+                <li key={h.source} className="flex items-center justify-between gap-3">
+                  <span className="truncate">{h.source}</span>
+                  <span className="shrink-0 font-semibold tabular-nums">{h.count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">Nog geen herkomstdata vandaag.</p>
+          )}
+        </div>
+
         <p className="mt-3 text-xs text-muted-foreground">
-          Toont per actieve bezoeker de huidige pagina. Ververst elke 12s. Uitgesloten IP&apos;s
-          verschijnen hier niet.
+          Toont per actieve bezoeker de huidige pagina, herkomst en winkelmand. Ververst elke 12s.
+          Uitgesloten IP&apos;s verschijnen hier niet.
         </p>
       </CardContent>
     </Card>

@@ -73,13 +73,19 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
-/** Fallback wanneer de methodenroute onverhoopt niet bereikbaar is. */
-const FALLBACK_METHODS: PaymentMethodInfo[] = [
-  { id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` },
-  { id: "bancontact", label: "Bancontact", image: `${MOLLIE_ICON}/bancontact.svg` },
-  { id: "creditcard", label: "Creditcard", image: `${MOLLIE_ICON}/creditcard.svg` },
-  { id: "klarna", label: "Achteraf betalen met Klarna", image: `${MOLLIE_ICON}/klarna.svg` },
-];
+/** Fallback wanneer de methodenroute onbereikbaar is. Landbewust: BE → Bancontact,
+ *  anders iDEAL. Apple Pay & Google Pay altijd erbij. */
+function fallbackFor(country: string): PaymentMethodInfo[] {
+  const rest: PaymentMethodInfo[] = [
+    { id: "creditcard", label: "Creditcard", image: `${MOLLIE_ICON}/creditcard.svg` },
+    { id: "applepay", label: "Apple Pay", image: `${MOLLIE_ICON}/applepay.svg` },
+    { id: "googlepay", label: "Google Pay", image: `${MOLLIE_ICON}/googlepay.svg` },
+    { id: "klarna", label: "Achteraf betalen met Klarna", image: `${MOLLIE_ICON}/klarna.svg` },
+  ];
+  return country === "BE"
+    ? [{ id: "bancontact", label: "Bancontact", image: `${MOLLIE_ICON}/bancontact.svg` }, ...rest]
+    : [{ id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` }, ...rest];
+}
 
 export function CheckoutForm({
   mollieProfile,
@@ -115,29 +121,6 @@ export function CheckoutForm({
   const [loginError, setLoginError] = useState<string | null>(null);
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPw, setAccountPw] = useState("");
-
-  // Geactiveerde betaalmethoden (incl. officiële logo's + iDEAL-banken) ophalen.
-  useEffect(() => {
-    let active = true;
-    const total = cartSummary(items, mode, kluspasActive).grossTotal;
-    const qs = total > 0 ? `?amount=${total.toFixed(2)}` : "";
-    setMethodsLoading(true);
-    fetch(`/api/checkout/payment-methods${qs}`)
-      .then((r) => r.json())
-      .then((d: { methods?: PaymentMethodInfo[] }) => {
-        if (!active) return;
-        setMethods(d.methods?.length ? d.methods : FALLBACK_METHODS);
-        setMethodsLoading(false);
-      })
-      .catch(() => {
-        if (!active) return;
-        setMethods(FALLBACK_METHODS);
-        setMethodsLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [items, mode, kluspasActive]);
 
   // Billie is alleen zakelijk: deselecteer 'm als de klant naar particulier wisselt.
   useEffect(() => {
@@ -225,6 +208,35 @@ export function CheckoutForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedEmail, watchedFirstName, items, mode, kluspasActive]);
 
+  const country = watch("country") || "NL";
+
+  // Betaalmethoden ophalen — landafhankelijk (Mollie filtert per land, dus de
+  // Belgische methoden verschijnen alleen bij BE) en incl. Apple Pay / Google Pay.
+  // Herlaadt zodra het bedrag of het gekozen land wijzigt.
+  useEffect(() => {
+    let active = true;
+    const total = cartSummary(items, mode, kluspasActive).grossTotal;
+    const params = new URLSearchParams();
+    if (total > 0) params.set("amount", total.toFixed(2));
+    params.set("country", country);
+    setMethodsLoading(true);
+    fetch(`/api/checkout/payment-methods?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d: { methods?: PaymentMethodInfo[] }) => {
+        if (!active) return;
+        setMethods(d.methods?.length ? d.methods : fallbackFor(country));
+        setMethodsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setMethods(fallbackFor(country));
+        setMethodsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [items, mode, kluspasActive, country]);
+
   // Postcode + huisnummer → straat + plaats automatisch invullen (PDOK).
   async function lookupAddress() {
     const postcode = (getValues("postalCode") || "").replace(/\s/g, "").toUpperCase();
@@ -261,7 +273,6 @@ export function CheckoutForm({
     );
   }
 
-  const country = watch("country") || "NL";
   // Landafhankelijke verzendkosten (gratis alleen NL/BE); afhalen of nabestel-
   // venster = 0.
   const grossSubtotalForShipping = cartSummary(items, mode, kluspasActive).grossSubtotal;

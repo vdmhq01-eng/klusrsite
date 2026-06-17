@@ -9,10 +9,13 @@ export const dynamic = "force-dynamic";
  * iDEAL, de banklijst). Optioneel ?amount=12.34 om op bedrag te filteren.
  */
 export async function GET(req: Request) {
-  const amountParam = new URL(req.url).searchParams.get("amount");
+  const url = new URL(req.url);
+  const amountParam = url.searchParams.get("amount");
   const amount = amountParam ? Number(amountParam) : undefined;
+  const country = url.searchParams.get("country") || undefined;
   const result = await listPaymentMethods(
     Number.isFinite(amount) ? amount : undefined,
+    country,
   );
   return NextResponse.json(result);
 }
