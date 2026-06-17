@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ContactForm } from "@/components/support/contact-form";
+import { t } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "Klantenservice",
@@ -52,225 +53,204 @@ const euTiers = Array.from(
 ).sort((a, b) => a[0] - b[0]);
 const cheapestEu = euTiers[0]?.[0] ?? 0;
 
-const contactCards = [
-  {
-    icon: Phone,
-    title: "Bel ons",
-    description: "Ma t/m vr 09:00 - 18:00",
-    actionLabel: flagshipStore.phone,
-    href: `tel:${flagshipStore.phone.replace(/[\s-]/g, "")}`,
-  },
-  {
-    icon: Mail,
-    title: "Mail ons",
-    description: "Reactie binnen 1 werkdag",
-    actionLabel: "klantenservice@klus-r.nl",
-    href: "mailto:klantenservice@klus-r.nl",
-  },
-  {
-    icon: Store,
-    title: "Bezoek een winkel",
-    description: "Persoonlijk advies in de winkel",
-    actionLabel: "Bekijk winkels",
-    href: "/winkels",
-  },
-  {
-    icon: Sparkles,
-    title: "AI klushulp",
-    description: "Direct antwoord, dag en nacht",
-    actionLabel: "Stel je vraag",
-    href: "/klushulp",
-  },
-];
-
-const trustItems = [
-  { icon: Truck, label: "Voor 19:00 besteld, morgen in huis" },
-  { icon: RotateCcw, label: "14 dagen gratis retour" },
-  { icon: ShieldCheck, label: "Veilig betalen via Mollie" },
-  { icon: Sparkles, label: "Advies van ex-schilders" },
-  { icon: BadgeCheck, label: "Wettelijke garantie op alles" },
-];
-
-const shippingFaqs = [
-  {
-    question: "Wanneer wordt mijn bestelling bezorgd?",
-    answer:
-      "Bestel je op werkdagen vóór 19:00? Dan ligt je bestelling de volgende dag in huis. Je ontvangt een track & trace-code zodra je pakket onderweg is.",
-  },
-  {
-    question: "Wat kost de verzending?",
-    answer:
-      `In Nederland en België is verzending gratis vanaf ${formatPrice(nlShipping.freeOver!)}. ` +
-      `Daaronder betaal je ${formatPrice(nlShipping.price)} in Nederland en ${formatPrice(beShipping.price)} in België. ` +
-      `Kleine, platte artikelen sturen we als brievenbuspakje voor ${formatPrice(BRIEVENBUS_PRICE.NL)} (alleen NL). ` +
-      `Naar de overige EU-landen bezorgen we vanaf ${formatPrice(cheapestEu)}; daar geldt geen gratis verzending. ` +
-      "De exacte verzendkosten zie je altijd tijdens het afrekenen.",
-  },
-  {
-    question: "Leveren jullie ook naar het buitenland?",
-    answer:
-      `We bezorgen in de hele EU. Naar België is verzending gratis vanaf ${formatPrice(beShipping.freeOver!)}; naar de overige EU-landen geldt een vast tarief per land vanaf ${formatPrice(cheapestEu)}, dat je tijdens het afrekenen ziet. ` +
-      "Buiten de EU — waaronder Zwitserland en het Verenigd Koninkrijk — verzenden we niet, vanwege de douane.",
-  },
-  {
-    question: "Hoe retourneer ik een product?",
-    answer:
-      "Retourneren is gratis in al onze winkels — neem je product en je orderbevestiging mee. Liever per post? Meld je retour aan via je account en gebruik het retourlabel. Je hebt 14 dagen bedenktijd.",
-  },
-];
-
-const paymentFaqs = [
-  {
-    question: "Welke betaalmethodes accepteren jullie?",
-    answer:
-      "Je betaalt veilig met iDEAL, Bancontact, creditcard of achteraf via Klarna. Alle betalingen verlopen versleuteld via onze betaalpartner Mollie.",
-  },
-  {
-    question: "Kan ik achteraf betalen?",
-    answer:
-      "Ja, met Klarna betaal je veilig achteraf. Je rekent pas af nadat je je bestelling hebt ontvangen en gecontroleerd.",
-  },
-  {
-    question: "Is online betalen veilig?",
-    answer:
-      "Absoluut. Alle transacties lopen via Mollie, een gecertificeerde betaaldienst. Wij slaan zelf geen betaalgegevens op.",
-  },
-];
-
-const warrantyFaqs = [
-  {
-    question: "Welke garantie krijg ik op producten?",
-    answer:
-      "Op al onze producten geldt de wettelijke garantie. Daarnaast hanteren veel merken hun eigen fabrieksgarantie. Is er iets mis met je product? Neem contact op, dan zoeken we samen naar een oplossing.",
-  },
-  {
-    question: "Mijn product is beschadigd aangekomen, wat nu?",
-    answer:
-      "Vervelend! Neem binnen 48 uur contact op met onze klantenservice en stuur een foto mee. We sturen kosteloos een vervangend product of storten het bedrag terug.",
-  },
-  {
-    question: "Kan ik in de winkel terecht voor service?",
-    answer:
-      "Zeker. Onze ex-schilders helpen je graag verder met advies, reparaties of vragen over je aankoop. Loop gerust binnen in een van onze winkels.",
-  },
-];
-
-const mengverfFaqs = [
-  {
-    question: "Kan ik op kleur gemengde verf retourneren?",
-    answer:
-      "Op kleur gemengde verf mengen we speciaal voor jou op maat. Daarom is deze — net als andere op maat gemaakte producten — wettelijk uitgesloten van het herroepingsrecht en kunnen we mengverf niet terugnemen. Is er onverhoopt iets mis met de kleur of het product? Neem dan contact op, dan lossen we het samen kosteloos op.",
-  },
-  {
-    question: "Hoe nauwkeurig is de kleurmatch?",
-    answer:
-      "We mengen op basis van professionele kleurcodes (o.a. RAL, Gamma en AkzoNobel) voor een exacte match. Twijfel je over een kleur? Vraag in de winkel een proefstaal of bestel eerst een kleurtester voordat je de hele hoeveelheid laat mengen.",
-  },
-  {
-    question: "Hoeveel verf heb ik nodig?",
-    answer:
-      "Reken globaal op 1 liter per 8–10 m² per laag. Op de productpagina en via onze AI-klushulp rekenen we het exact voor je uit, zodat je niet te veel of te weinig bestelt.",
-  },
-  {
-    question: "Kan ik verf ook in de winkel laten mengen?",
-    answer:
-      "Zeker. Onze kleurspecialisten mengen je verf vakkundig terwijl je wacht. Kom langs in een KLUSR-winkel met je kleurkeuze, of kies je kleur alvast online.",
-  },
-];
-
-const kluspasFaqs = [
-  {
-    question: "Wat is de KLUSRPAS en wat kost het?",
-    answer:
-      "De KLUSRPAS is helemaal gratis en geeft je direct de scherpere KLUSRPAS-prijs op de hele collectie, plus exclusieve acties. Je activeert 'm bij het aanmaken van een account.",
-  },
-  {
-    question: "Ik bestel zakelijk — kan dat ook?",
-    answer:
-      "Ja. Voor zzp'ers, schilders en bedrijven hebben we de KLUSR ProfPas: 10% korting op de hele collectie en prijzen excl. btw, op factuur. Gratis registreren kan via de zakelijk-pagina.",
-  },
-  {
-    question: "Krijg ik een factuur met btw?",
-    answer:
-      "Ja, bij elke bestelling ontvang je een nette factuur met btw gespecificeerd. Zakelijke klanten zien de prijzen excl. btw en betalen op factuur.",
-  },
-];
-
-const generalFaqs = [
-  {
-    question: "Hoe plaats ik een bestelling?",
-    answer:
-      "Voeg producten toe aan je winkelmandje, ga naar de kassa en doorloop de stappen. Je hebt geen account nodig om te bestellen, maar met een account gaat het de volgende keer sneller.",
-  },
-  {
-    question: "Heb ik een account nodig?",
-    answer:
-      "Nee, je kunt als gast bestellen. Met een account bewaar je wel je gegevens, bestelhistorie en je KLUSRPAS-voordelen op één plek.",
-  },
-  {
-    question: "Kan ik verf op kleur laten mengen?",
-    answer:
-      "Ja! Wij mengen elke gewenste kleur op maat. Kies online je kleur of kom langs in de winkel, waar onze kleurspecialisten je verf vakkundig mengen terwijl je wacht.",
-  },
-];
-
-const faqGroups = [
-  {
-    id: "verzending",
-    title: "Verzending & retour",
-    icon: Truck,
-    intro:
-      `Gratis verzending vanaf ${formatPrice(nlShipping.freeOver!)} in NL en BE, voor 19:00 besteld is morgen in huis, en gratis retourneren in de winkel. Naar de rest van de EU vanaf ${formatPrice(cheapestEu)}.`,
-    faqs: shippingFaqs,
-  },
-  {
-    id: "betalen",
-    title: "Veilig betalen",
-    icon: CreditCard,
-    intro:
-      "Betaal eenvoudig en veilig met iDEAL, Bancontact, creditcard of achteraf met Klarna via Mollie.",
-    faqs: paymentFaqs,
-  },
-  {
-    id: "garantie",
-    title: "Garantie & service",
-    icon: ShieldCheck,
-    intro:
-      "Wettelijke garantie op alles, plus persoonlijke service van onze ex-schilders.",
-    faqs: warrantyFaqs,
-  },
-  {
-    id: "mengverf",
-    title: "Mengverf & kleuradvies",
-    icon: Palette,
-    intro:
-      "Elke kleur op maat gemengd met een exacte kleurmatch. Let op: op kleur gemengde verf is maatwerk en kan niet retour.",
-    faqs: mengverfFaqs,
-  },
-  {
-    id: "kluspas",
-    title: "KLUSRPAS & zakelijk",
-    icon: BadgeCheck,
-    intro:
-      "Gratis KLUSRPAS-voordeel voor particulieren, en de ProfPas met 10% korting (excl. btw) voor zakelijke klanten.",
-    faqs: kluspasFaqs,
-  },
-];
-
 export default function KlantenservicePage() {
+  // Prijzen blijven data-driven (formatPrice + shipping.ts); ze worden als
+  // interpolatie doorgegeven zodat de teksten vertaalbaar zijn maar de bedragen
+  // nooit uit de pas lopen met het afrekenen.
+  const nlFree = formatPrice(nlShipping.freeOver!);
+  const beFree = formatPrice(beShipping.freeOver!);
+  const nlPrice = formatPrice(nlShipping.price);
+  const bePrice = formatPrice(beShipping.price);
+  const mailbox = formatPrice(BRIEVENBUS_PRICE.NL);
+  const eu = formatPrice(cheapestEu);
+
+  const contactCards = [
+    {
+      icon: Phone,
+      title: t("service.contact.call.title"),
+      description: t("service.contact.call.description"),
+      actionLabel: flagshipStore.phone,
+      href: `tel:${flagshipStore.phone.replace(/[\s-]/g, "")}`,
+    },
+    {
+      icon: Mail,
+      title: t("service.contact.mail.title"),
+      description: t("service.contact.mail.description"),
+      actionLabel: "klantenservice@klus-r.nl",
+      href: "mailto:klantenservice@klus-r.nl",
+    },
+    {
+      icon: Store,
+      title: t("service.contact.store.title"),
+      description: t("service.contact.store.description"),
+      actionLabel: t("service.contact.store.action"),
+      href: "/winkels",
+    },
+    {
+      icon: Sparkles,
+      title: t("service.contact.ai.title"),
+      description: t("service.contact.ai.description"),
+      actionLabel: t("service.contact.ai.action"),
+      href: "/klushulp",
+    },
+  ];
+
+  const trustItems = [
+    { icon: Truck, label: t("service.trust.delivery") },
+    { icon: RotateCcw, label: t("service.trust.returns") },
+    { icon: ShieldCheck, label: t("service.trust.payment") },
+    { icon: Sparkles, label: t("service.trust.advice") },
+    { icon: BadgeCheck, label: t("service.trust.warranty") },
+  ];
+
+  const shippingFaqs = [
+    {
+      question: t("service.faq.shipping.when.q"),
+      answer: t("service.faq.shipping.when.a"),
+    },
+    {
+      question: t("service.faq.shipping.cost.q"),
+      answer: t("service.faq.shipping.cost.a", { nlFree, nlPrice, bePrice, mailbox, eu }),
+    },
+    {
+      question: t("service.faq.shipping.abroad.q"),
+      answer: t("service.faq.shipping.abroad.a", { beFree, eu }),
+    },
+    {
+      question: t("service.faq.shipping.return.q"),
+      answer: t("service.faq.shipping.return.a"),
+    },
+  ];
+
+  const paymentFaqs = [
+    {
+      question: t("service.faq.payment.methods.q"),
+      answer: t("service.faq.payment.methods.a"),
+    },
+    {
+      question: t("service.faq.payment.afterwards.q"),
+      answer: t("service.faq.payment.afterwards.a"),
+    },
+    {
+      question: t("service.faq.payment.safe.q"),
+      answer: t("service.faq.payment.safe.a"),
+    },
+  ];
+
+  const warrantyFaqs = [
+    {
+      question: t("service.faq.warranty.products.q"),
+      answer: t("service.faq.warranty.products.a"),
+    },
+    {
+      question: t("service.faq.warranty.damaged.q"),
+      answer: t("service.faq.warranty.damaged.a"),
+    },
+    {
+      question: t("service.faq.warranty.store.q"),
+      answer: t("service.faq.warranty.store.a"),
+    },
+  ];
+
+  const mengverfFaqs = [
+    {
+      question: t("service.faq.mengverf.return.q"),
+      answer: t("service.faq.mengverf.return.a"),
+    },
+    {
+      question: t("service.faq.mengverf.match.q"),
+      answer: t("service.faq.mengverf.match.a"),
+    },
+    {
+      question: t("service.faq.mengverf.amount.q"),
+      answer: t("service.faq.mengverf.amount.a"),
+    },
+    {
+      question: t("service.faq.mengverf.instore.q"),
+      answer: t("service.faq.mengverf.instore.a"),
+    },
+  ];
+
+  const kluspasFaqs = [
+    {
+      question: t("service.faq.kluspas.what.q"),
+      answer: t("service.faq.kluspas.what.a"),
+    },
+    {
+      question: t("service.faq.kluspas.business.q"),
+      answer: t("service.faq.kluspas.business.a"),
+    },
+    {
+      question: t("service.faq.kluspas.invoice.q"),
+      answer: t("service.faq.kluspas.invoice.a"),
+    },
+  ];
+
+  const generalFaqs = [
+    {
+      question: t("service.faq.general.order.q"),
+      answer: t("service.faq.general.order.a"),
+    },
+    {
+      question: t("service.faq.general.account.q"),
+      answer: t("service.faq.general.account.a"),
+    },
+    {
+      question: t("service.faq.general.mix.q"),
+      answer: t("service.faq.general.mix.a"),
+    },
+  ];
+
+  const faqGroups = [
+    {
+      id: "verzending",
+      title: t("service.group.shipping.title"),
+      icon: Truck,
+      intro: t("service.group.shipping.intro", { free: nlFree, eu }),
+      faqs: shippingFaqs,
+    },
+    {
+      id: "betalen",
+      title: t("service.group.payment.title"),
+      icon: CreditCard,
+      intro: t("service.group.payment.intro"),
+      faqs: paymentFaqs,
+    },
+    {
+      id: "garantie",
+      title: t("service.group.warranty.title"),
+      icon: ShieldCheck,
+      intro: t("service.group.warranty.intro"),
+      faqs: warrantyFaqs,
+    },
+    {
+      id: "mengverf",
+      title: t("service.group.mengverf.title"),
+      icon: Palette,
+      intro: t("service.group.mengverf.intro"),
+      faqs: mengverfFaqs,
+    },
+    {
+      id: "kluspas",
+      title: t("service.group.kluspas.title"),
+      icon: BadgeCheck,
+      intro: t("service.group.kluspas.intro"),
+      faqs: kluspasFaqs,
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-12 py-8 sm:gap-16">
       {/* Hero */}
       <section className="container-klusr">
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
-          Klantenservice
+          {t("service.hero.kicker")}
         </p>
         <h1 className="mt-2 max-w-3xl text-3xl font-black tracking-tight text-balance sm:text-4xl lg:text-5xl">
-          Waarmee kunnen we je helpen?
+          {t("service.hero.title")}
         </h1>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Vind hieronder snel antwoord op de meestgestelde vragen, of neem
-          direct contact met ons op. Onze klussers staan voor je klaar.
+          {t("service.hero.subtitle")}
         </p>
       </section>
 
@@ -320,12 +300,10 @@ export default function KlantenservicePage() {
           </span>
           <div>
             <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
-              Verzendkosten
+              {t("service.shipping.title")}
             </h2>
             <p className="mt-1 max-w-2xl text-muted-foreground">
-              Gratis verzending vanaf {formatPrice(nlShipping.freeOver!)} in
-              Nederland en België. Voor 19:00 besteld op werkdagen? Dan ligt je
-              pakket de volgende dag in huis.
+              {t("service.shipping.subtitle", { amount: nlFree })}
             </p>
           </div>
         </div>
@@ -334,21 +312,21 @@ export default function KlantenservicePage() {
           <table className="w-full text-sm">
             <tbody className="divide-y divide-border">
               <tr>
-                <td className="px-4 py-3 font-medium">Nederland</td>
+                <td className="px-4 py-3 font-medium">{t("service.shipping.rowNl")}</td>
                 <td className="px-4 py-3 text-right">
                   <span className="font-semibold">{formatPrice(nlShipping.price)}</span>
                   <span className="text-muted-foreground">
-                    {" "}· gratis vanaf {formatPrice(nlShipping.freeOver!)}
+                    {" "}{t("service.shipping.freeFrom", { amount: nlFree })}
                   </span>
                 </td>
               </tr>
               <tr className="bg-secondary/40">
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1.5 font-medium">
-                    <Mailbox className="h-4 w-4 text-primary" /> Brievenbuspakje (NL)
+                    <Mailbox className="h-4 w-4 text-primary" /> {t("service.shipping.mailbox")}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    Kleine, platte artikelen die door de brievenbus passen
+                    {t("service.shipping.mailboxHint")}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right font-semibold">
@@ -356,11 +334,11 @@ export default function KlantenservicePage() {
                 </td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-medium">België</td>
+                <td className="px-4 py-3 font-medium">{t("service.shipping.rowBe")}</td>
                 <td className="px-4 py-3 text-right">
                   <span className="font-semibold">{formatPrice(beShipping.price)}</span>
                   <span className="text-muted-foreground">
-                    {" "}· gratis vanaf {formatPrice(beShipping.freeOver!)}
+                    {" "}{t("service.shipping.freeFrom", { amount: beFree })}
                   </span>
                 </td>
               </tr>
@@ -377,9 +355,7 @@ export default function KlantenservicePage() {
         <p className="mt-3 flex max-w-3xl items-start gap-2 text-sm text-muted-foreground">
           <Globe className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <span>
-            We leveren binnen de hele EU. Buiten Nederland en België is er geen
-            gratis verzending. Buiten de EU — waaronder Zwitserland en het
-            Verenigd Koninkrijk — verzenden we niet, vanwege de douane.
+            {t("service.shipping.outsideNote")}
           </span>
         </p>
       </section>
@@ -420,7 +396,7 @@ export default function KlantenservicePage() {
       {/* General FAQ */}
       <section className="container-klusr">
         <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
-          Bestellen & account
+          {t("service.general.title")}
         </h2>
         <div className="mt-4 max-w-3xl">
           <Accordion type="single" collapsible>
@@ -438,13 +414,10 @@ export default function KlantenservicePage() {
       <section className="container-klusr">
         <div className="rounded-2xl bg-klusr-black p-6 text-white sm:p-10">
           <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
-            Niet goed? Geld terug.
+            {t("service.guarantee.title")}
           </h2>
           <p className="mt-2 max-w-2xl text-white/80">
-            We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd,
-            gratis retour (ook in de winkel) en wettelijke garantie op alles. Op kleur gemengde
-            verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het
-            altijd kosteloos op.
+            {t("service.guarantee.text")}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Button
@@ -453,7 +426,7 @@ export default function KlantenservicePage() {
               variant="outline"
               className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
             >
-              <Link href="/retourvoorwaarden">Lees de retourvoorwaarden</Link>
+              <Link href="/retourvoorwaarden">{t("service.guarantee.cta")}</Link>
             </Button>
           </div>
         </div>
@@ -464,25 +437,24 @@ export default function KlantenservicePage() {
         <div className="grid gap-6 rounded-2xl border border-border bg-card p-6 shadow-card sm:p-10 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
-              Staat je vraag er niet bij?
+              {t("service.contactBlock.title")}
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Stuur ons een bericht. Je ontvangt direct een ticketnummer en een
-              bevestiging per e-mail — we reageren meestal binnen 1 werkdag.
+              {t("service.contactBlock.text")}
             </p>
             <div className="mt-5">
               <ContactForm />
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Liever meteen antwoord?{" "}
+              {t("service.contactBlock.preferPre")}
               <Link
                 href="/klushulp"
                 className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
               >
                 <MessageCircle className="h-4 w-4" />
-                Vraag de AI klushulp
-              </Link>{" "}
-              — 24/7 beschikbaar.
+                {t("service.contactBlock.preferLink")}
+              </Link>
+              {t("service.contactBlock.preferPost")}
             </p>
           </div>
 
@@ -516,7 +488,7 @@ export default function KlantenservicePage() {
               href="/winkels/nijverdal"
               className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
             >
-              Bekijk winkelpagina
+              {t("service.contactBlock.viewStorePage")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

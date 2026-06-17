@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { t } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "Veelgestelde vragen | KLUSR",
@@ -24,121 +25,130 @@ interface QA {
   text: string;
 }
 
-const GROUPS: { title: string; items: QA[] }[] = [
-  {
-    title: "Bestellen & betalen",
-    items: [
-      {
-        q: "Hoe plaats ik een bestelling?",
-        a: "Voeg producten toe aan je winkelwagen en reken veilig af. Voor verf kies je eerst je kleur — die mengen wij exact voor je.",
-        text: "Voeg producten toe aan je winkelwagen en reken veilig af. Voor verf kies je eerst je kleur — die mengen wij exact voor je.",
-      },
-      {
-        q: "Welke betaalmethoden accepteren jullie?",
-        a: "Je betaalt veilig via Mollie met onder andere iDEAL, creditcard en — waar beschikbaar — achteraf betalen.",
-        text: "Je betaalt veilig via Mollie met onder andere iDEAL, creditcard en — waar beschikbaar — achteraf betalen.",
-      },
-      {
-        q: "Heb ik een account nodig?",
-        a: "Nee, je kunt als gast bestellen. Met een (gratis) account en KLUSRPAS profiteer je wel van extra voordeel en bewaar je je bestellingen en kleuren.",
-        text: "Nee, je kunt als gast bestellen. Met een gratis account en KLUSRPAS profiteer je van extra voordeel en bewaar je je bestellingen en kleuren.",
-      },
-    ],
-  },
-  {
-    title: "Levering & retour",
-    items: [
-      {
-        q: "Wanneer is mijn bestelling in huis?",
-        a: "Voor 19:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
-        text: "Voor 19:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
-      },
-      {
-        q: "Kan ik in de winkel afhalen?",
-        a: (
-          <>
-            Ja, afhalen in een KLUSR-winkel is gratis. Bekijk onze{" "}
-            <Link href="/winkels">winkels</Link>.
-          </>
-        ),
-        text: "Ja, afhalen in een KLUSR-winkel is gratis.",
-      },
-      {
-        q: "Hoe retourneer ik een product?",
-        a: (
-          <>
-            Je hebt 14 dagen bedenktijd. Meld je retour bij onze{" "}
-            <Link href="/klantenservice">klantenservice</Link>. Let op: op kleur gemengde verf is
-            uitgesloten van retour (zie <Link href="/voorwaarden">voorwaarden</Link>).
-          </>
-        ),
-        text: "Je hebt 14 dagen bedenktijd. Meld je retour bij onze klantenservice. Op kleur gemengde verf is uitgesloten van retour.",
-      },
-    ],
-  },
-  {
-    title: "Mengverf & kleur",
-    items: [
-      {
-        q: "Kan ik elke kleur laten mengen?",
-        a: (
-          <>
-            Ja. Kies uit duizenden kleuren (Gamma, Sikkens, RAL, AkzoNobel) of je eigen tint in
-            onze <Link href="/kleurkiezer">kleurkiezer</Link>. Wij mengen de verf exact op kleur.
-          </>
-        ),
-        text: "Ja. Kies uit duizenden kleuren (Gamma, Sikkens, RAL, AkzoNobel) of je eigen tint in onze kleurkiezer. Wij mengen de verf exact op kleur.",
-      },
-      {
-        q: "Hoe werkt mengverf precies?",
-        a: (
-          <>
-            Je kiest een kleur, wij mengen die professioneel in de juiste basis. Meer lees je op{" "}
-            <Link href="/mengverf">de mengverf-pagina</Link>.
-          </>
-        ),
-        text: "Je kiest een kleur, wij mengen die professioneel in de juiste basis. Meer lees je op de mengverf-pagina.",
-      },
-      {
-        q: "Kan ik gemengde verf ruilen?",
-        a: "Op kleur gemengde verf maken we speciaal voor jou en is daarom uitgesloten van het herroepingsrecht, tenzij er sprake is van een gebrek.",
-        text: "Op kleur gemengde verf maken we speciaal voor jou en is daarom uitgesloten van het herroepingsrecht, tenzij er sprake is van een gebrek.",
-      },
-    ],
-  },
-  {
-    title: "KLUSRPAS",
-    items: [
-      {
-        q: "Wat is de KLUSRPAS?",
-        a: (
-          <>
-            De gratis KLUSRPAS geeft je altijd de scherpste prijs en exclusieve acties. Lees er
-            alles over op de <Link href="/kluspas">KLUSRPAS-pagina</Link>.
-          </>
-        ),
-        text: "De gratis KLUSRPAS geeft je altijd de scherpste prijs en exclusieve acties.",
-      },
-      {
-        q: "Wat kost de KLUSRPAS?",
-        a: "Niets — de KLUSRPAS is gratis aan te vragen en te gebruiken.",
-        text: "Niets — de KLUSRPAS is gratis aan te vragen en te gebruiken.",
-      },
-    ],
-  },
-];
-
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: GROUPS.flatMap((g) => g.items).map((it) => ({
-    "@type": "Question",
-    name: it.q,
-    acceptedAnswer: { "@type": "Answer", text: it.text },
-  })),
-};
-
 export default function FaqPage() {
+  // Per-request opgebouwd zodat de teksten de actieve locale volgen. Antwoorden
+  // met een link splitsen we in tekstfragmenten rond de <Link>; `text` blijft de
+  // platte variant voor de structured data.
+  const GROUPS: { title: string; items: QA[] }[] = [
+    {
+      title: t("faq.group.ordering"),
+      items: [
+        {
+          q: t("faq.order.how.q"),
+          a: t("faq.order.how.a"),
+          text: t("faq.order.how.a"),
+        },
+        {
+          q: t("faq.order.payment.q"),
+          a: t("faq.order.payment.a"),
+          text: t("faq.order.payment.a"),
+        },
+        {
+          q: t("faq.order.account.q"),
+          a: t("faq.order.account.a"),
+          text: t("faq.order.account.text"),
+        },
+      ],
+    },
+    {
+      title: t("faq.group.delivery"),
+      items: [
+        {
+          q: t("faq.delivery.when.q"),
+          a: t("faq.delivery.when.a"),
+          text: t("faq.delivery.when.a"),
+        },
+        {
+          q: t("faq.delivery.pickup.q"),
+          a: (
+            <>
+              {t("faq.delivery.pickup.aPre")}
+              <Link href="/winkels">{t("faq.delivery.pickup.aLink")}</Link>
+              {t("faq.delivery.pickup.aPost")}
+            </>
+          ),
+          text: t("faq.delivery.pickup.text"),
+        },
+        {
+          q: t("faq.delivery.return.q"),
+          a: (
+            <>
+              {t("faq.delivery.return.aPre")}
+              <Link href="/klantenservice">{t("faq.delivery.return.aLink")}</Link>
+              {t("faq.delivery.return.aMid")}
+              <Link href="/voorwaarden">{t("faq.delivery.return.aTermsLink")}</Link>
+              {t("faq.delivery.return.aPost")}
+            </>
+          ),
+          text: t("faq.delivery.return.text"),
+        },
+      ],
+    },
+    {
+      title: t("faq.group.mengverf"),
+      items: [
+        {
+          q: t("faq.mengverf.any.q"),
+          a: (
+            <>
+              {t("faq.mengverf.any.aPre")}
+              <Link href="/kleurkiezer">{t("faq.mengverf.any.aLink")}</Link>
+              {t("faq.mengverf.any.aPost")}
+            </>
+          ),
+          text: t("faq.mengverf.any.text"),
+        },
+        {
+          q: t("faq.mengverf.how.q"),
+          a: (
+            <>
+              {t("faq.mengverf.how.aPre")}
+              <Link href="/mengverf">{t("faq.mengverf.how.aLink")}</Link>
+              {t("faq.mengverf.how.aPost")}
+            </>
+          ),
+          text: t("faq.mengverf.how.text"),
+        },
+        {
+          q: t("faq.mengverf.exchange.q"),
+          a: t("faq.mengverf.exchange.a"),
+          text: t("faq.mengverf.exchange.a"),
+        },
+      ],
+    },
+    {
+      title: t("faq.group.kluspas"),
+      items: [
+        {
+          q: t("faq.kluspas.what.q"),
+          a: (
+            <>
+              {t("faq.kluspas.what.aPre")}
+              <Link href="/kluspas">{t("faq.kluspas.what.aLink")}</Link>
+              {t("faq.kluspas.what.aPost")}
+            </>
+          ),
+          text: t("faq.kluspas.what.text"),
+        },
+        {
+          q: t("faq.kluspas.cost.q"),
+          a: t("faq.kluspas.cost.a"),
+          text: t("faq.kluspas.cost.a"),
+        },
+      ],
+    },
+  ];
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: GROUPS.flatMap((g) => g.items).map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: { "@type": "Answer", text: it.text },
+    })),
+  };
+
   return (
     <div className="pb-16">
       <script
@@ -147,19 +157,19 @@ export default function FaqPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <div className="container-klusr">
-        <Breadcrumb items={[{ label: "Veelgestelde vragen" }]} />
+        <Breadcrumb items={[{ label: t("faq.meta.breadcrumb") }]} />
       </div>
 
       <section className="container-klusr mt-6 max-w-3xl">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">
           <HelpCircle className="h-3.5 w-3.5" />
-          Hulp & uitleg
+          {t("faq.badge")}
         </span>
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Veelgestelde vragen
+          {t("faq.title")}
         </h1>
         <p className="mt-3 text-base text-muted-foreground">
-          Niet gevonden wat je zoekt? Onze klantenservice helpt je graag verder.
+          {t("faq.subtitle")}
         </p>
 
         <div className="mt-8 space-y-8">
@@ -184,13 +194,13 @@ export default function FaqPage() {
 
         <div className="mt-10 flex flex-col items-start gap-3 rounded-2xl border border-border bg-secondary/40 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold">Nog een vraag?</h2>
+            <h2 className="text-lg font-bold">{t("faq.more.title")}</h2>
             <p className="text-sm text-muted-foreground">
-              We helpen je graag persoonlijk verder.
+              {t("faq.more.text")}
             </p>
           </div>
           <Button asChild size="lg">
-            <Link href="/klantenservice">Naar klantenservice</Link>
+            <Link href="/klantenservice">{t("faq.more.cta")}</Link>
           </Button>
         </div>
       </section>
