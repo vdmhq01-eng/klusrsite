@@ -10,9 +10,11 @@ import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { useBumpOnIncrease } from "@/lib/hooks/use-bump";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const t = useT();
   const items = useCart((s) => s.items);
   const favIds = useFavorites((s) => s.ids);
   const openCart = useUI((s) => s.openCart);
@@ -69,7 +71,7 @@ export function MobileBottomNav() {
                 </span>
               )}
             </span>
-            Winkelwagen
+            {t("nav.cart")}
           </button>
         </li>
       </ul>

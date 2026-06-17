@@ -1,14 +1,15 @@
 import { Hammer, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { PricingModeSwitch } from "./pricing-mode-switch";
-
-const usps = [
-  { icon: Sparkles, label: "Advies van ex-schilders" },
-  { icon: ShieldCheck, label: "Professionele kwaliteit" },
-  { icon: Hammer, label: "Alles voor jouw klus" },
-  { icon: Truck, label: "Voor 19:00 besteld, morgen in huis" },
-];
+import { t } from "@/lib/i18n/server";
 
 export function TopBar() {
+  const usps = [
+    { icon: Sparkles, label: t("usp.advice") },
+    { icon: ShieldCheck, label: t("usp.quality") },
+    { icon: Hammer, label: t("usp.everything") },
+    { icon: Truck, label: t("usp.delivery") },
+  ];
+
   return (
     <div className="bg-klusr-black text-white">
       <div className="container-klusr">
