@@ -163,7 +163,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
             <p className="mt-4 text-lg text-muted-foreground">{post.excerpt}</p>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span>Klus-AI redactie</span>
+            <span>KLUSR redactie</span>
             <span aria-hidden>·</span>
             <time dateTime={post.date}>{formatDate(post.date)}</time>
             <span className="inline-flex items-center gap-1.5">
@@ -203,7 +203,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
                 href="/klushulp"
                 className="group flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
               >
-                Vraag de Klus-AI om advies
+                Vraag onze klushulp om advies
                 <ArrowRight className="h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </li>
@@ -253,7 +253,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
                 Zelf aan de slag met jouw klus?
               </h2>
               <p className="mt-2 text-white/70">
-                Beschrijf je klus en de Klus-AI stelt direct het juiste
+                Beschrijf je klus en onze klushulp stelt direct het juiste
                 stappenplan en de juiste producten voor.
               </p>
             </div>

@@ -76,7 +76,7 @@ export function AiFinder({
         Niet zeker wat je nodig hebt?
       </p>
       <p className="mt-0.5 text-sm text-muted-foreground">
-        Vertel kort je klus — onze AI filtert meteen de juiste producten.
+        Vertel kort je klus, dan zoeken we meteen de juiste producten voor je.
       </p>
 
       <form
