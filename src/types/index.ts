@@ -191,6 +191,8 @@ export interface OrderCustomer {
   street: string;
   postalCode: string;
   city: string;
+  /** ISO-landcode (NL, BE, …). Standaard NL. */
+  country?: string;
   phone?: string;
   /** Zakelijke gegevens (alleen bij zakelijke bestellingen). */
   company?: string;

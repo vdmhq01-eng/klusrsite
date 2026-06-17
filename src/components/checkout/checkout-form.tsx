@@ -32,6 +32,7 @@ import {
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
+import { SHIPPING_COUNTRIES, shippingForCountry } from "@/lib/shipping";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
@@ -40,11 +41,12 @@ const schema = z.object({
   email: z.string().email("Vul een geldig e-mailadres in"),
   firstName: z.string().min(1, "Verplicht"),
   lastName: z.string().min(1, "Verplicht"),
-  postalCode: z.string().regex(/^\d{4}\s?[A-Za-z]{2}$/, "Bijv. 7443 BR"),
+  postalCode: z.string().min(3, "Vul je postcode in"),
   houseNumber: z.string().min(1, "Verplicht"),
   houseNumberAddition: z.string().optional(),
   street: z.string().min(2, "Vul je straatnaam in"),
   city: z.string().min(1, "Verplicht"),
+  country: z.string().min(2).default("NL"),
   phone: z.string().optional(),
   // Zakelijk (optioneel; alleen getoond/relevant in zakelijke modus).
   companyName: z.string().optional(),
@@ -60,6 +62,11 @@ const schema = z.object({
     message: "Ga akkoord met de algemene voorwaarden om te bestellen.",
   }),
   newsletter: z.boolean().optional(),
+}).superRefine((val, ctx) => {
+  // Nederlandse postcode strikt valideren (1234 AB); buitenland soepeler.
+  if (val.country === "NL" && !/^\d{4}\s?[A-Za-z]{2}$/.test(val.postalCode)) {
+    ctx.addIssue({ path: ["postalCode"], code: z.ZodIssueCode.custom, message: "Bijv. 7443 BR" });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -151,7 +158,7 @@ export function CheckoutForm({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { terms: false, newsletter: false },
+    defaultValues: { terms: false, newsletter: false, country: "NL" },
   });
 
   // Vul contactgegevens voor zodra de klant is ingelogd (inline of al ingelogd).
@@ -253,12 +260,15 @@ export function CheckoutForm({
     );
   }
 
-  const summary = cartSummary(
-    items,
-    mode,
-    kluspasActive,
-    shippingMethod === "pickup" || reorderFree ? 0 : undefined,
-  );
+  const country = watch("country") || "NL";
+  // Landafhankelijke verzendkosten (gratis alleen NL/BE); afhalen of nabestel-
+  // venster = 0.
+  const grossSubtotalForShipping = cartSummary(items, mode, kluspasActive).grossSubtotal;
+  const shippingOverride =
+    shippingMethod === "pickup" || reorderFree
+      ? 0
+      : shippingForCountry(grossSubtotalForShipping, country);
+  const summary = cartSummary(items, mode, kluspasActive, shippingOverride);
 
   // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
   const billieSurcharge =
@@ -336,6 +346,7 @@ export function CheckoutForm({
       street,
       postalCode: values.postalCode,
       city: values.city,
+      country: values.country,
       phone: values.phone,
       ...(mode === "zakelijk" && values.companyName?.trim()
         ? {
@@ -564,6 +575,23 @@ export function CheckoutForm({
           </Section>
 
           <Section title="Bezorgadres" step={2}>
+            <Field label="Land">
+              <select
+                {...register("country")}
+                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {SHIPPING_COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {country !== "NL" && country !== "BE" && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Buiten NL en BE gelden vaste verzendkosten (geen gratis verzending).
+                </p>
+              )}
+            </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Voornaam" error={errors.firstName?.message}>
                 <Input {...register("firstName")} />

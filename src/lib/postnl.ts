@@ -129,7 +129,7 @@ export async function createLabel(order: Order): Promise<LabelResult> {
               ...(houseNrExt ? { HouseNrExt: houseNrExt } : {}),
               Zipcode: c.postalCode.replace(/\s/g, "").toUpperCase(),
               City: c.city,
-              Countrycode: "NL",
+              Countrycode: (c.country || "NL").toUpperCase().slice(0, 2),
             },
             {
               AddressType: "02",

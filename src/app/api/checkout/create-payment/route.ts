@@ -37,6 +37,7 @@ const bodySchema = z.object({
     street: z.string().min(1),
     postalCode: z.string().min(1),
     city: z.string().min(1),
+    country: z.string().optional(),
     phone: z.string().optional(),
     company: z.string().optional(),
     cocNumber: z.string().optional(),
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
       streetAndNumber: bill?.street || data.customer.street,
       postalCode: bill?.postalCode || data.customer.postalCode,
       city: bill?.city || data.customer.city,
-      country: "NL",
+      country: (data.customer.country || "NL").toUpperCase().slice(0, 2),
     };
 
     // Order-regels voor pay-later (Klarna): moeten exact optellen tot het totaal.
