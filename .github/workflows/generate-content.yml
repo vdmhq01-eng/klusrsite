@@ -1,0 +1,84 @@
+name: Genereer content (SEO/FAQ)
+
+# Bulk-generatie van SEO- en FAQ-content (en optioneel beschrijving/specs) voor
+# de hele productcatalogus met Claude (Sonnet 4.6) — als achtergrond-job, zodat
+# de admin GÉÉN browsertabblad open hoeft te houden. Draai 'm via tabblad
+# "Actions" → "Genereer content (SEO/FAQ)" → "Run workflow".
+#
+# LET OP: deze job schrijft DIRECT naar de live KV-store. De gegenereerde tekst
+# staat dus meteen online — net als de admin-knop "Bulk: SEO + FAQ (publiceert
+# direct)". Er komt geen tussenstap of goedkeuring. Gebruik het zoekwoord
+# only_missing=true (standaard) om bestaande content niet te overschrijven.
+#
+# Eénmalig instellen: Settings → Secrets and variables → Actions → New
+# repository secret. Benodigde secrets:
+#   ANTHROPIC_API_KEY  — je Claude-API-key (verplicht).
+#   KV_REST_API_URL    — de Upstash/Vercel KV REST-URL (verplicht).
+#   KV_REST_API_TOKEN  — het bijbehorende REST-token (verplicht).
+# De UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN-varianten werken ook
+# (zelfde fallback als src/lib/store/kv.ts).
+#
+# Resumable: only_missing slaat (product,type)-combinaties over die al in KV
+# staan, dus een herhaalde run vult alleen aan en herstelt mislukte items.
+
+on:
+  workflow_dispatch:
+    inputs:
+      types:
+        description: "Content-types (kommagescheiden: seo,faqs,description,specifications)"
+        required: false
+        default: "seo,faqs"
+      limit:
+        description: "Aantal producten (leeg = alles; zet bv. 20 voor een goedkope testrun)"
+        required: false
+        default: ""
+      only_missing:
+        description: "Bestaande content overslaan (true/false)"
+        required: false
+        default: "true"
+      dry_run:
+        description: "Alleen tonen wat er zou gebeuren, niets schrijven (true/false)"
+        required: false
+        default: "false"
+
+concurrency:
+  group: generate-content
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Genereer de content
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
+          KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          TYPES: ${{ github.event.inputs.types }}
+          LIMIT: ${{ github.event.inputs.limit }}
+          ONLY_MISSING: ${{ github.event.inputs.only_missing }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          if [ "${DRY_RUN}" != "true" ]; then
+            if [ -z "$ANTHROPIC_API_KEY" ]; then
+              echo "::error::ANTHROPIC_API_KEY-secret ontbreekt. Voeg 'm toe via Settings → Secrets and variables → Actions."
+              exit 1
+            fi
+            if { [ -z "$KV_REST_API_URL" ] || [ -z "$KV_REST_API_TOKEN" ]; } \
+               && { [ -z "$UPSTASH_REDIS_REST_URL" ] || [ -z "$UPSTASH_REDIS_REST_TOKEN" ]; }; then
+              echo "::error::KV-secrets ontbreken (KV_REST_API_URL + KV_REST_API_TOKEN, of de UPSTASH_REDIS_REST_*-varianten). Voeg ze toe via Settings → Secrets and variables → Actions — zonder KV kan de content niet gepubliceerd worden."
+              exit 1
+            fi
+          fi
+          node scripts/generate-content.mjs
