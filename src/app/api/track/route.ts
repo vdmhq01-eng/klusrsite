@@ -41,13 +41,14 @@ export async function POST(req: Request) {
   const path = body.path ? String(body.path).slice(0, 200) : undefined;
 
   if (type === "pageview" || type === "view") {
-    await recordVisit({ visitorId, path, logType: "pageview" });
+    await recordVisit({ visitorId, path, ip, logType: "pageview" });
   } else if (type === "heartbeat") {
-    await recordVisit({ visitorId, path, logType: null });
+    await recordVisit({ visitorId, path, ip, logType: null });
   } else if (type === "view_item") {
     await recordVisit({
       visitorId,
       path,
+      ip,
       productId: body.productId ? String(body.productId).slice(0, 64) : undefined,
       title: body.title ? String(body.title).slice(0, 160) : undefined,
       logType: "view_item",
