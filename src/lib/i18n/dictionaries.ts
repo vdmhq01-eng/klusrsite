@@ -63,6 +63,8 @@ export type Messages = {
   "footer.bottom.cookies": string;
   "footer.bottom.accessibility": string;
   "footer.bottom.securePaymentVia": string;
+  "footer.trust.payTitle": string;
+  "footer.trust.shipTitle": string;
 
   // Taalschakelaar & voorstel-banner
   "lang.label": string;
@@ -719,6 +721,8 @@ const nl: Messages = {
   "footer.bottom.cookies": "Cookiebeleid",
   "footer.bottom.accessibility": "Toegankelijkheid",
   "footer.bottom.securePaymentVia": "Veilig betalen via",
+  "footer.trust.payTitle": "Veilig betalen",
+  "footer.trust.shipTitle": "Verzonden met",
 
   "lang.label": "Taal",
   "lang.continueIn": "Verdergaan in het {language}?",
@@ -1371,6 +1375,8 @@ const en: Messages = {
   "footer.bottom.cookies": "Cookie policy",
   "footer.bottom.accessibility": "Accessibility",
   "footer.bottom.securePaymentVia": "Secure payment via",
+  "footer.trust.payTitle": "Secure payment",
+  "footer.trust.shipTitle": "Shipped with",
 
   "lang.label": "Language",
   "lang.continueIn": "Continue in {language}?",
@@ -2023,6 +2029,8 @@ const fr: Messages = {
   "footer.bottom.cookies": "Politique en matière de cookies",
   "footer.bottom.accessibility": "Accessibilité",
   "footer.bottom.securePaymentVia": "Paiement sécurisé via",
+  "footer.trust.payTitle": "Paiement sécurisé",
+  "footer.trust.shipTitle": "Expédié avec",
 
   "lang.label": "Langue",
   "lang.continueIn": "Continuer en {language} ?",
@@ -2675,6 +2683,8 @@ const de: Messages = {
   "footer.bottom.cookies": "Cookie-Richtlinie",
   "footer.bottom.accessibility": "Barrierefreiheit",
   "footer.bottom.securePaymentVia": "Sicher bezahlen über",
+  "footer.trust.payTitle": "Sichere Zahlung",
+  "footer.trust.shipTitle": "Versand mit",
 
   "lang.label": "Sprache",
   "lang.continueIn": "Auf {language} ansehen?",
