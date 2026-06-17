@@ -49,8 +49,6 @@ const DEMO = {
   city: "",
   memberNumber: "KP 4815 2042",
   memberSince: "2025",
-  spaartegoed: 12.5,
-  jaarvoordeel: 87.4,
 };
 
 export function AccountDashboard({
@@ -86,6 +84,16 @@ export function AccountDashboard({
   const lastColor = data?.lastColor;
   const recentItems = data?.recentItems ?? [];
   const openOrders = data?.stats.openCount ?? 0;
+  // KLUSRPAS-voordeel dit jaar: som van de kluspas-korting op betaalde orders van dit jaar.
+  const PAID_STATUSES: Order["paymentStatus"][] = ["paid", "authorized", "shipped", "delivered"];
+  const thisYear = new Date().getFullYear();
+  const jaarvoordeel = orders
+    .filter(
+      (o) =>
+        PAID_STATUSES.includes(o.paymentStatus) &&
+        new Date(o.createdAt).getFullYear() === thisYear,
+    )
+    .reduce((s, o) => s + (o.kluspasSavings ?? 0), 0);
 
   return (
     <Tabs defaultValue="overzicht" className="w-full">
@@ -110,7 +118,7 @@ export function AccountDashboard({
           </div>
 
           {/* Quick stat tiles */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
             <StatTile
               icon={<Package className="h-5 w-5" />}
               label="Open bestellingen"
@@ -124,13 +132,8 @@ export function AccountDashboard({
             <StatTile
               icon={<PiggyBank className="h-5 w-5" />}
               label="KLUSRPAS-voordeel dit jaar"
-              value={formatPrice(DEMO.jaarvoordeel)}
+              value={formatPrice(jaarvoordeel)}
               accent
-            />
-            <StatTile
-              icon={<CreditCard className="h-5 w-5" />}
-              label="Spaartegoed"
-              value={formatPrice(DEMO.spaartegoed)}
             />
           </div>
 
@@ -277,7 +280,7 @@ export function AccountDashboard({
 
       {/* ------------------------------------------------------------ KLUSRPAS */}
       <TabsContent value="kluspas">
-        <KluspasPanel firstName={firstName} lastName={lastName} />
+        <KluspasPanel firstName={firstName} lastName={lastName} jaarvoordeel={jaarvoordeel} />
       </TabsContent>
     </Tabs>
   );
@@ -484,7 +487,15 @@ const KLUSPAS_BENEFITS = [
   "Exclusieve ledenacties en vroege toegang tot aanbiedingen",
 ];
 
-function KluspasPanel({ firstName, lastName }: { firstName: string; lastName: string }) {
+function KluspasPanel({
+  firstName,
+  lastName,
+  jaarvoordeel,
+}: {
+  firstName: string;
+  lastName: string;
+  jaarvoordeel: number;
+}) {
   return (
     <div className="flex flex-col gap-6">
       {/* Visual KLUSRPAS card */}
@@ -526,21 +537,11 @@ function KluspasPanel({ firstName, lastName }: { firstName: string; lastName: st
           <CardTitle>Jouw KLUSRPAS-voordeel</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-secondary/60 p-4">
-              <p className="text-xl font-black tracking-tight text-primary">
-                {formatPrice(DEMO.jaarvoordeel)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Bespaard dit jaar
-              </p>
-            </div>
-            <div className="rounded-lg bg-secondary/60 p-4">
-              <p className="text-xl font-black tracking-tight">
-                {formatPrice(DEMO.spaartegoed)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">Spaartegoed</p>
-            </div>
+          <div className="rounded-lg bg-secondary/60 p-4">
+            <p className="text-xl font-black tracking-tight text-primary">
+              {formatPrice(jaarvoordeel)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Bespaard dit jaar</p>
           </div>
 
           <Separator />
