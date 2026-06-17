@@ -442,53 +442,7 @@ export function ProductBuybox({
         ))}
       </ul>
 
-      {/* Mobile sticky add-to-cart */}
-      <MobileStickyBar
-        price={priceInfo.amount}
-        onAdd={handleAdd}
-        label={
-          color?.base ? `${variant.label} · ${paintBases[color.base.id].short}` : variant.label
-        }
-      />
     </div>
   );
 }
 
-function MobileStickyBar({
-  price,
-  label,
-  onAdd,
-}: {
-  price: number;
-  label: string;
-  onAdd: () => void;
-}) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 420);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return (
-    <div
-      className={cn(
-        "fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 p-3 shadow-card-hover backdrop-blur transition-transform lg:hidden",
-        visible ? "translate-y-0" : "translate-y-[150%]",
-      )}
-    >
-      <div className="container-klusr flex items-center gap-3">
-        <div className="leading-tight">
-          <p className="text-[11px] text-muted-foreground">{label}</p>
-          <p className="text-lg font-black text-primary">{formatPrice(price)}</p>
-        </div>
-        <Button onClick={onAdd} size="lg" className="flex-1">
-          <ShoppingCart className="h-5 w-5" />
-          In winkelwagen
-        </Button>
-      </div>
-    </div>
-  );
-}

@@ -24,7 +24,7 @@ export function TopBar() {
         </div>
         {/* Mobile: marquee + prijsschakelaar rechts */}
         <div className="flex h-9 items-center gap-2 md:hidden">
-          <div className="flex flex-1 items-center overflow-hidden">
+          <div className="flex min-w-0 flex-1 items-center overflow-hidden">
             <div className="flex animate-marquee whitespace-nowrap">
               {[...usps, ...usps].map(({ icon: Icon, label }, i) => (
                 <span
