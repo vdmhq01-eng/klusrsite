@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
 
 export interface FinderFacet {
   key: string;
@@ -32,6 +33,7 @@ export function AiFinder({
   onApply: (sel: AiSelections, summary: string) => void;
   className?: string;
 }) {
+  const t = useT();
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -55,10 +57,10 @@ export function AiFinder({
         sel.subCategories.length +
         sel.brands.length;
       setSummary(
-        d.summary || (n > 0 ? "Filters toegepast op je klus." : "Geen specifiek filter gevonden — verfijn je vraag of gebruik de filters."),
+        d.summary || (n > 0 ? t("finder.applied") : t("finder.none")),
       );
     } catch {
-      setSummary("Dat lukte even niet. Probeer het opnieuw of gebruik de filters links.");
+      setSummary(t("finder.error"));
     } finally {
       setBusy(false);
     }
@@ -73,10 +75,10 @@ export function AiFinder({
     >
       <p className="flex items-center gap-2 text-sm font-bold sm:text-base">
         <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-        Niet zeker wat je nodig hebt?
+        {t("finder.title")}
       </p>
       <p className="mt-0.5 text-sm text-muted-foreground">
-        Vertel kort je klus, dan zoeken we meteen de juiste producten voor je.
+        {t("finder.subtitle")}
       </p>
 
       <form
@@ -89,9 +91,9 @@ export function AiFinder({
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Bijv. verf voor mijn houten kozijnen buiten"
+          placeholder={t("finder.placeholder")}
           className="min-w-0 flex-1 rounded-full border border-input bg-card px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          aria-label="Beschrijf je klus"
+          aria-label={t("finder.inputAria")}
         />
         <button
           type="submit"
@@ -99,8 +101,8 @@ export function AiFinder({
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-          <span className="hidden sm:inline">Vind producten</span>
-          <span className="sm:hidden">Vind</span>
+          <span className="hidden sm:inline">{t("finder.submit")}</span>
+          <span className="sm:hidden">{t("finder.submitShort")}</span>
         </button>
       </form>
 

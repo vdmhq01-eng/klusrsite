@@ -29,48 +29,65 @@ import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { useViewMode } from "@/lib/store/view-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/locale-provider";
+import type { MessageKey } from "@/lib/i18n/dictionaries";
 
 /* ----------------------------------------------------------------- config */
 
 type SortKey = "populair" | "prijs-op" | "prijs-af" | "beoordeling" | "nieuwste";
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "populair", label: "Populair" },
-  { value: "prijs-op", label: "Prijs oplopend" },
-  { value: "prijs-af", label: "Prijs aflopend" },
-  { value: "beoordeling", label: "Best beoordeeld" },
-  { value: "nieuwste", label: "Nieuwste" },
+const SORT_OPTIONS: { value: SortKey; labelKey: MessageKey }[] = [
+  { value: "populair", labelKey: "plp.sort.populair" },
+  { value: "prijs-op", labelKey: "plp.sort.priceAsc" },
+  { value: "prijs-af", labelKey: "plp.sort.priceDesc" },
+  { value: "beoordeling", labelKey: "plp.sort.rating" },
+  { value: "nieuwste", labelKey: "plp.sort.newest" },
 ];
 
 interface PriceBucket {
   id: string;
-  label: string;
+  labelKey: MessageKey;
   min: number;
   max: number; // Infinity for open-ended
 }
 
 const PRICE_BUCKETS: PriceBucket[] = [
-  { id: "lt25", label: "Tot € 25", min: 0, max: 25 },
-  { id: "25-50", label: "€ 25 – € 50", min: 25, max: 50 },
-  { id: "50-100", label: "€ 50 – € 100", min: 50, max: 100 },
-  { id: "gt100", label: "Vanaf € 100", min: 100, max: Infinity },
+  { id: "lt25", labelKey: "plp.priceBucket.lt25", min: 0, max: 25 },
+  { id: "25-50", labelKey: "plp.priceBucket.mid", min: 25, max: 50 },
+  { id: "50-100", labelKey: "plp.priceBucket.high", min: 50, max: 100 },
+  { id: "gt100", labelKey: "plp.priceBucket.top", min: 100, max: Infinity },
 ];
 
 // Badges exposed as facets (NIEUW omitted — not used as a filter here).
 const BADGE_FILTERS: ProductBadge[] = ["ACTIE", "BESTSELLER", "PRO KEUZE", "BUNDEL"];
 
-const BADGE_LABELS: Record<ProductBadge, string> = {
-  ACTIE: "Actie",
-  BESTSELLER: "Bestseller",
-  "PRO KEUZE": "Pro keuze",
-  NIEUW: "Nieuw",
-  BUNDEL: "Voordeelbundel",
+const BADGE_LABEL_KEYS: Record<ProductBadge, MessageKey> = {
+  ACTIE: "plp.badge.actie",
+  BESTSELLER: "plp.badge.bestseller",
+  "PRO KEUZE": "plp.badge.proKeuze",
+  NIEUW: "plp.badge.nieuw",
+  BUNDEL: "plp.badge.bundel",
 };
 
-const RATING_BUCKETS = [
-  { min: 4, label: "4 sterren & hoger" },
-  { min: 4.5, label: "4,5 sterren & hoger" },
+const RATING_BUCKETS: { min: number; labelKey: MessageKey }[] = [
+  { min: 4, labelKey: "plp.rating.min4" },
+  { min: 4.5, labelKey: "plp.rating.min45" },
 ];
+
+/**
+ * De attribuut-facetten houden hun NL-titel als canonieke naam (gebruikt voor de
+ * AI-zoeker), maar voor de zichtbare filtergroep-kop mappen we die titel naar een
+ * vertaalsleutel. Facet-WAARDEN (defs[].label) blijven productafgeleid → NL.
+ */
+const FACET_TITLE_KEY: Record<string, MessageKey> = {
+  Glansgraad: "plp.facet.glans",
+  Materiaal: "plp.facet.materiaal",
+  Fitting: "plp.facet.fitting",
+  Dessin: "plp.facet.dessin",
+  Toepassing: "plp.facet.toepassing",
+  Korrel: "plp.facet.korrel",
+  Lichtkleur: "plp.facet.lichtkleur",
+};
 
 // Merk-waarden die geen echt merk zijn → niet als facet tonen.
 const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
@@ -285,6 +302,7 @@ export function ProductListing({
   listName,
   className,
 }: ProductListingProps) {
+  const t = useT();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<SortKey>("populair");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -532,14 +550,14 @@ export function ProductListing({
         <aside className="hidden lg:block">
           <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-card">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold">Filters</h2>
+              <h2 className="text-base font-bold">{t("plp.filters")}</h2>
               {activeFilterCount > 0 && (
                 <button
                   type="button"
                   onClick={clearFilters}
                   className="text-xs font-semibold text-primary hover:underline"
                 >
-                  Wis filters ({activeFilterCount})
+                  {t("plp.clearFiltersCount", { count: activeFilterCount })}
                 </button>
               )}
             </div>
@@ -552,7 +570,7 @@ export function ProductListing({
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               <span className="font-bold text-foreground">{sorted.length}</span>{" "}
-              {sorted.length === 1 ? "product" : "producten"}
+              {sorted.length === 1 ? t("plp.resultCountOne") : t("plp.resultCount")}
             </p>
 
             <div className="flex items-center gap-2">
@@ -561,7 +579,7 @@ export function ProductListing({
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="lg:hidden">
                     <SlidersHorizontal className="h-4 w-4" />
-                    Filters
+                    {t("plp.filters")}
                     {activeFilterCount > 0 && (
                       <span className="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
                         {activeFilterCount}
@@ -571,7 +589,7 @@ export function ProductListing({
                 </SheetTrigger>
                 <SheetContent side="bottom" className="flex max-h-[85vh] flex-col" hideClose>
                   <SheetHeader className="flex-row items-center justify-between space-y-0 border-b border-border">
-                    <SheetTitle>Filters</SheetTitle>
+                    <SheetTitle>{t("plp.filters")}</SheetTitle>
                     <div className="flex items-center gap-3">
                       {activeFilterCount > 0 && (
                         <button
@@ -579,13 +597,13 @@ export function ProductListing({
                           onClick={clearFilters}
                           className="text-xs font-semibold text-primary hover:underline"
                         >
-                          Wis filters
+                          {t("plp.clearFilters")}
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setSheetOpen(false)}
-                        aria-label="Sluiten"
+                        aria-label={t("lang.dismiss")}
                         className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
                       >
                         <X className="h-5 w-5" />
@@ -595,8 +613,9 @@ export function ProductListing({
                   <div className="flex-1 overflow-y-auto px-5 py-4">{filterPanel}</div>
                   <SheetFooter>
                     <Button onClick={() => setSheetOpen(false)} size="lg">
-                      Toon {sorted.length}{" "}
-                      {sorted.length === 1 ? "product" : "producten"}
+                      {sorted.length === 1
+                        ? t("plp.showOne", { count: sorted.length })
+                        : t("plp.show", { count: sorted.length })}
                     </Button>
                   </SheetFooter>
                 </SheetContent>
@@ -605,13 +624,13 @@ export function ProductListing({
               {/* Weergave: raster / lijst */}
               <div
                 role="group"
-                aria-label="Weergave"
+                aria-label={t("plp.viewAria")}
                 className="hidden items-center rounded-md border border-input bg-card p-0.5 sm:flex"
               >
                 <button
                   type="button"
                   onClick={() => setViewMode("grid")}
-                  aria-label="Rasterweergave"
+                  aria-label={t("plp.viewGrid")}
                   aria-pressed={!showList}
                   className={cn(
                     "grid h-8 w-8 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground",
@@ -623,7 +642,7 @@ export function ProductListing({
                 <button
                   type="button"
                   onClick={() => setViewMode("list")}
-                  aria-label="Lijstweergave"
+                  aria-label={t("plp.viewList")}
                   aria-pressed={showList}
                   className={cn(
                     "grid h-8 w-8 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground",
@@ -636,13 +655,13 @@ export function ProductListing({
 
               {/* Sort */}
               <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-                <SelectTrigger className="h-9 w-[170px] text-sm" aria-label="Sorteren">
-                  <SelectValue placeholder="Sorteren" />
+                <SelectTrigger className="h-9 w-[170px] text-sm" aria-label={t("plp.sortAria")}>
+                  <SelectValue placeholder={t("plp.sortAria")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SORT_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -654,7 +673,7 @@ export function ProductListing({
           {activeFilterCount > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {filters.mengverf && (
-                <FilterChip onRemove={toggleMengverf}>Op kleur te mengen</FilterChip>
+                <FilterChip onRemove={toggleMengverf}>{t("plp.colorMixable")}</FilterChip>
               )}
               {filters.subCategories.map((slug) => (
                 <FilterChip key={`s-${slug}`} onRemove={() => toggleSub(slug)}>
@@ -671,11 +690,14 @@ export function ProductListing({
                   {size}
                 </FilterChip>
               ))}
-              {filters.priceBuckets.map((id) => (
-                <FilterChip key={`p-${id}`} onRemove={() => toggleBucket(id)}>
-                  {PRICE_BUCKETS.find((b) => b.id === id)?.label ?? id}
-                </FilterChip>
-              ))}
+              {filters.priceBuckets.map((id) => {
+                const bucket = PRICE_BUCKETS.find((b) => b.id === id);
+                return (
+                  <FilterChip key={`p-${id}`} onRemove={() => toggleBucket(id)}>
+                    {bucket ? t(bucket.labelKey) : id}
+                  </FilterChip>
+                );
+              })}
               {availableAttrs.flatMap(({ facet }) =>
                 (filters.attrs[facet.key] ?? []).map((id) => (
                   <FilterChip
@@ -688,12 +710,12 @@ export function ProductListing({
               )}
               {filters.minRating > 0 && (
                 <FilterChip onRemove={() => toggleRating(filters.minRating)}>
-                  {String(filters.minRating).replace(".", ",")}+ sterren
+                  {t("plp.ratingChip", { rating: String(filters.minRating).replace(".", ",") })}
                 </FilterChip>
               )}
               {filters.badges.map((badge) => (
                 <FilterChip key={`bd-${badge}`} onRemove={() => toggleBadge(badge)}>
-                  {BADGE_LABELS[badge]}
+                  {t(BADGE_LABEL_KEYS[badge])}
                 </FilterChip>
               ))}
             </div>
@@ -716,12 +738,12 @@ export function ProductListing({
             )
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-              <p className="text-base font-bold">Geen producten gevonden</p>
+              <p className="text-base font-bold">{t("plp.empty.title")}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Pas je filters aan om meer resultaten te zien.
+                {t("plp.empty.text")}
               </p>
               <Button onClick={clearFilters} variant="outline" className="mt-4">
-                Wis alle filters
+                {t("plp.clearAll")}
               </Button>
             </div>
           )}
@@ -766,16 +788,17 @@ function FilterControls({
   onToggleMengverf: () => void;
   onToggleAttr: (key: string, id: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-5">
       {hasMengverf && (
         <>
-          <FilterGroup title="Mengverf">
+          <FilterGroup title={t("plp.group.mengverf")}>
             <CheckRow
               id="filter-mengverf"
               checked={filters.mengverf}
               onChange={onToggleMengverf}
-              label="Op kleur te mengen"
+              label={t("plp.colorMixable")}
             />
           </FilterGroup>
           <Separator />
@@ -784,7 +807,7 @@ function FilterControls({
 
       {availableSubCategories.length > 1 && (
         <>
-          <FilterGroup title="Productsoort">
+          <FilterGroup title={t("plp.group.productType")}>
             {availableSubCategories.map((slug) => (
               <CheckRow
                 key={slug}
@@ -801,7 +824,7 @@ function FilterControls({
 
       {availableAttrs.map(({ facet, values }) => (
         <div key={facet.key} className="flex flex-col gap-5">
-          <FilterGroup title={facet.title}>
+          <FilterGroup title={FACET_TITLE_KEY[facet.title] ? t(FACET_TITLE_KEY[facet.title]) : facet.title}>
             {values.map((v) => (
               <CheckRow
                 key={v.id}
@@ -816,14 +839,14 @@ function FilterControls({
         </div>
       ))}
 
-      <FilterGroup title="Prijs">
+      <FilterGroup title={t("plp.group.price")}>
         {PRICE_BUCKETS.map((bucket) => (
           <CheckRow
             key={bucket.id}
             id={`filter-price-${bucket.id}`}
             checked={filters.priceBuckets.includes(bucket.id)}
             onChange={() => onToggleBucket(bucket.id)}
-            label={bucket.label}
+            label={t(bucket.labelKey)}
           />
         ))}
       </FilterGroup>
@@ -831,7 +854,7 @@ function FilterControls({
       {availableSizes.length > 1 && (
         <>
           <Separator />
-          <FilterGroup title="Inhoud">
+          <FilterGroup title={t("plp.group.volume")}>
             {availableSizes.map((size) => (
               <CheckRow
                 key={size}
@@ -846,7 +869,7 @@ function FilterControls({
       )}
 
       <Separator />
-      <FilterGroup title="Beoordeling">
+      <FilterGroup title={t("plp.group.rating")}>
         {RATING_BUCKETS.map((bucket) => (
           <CheckRow
             key={bucket.min}
@@ -856,7 +879,7 @@ function FilterControls({
             label={
               <span className="inline-flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-klusr-action text-klusr-action" />
-                {bucket.label}
+                {t(bucket.labelKey)}
               </span>
             }
           />
@@ -866,14 +889,14 @@ function FilterControls({
       {availableBadges.length > 0 && (
         <>
           <Separator />
-          <FilterGroup title="Acties & labels">
+          <FilterGroup title={t("plp.group.dealsLabels")}>
             {availableBadges.map((badge) => (
               <CheckRow
                 key={badge}
                 id={`filter-badge-${badge}`}
                 checked={filters.badges.includes(badge)}
                 onChange={() => onToggleBadge(badge)}
-                label={BADGE_LABELS[badge]}
+                label={t(BADGE_LABEL_KEYS[badge])}
               />
             ))}
           </FilterGroup>
@@ -883,7 +906,7 @@ function FilterControls({
       {availableBrands.length > 1 && (
         <>
           <Separator />
-          <FilterGroup title="Merk">
+          <FilterGroup title={t("plp.group.brand")}>
             {availableBrands.map((brand) => (
               <CheckRow
                 key={brand}

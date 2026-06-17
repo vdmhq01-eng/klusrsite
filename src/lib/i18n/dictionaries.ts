@@ -542,6 +542,135 @@ export type Messages = {
   "notFound.popular.advice": string;
   "notFound.toHome": string;
   "notFound.customerService": string;
+
+  // ── Productoverzicht (PLP) ────────────────────────────────────────────────
+  "plp.filters": string;
+  "plp.clearFilters": string;
+  "plp.clearFiltersCount": string; // {count}
+  "plp.clearAll": string;
+  "plp.resultCount": string; // zelfstandig naamwoord; aantal staat in een aparte <span>
+  "plp.resultCountOne": string;
+  "plp.show": string; // {count}
+  "plp.showOne": string; // {count}
+  "plp.sortAria": string;
+  "plp.sort.populair": string;
+  "plp.sort.priceAsc": string;
+  "plp.sort.priceDesc": string;
+  "plp.sort.rating": string;
+  "plp.sort.newest": string;
+
+  // PLP — filtergroep-titels (statisch)
+  "plp.group.mengverf": string;
+  "plp.group.productType": string;
+  "plp.group.price": string;
+  "plp.group.volume": string;
+  "plp.group.rating": string;
+  "plp.group.dealsLabels": string;
+  "plp.group.brand": string;
+
+  // PLP — attribuut-facet-titels (statisch)
+  "plp.facet.glans": string;
+  "plp.facet.materiaal": string;
+  "plp.facet.fitting": string;
+  "plp.facet.dessin": string;
+  "plp.facet.toepassing": string;
+  "plp.facet.korrel": string;
+  "plp.facet.lichtkleur": string;
+
+  // PLP — prijsbuckets (statisch; € blijft)
+  "plp.priceBucket.lt25": string;
+  "plp.priceBucket.mid": string;
+  "plp.priceBucket.high": string;
+  "plp.priceBucket.top": string;
+
+  // PLP — beoordeling-facet + chip
+  "plp.rating.min4": string;
+  "plp.rating.min45": string;
+  "plp.ratingChip": string; // {rating}
+
+  // PLP — badge-filterlabels (UI-chrome, geen productdata)
+  "plp.badge.actie": string;
+  "plp.badge.bestseller": string;
+  "plp.badge.proKeuze": string;
+  "plp.badge.nieuw": string;
+  "plp.badge.bundel": string;
+
+  "plp.colorMixable": string;
+  "plp.viewAria": string;
+  "plp.viewGrid": string;
+  "plp.viewList": string;
+  "plp.empty.title": string;
+  "plp.empty.text": string;
+  "plp.favorite": string;
+
+  // ── AI-productzoeker ──────────────────────────────────────────────────────
+  "finder.title": string;
+  "finder.subtitle": string;
+  "finder.placeholder": string;
+  "finder.inputAria": string;
+  "finder.submit": string;
+  "finder.submitShort": string;
+  "finder.applied": string;
+  "finder.none": string;
+  "finder.error": string;
+
+  // ── Productdetail (PDP) ───────────────────────────────────────────────────
+  "pdp.addToCart": string;
+  "pdp.buyNow": string;
+  "pdp.reviewsLink": string; // {rating} {count}
+  "pdp.sizeLabel": string;
+  "pdp.color": string;
+  "pdp.chooseColor": string;
+  "pdp.changeColor": string;
+  "pdp.anyColor": string;
+  "pdp.mixed.pre": string;
+  "pdp.mixed.bold": string;
+  "pdp.mixed.inBase": string; // {base}
+  "pdp.mixed.post": string;
+  "pdp.chooseColorTitle": string;
+  "pdp.chooseColorBuy": string;
+  "pdp.chooseColorAdd": string;
+  "pdp.addedToCart": string;
+  "pdp.favAdded": string;
+  "pdp.favRemoved": string;
+  "pdp.favSave": string;
+  "pdp.favSaved": string;
+  "pdp.kluspasPrice": string;
+  "pdp.profpasPrice": string;
+  "pdp.normalPrice": string;
+  "pdp.withoutAccount": string;
+  "pdp.surcharge": string; // {base} {amount}
+  "pdp.perLiter": string; // {price}
+  "pdp.perLiterCheaper": string;
+  "pdp.stockForBasePre": string;
+  "pdp.stockForBasePost": string;
+
+  // PDP — USP's in de buybox
+  "pdp.usp.freeShipping": string;
+  "pdp.usp.returns": string;
+  "pdp.usp.afterpay": string;
+
+  // PDP — tabbladen + secties
+  "pdp.tab.description": string;
+  "pdp.tab.specs": string;
+  "pdp.tab.reviews": string;
+  "pdp.tab.processing": string;
+  "pdp.reviews.basedOnPre": string;
+  "pdp.reviews.basedOnPost": string;
+  "pdp.reviews.verified": string;
+  "pdp.reviews.none": string;
+  "pdp.processing.title": string;
+
+  // ── Prijsblok (price.tsx + buybox) ────────────────────────────────────────
+  "price.advies": string; // map van pricing.ts "Adviesprijs"
+  "price.normal": string; // map van pricing.ts "Normaal"
+  "price.inclVat": string; // map van pricing.ts "incl. btw"
+  "price.exclVat": string; // map van pricing.ts "excl. btw"
+  "price.from": string;
+  "price.save": string; // {amount}
+  "price.savePct": string; // {pct}
+  "price.vsAdvies": string;
+  "price.vsAccount": string;
 };
 
 const nl: Messages = {
@@ -1075,6 +1204,125 @@ const nl: Messages = {
   "notFound.popular.advice": "Klusadvies",
   "notFound.toHome": "Naar de homepagina",
   "notFound.customerService": "Klantenservice",
+
+  "plp.filters": "Filters",
+  "plp.clearFilters": "Wis filters",
+  "plp.clearFiltersCount": "Wis filters ({count})",
+  "plp.clearAll": "Wis alle filters",
+  "plp.resultCount": "producten",
+  "plp.resultCountOne": "product",
+  "plp.show": "Toon {count} producten",
+  "plp.showOne": "Toon {count} product",
+  "plp.sortAria": "Sorteren",
+  "plp.sort.populair": "Populair",
+  "plp.sort.priceAsc": "Prijs oplopend",
+  "plp.sort.priceDesc": "Prijs aflopend",
+  "plp.sort.rating": "Best beoordeeld",
+  "plp.sort.newest": "Nieuwste",
+
+  "plp.group.mengverf": "Mengverf",
+  "plp.group.productType": "Productsoort",
+  "plp.group.price": "Prijs",
+  "plp.group.volume": "Inhoud",
+  "plp.group.rating": "Beoordeling",
+  "plp.group.dealsLabels": "Acties & labels",
+  "plp.group.brand": "Merk",
+
+  "plp.facet.glans": "Glansgraad",
+  "plp.facet.materiaal": "Materiaal",
+  "plp.facet.fitting": "Fitting",
+  "plp.facet.dessin": "Dessin",
+  "plp.facet.toepassing": "Toepassing",
+  "plp.facet.korrel": "Korrel",
+  "plp.facet.lichtkleur": "Lichtkleur",
+
+  "plp.priceBucket.lt25": "Tot € 25",
+  "plp.priceBucket.mid": "€ 25 – € 50",
+  "plp.priceBucket.high": "€ 50 – € 100",
+  "plp.priceBucket.top": "Vanaf € 100",
+
+  "plp.rating.min4": "4 sterren & hoger",
+  "plp.rating.min45": "4,5 sterren & hoger",
+  "plp.ratingChip": "{rating}+ sterren",
+
+  "plp.badge.actie": "Actie",
+  "plp.badge.bestseller": "Bestseller",
+  "plp.badge.proKeuze": "Pro keuze",
+  "plp.badge.nieuw": "Nieuw",
+  "plp.badge.bundel": "Voordeelbundel",
+
+  "plp.colorMixable": "Op kleur te mengen",
+  "plp.viewAria": "Weergave",
+  "plp.viewGrid": "Rasterweergave",
+  "plp.viewList": "Lijstweergave",
+  "plp.empty.title": "Geen producten gevonden",
+  "plp.empty.text": "Pas je filters aan om meer resultaten te zien.",
+  "plp.favorite": "Bewaar als favoriet",
+
+  "finder.title": "Niet zeker wat je nodig hebt?",
+  "finder.subtitle": "Vertel kort je klus, dan zoeken we meteen de juiste producten voor je.",
+  "finder.placeholder": "Bijv. verf voor mijn houten kozijnen buiten",
+  "finder.inputAria": "Beschrijf je klus",
+  "finder.submit": "Vind producten",
+  "finder.submitShort": "Vind",
+  "finder.applied": "Filters toegepast op je klus.",
+  "finder.none": "Geen specifiek filter gevonden — verfijn je vraag of gebruik de filters.",
+  "finder.error": "Dat lukte even niet. Probeer het opnieuw of gebruik de filters links.",
+
+  "pdp.addToCart": "In winkelwagen",
+  "pdp.buyNow": "Direct afrekenen",
+  "pdp.reviewsLink": "{rating} · {count} reviews",
+  "pdp.sizeLabel": "Maat / inhoud:",
+  "pdp.color": "Kleur",
+  "pdp.chooseColor": "Kies je kleur",
+  "pdp.changeColor": "Kleur wijzigen",
+  "pdp.anyColor":
+    "Elke kleur mogelijk — wij mengen de verf exact op jouw gekozen tint. Kies een kleur om 'm op de muur te zien.",
+  "pdp.mixed.pre": "Wordt ",
+  "pdp.mixed.bold": "professioneel op kleur gemengd",
+  "pdp.mixed.inBase": " in {base}",
+  "pdp.mixed.post": ". Exacte match, klaar voor gebruik.",
+  "pdp.chooseColorTitle": "Kies eerst een kleur",
+  "pdp.chooseColorBuy": "Selecteer een kleur voordat je deze verf bestelt.",
+  "pdp.chooseColorAdd": "Selecteer een kleur voordat je deze verf toevoegt.",
+  "pdp.addedToCart": "Toegevoegd aan winkelwagen",
+  "pdp.favAdded": "Toegevoegd aan favorieten",
+  "pdp.favRemoved": "Verwijderd uit favorieten",
+  "pdp.favSave": "Bewaar voor later",
+  "pdp.favSaved": "Bewaard in favorieten",
+  "pdp.kluspasPrice": "KLUSRPAS-prijs",
+  "pdp.profpasPrice": "ProfPas-prijs",
+  "pdp.normalPrice": "Normale prijs",
+  "pdp.withoutAccount": "— zonder account",
+  "pdp.surcharge": "Incl. {base} (+{amount} voor donkere kleur)",
+  "pdp.perLiter": "{price} per liter",
+  "pdp.perLiterCheaper": "grotere bus is voordeliger per liter",
+  "pdp.stockForBasePre": "Voorraad getoond voor ",
+  "pdp.stockForBasePost": " — elke basis heeft een eigen voorraad.",
+
+  "pdp.usp.freeShipping": "Gratis verzending vanaf €50",
+  "pdp.usp.returns": "Gratis retourneren binnen 30 dagen",
+  "pdp.usp.afterpay": "Achteraf betalen mogelijk",
+
+  "pdp.tab.description": "Omschrijving",
+  "pdp.tab.specs": "Specificaties",
+  "pdp.tab.reviews": "Reviews",
+  "pdp.tab.processing": "Verwerking & advies",
+  "pdp.reviews.basedOnPre": "Gebaseerd op ",
+  "pdp.reviews.basedOnPost": " reviews van geverifieerde klussers.",
+  "pdp.reviews.verified": "Geverifieerd",
+  "pdp.reviews.none": "Nog geen reviews.",
+  "pdp.processing.title": "Advies van onze ex-schilders",
+
+  "price.advies": "Adviesprijs",
+  "price.normal": "Normaal",
+  "price.inclVat": "incl. btw",
+  "price.exclVat": "excl. btw",
+  "price.from": "vanaf",
+  "price.save": "Je bespaart {amount}",
+  "price.savePct": " ({pct}%)",
+  "price.vsAdvies": " op de adviesprijs",
+  "price.vsAccount": " met je gratis KLUSR-account",
 };
 
 const en: Messages = {
@@ -1608,6 +1856,125 @@ const en: Messages = {
   "notFound.popular.advice": "DIY advice",
   "notFound.toHome": "To the homepage",
   "notFound.customerService": "Customer service",
+
+  "plp.filters": "Filters",
+  "plp.clearFilters": "Clear filters",
+  "plp.clearFiltersCount": "Clear filters ({count})",
+  "plp.clearAll": "Clear all filters",
+  "plp.resultCount": "products",
+  "plp.resultCountOne": "product",
+  "plp.show": "Show {count} products",
+  "plp.showOne": "Show {count} product",
+  "plp.sortAria": "Sort",
+  "plp.sort.populair": "Popular",
+  "plp.sort.priceAsc": "Price low to high",
+  "plp.sort.priceDesc": "Price high to low",
+  "plp.sort.rating": "Best rated",
+  "plp.sort.newest": "Newest",
+
+  "plp.group.mengverf": "Mixed paint",
+  "plp.group.productType": "Product type",
+  "plp.group.price": "Price",
+  "plp.group.volume": "Volume",
+  "plp.group.rating": "Rating",
+  "plp.group.dealsLabels": "Deals & labels",
+  "plp.group.brand": "Brand",
+
+  "plp.facet.glans": "Sheen",
+  "plp.facet.materiaal": "Material",
+  "plp.facet.fitting": "Fitting",
+  "plp.facet.dessin": "Pattern",
+  "plp.facet.toepassing": "Use",
+  "plp.facet.korrel": "Grit",
+  "plp.facet.lichtkleur": "Light colour",
+
+  "plp.priceBucket.lt25": "Up to € 25",
+  "plp.priceBucket.mid": "€ 25 – € 50",
+  "plp.priceBucket.high": "€ 50 – € 100",
+  "plp.priceBucket.top": "From € 100",
+
+  "plp.rating.min4": "4 stars & up",
+  "plp.rating.min45": "4.5 stars & up",
+  "plp.ratingChip": "{rating}+ stars",
+
+  "plp.badge.actie": "Sale",
+  "plp.badge.bestseller": "Bestseller",
+  "plp.badge.proKeuze": "Pro choice",
+  "plp.badge.nieuw": "New",
+  "plp.badge.bundel": "Value bundle",
+
+  "plp.colorMixable": "Mixed to colour",
+  "plp.viewAria": "View",
+  "plp.viewGrid": "Grid view",
+  "plp.viewList": "List view",
+  "plp.empty.title": "No products found",
+  "plp.empty.text": "Adjust your filters to see more results.",
+  "plp.favorite": "Save as favourite",
+
+  "finder.title": "Not sure what you need?",
+  "finder.subtitle": "Tell us briefly about your project and we'll find the right products for you.",
+  "finder.placeholder": "E.g. paint for my wooden window frames outside",
+  "finder.inputAria": "Describe your project",
+  "finder.submit": "Find products",
+  "finder.submitShort": "Find",
+  "finder.applied": "Filters applied to your project.",
+  "finder.none": "No specific filter found — refine your question or use the filters.",
+  "finder.error": "That didn't quite work. Try again or use the filters on the left.",
+
+  "pdp.addToCart": "Add to cart",
+  "pdp.buyNow": "Buy now",
+  "pdp.reviewsLink": "{rating} · {count} reviews",
+  "pdp.sizeLabel": "Size / volume:",
+  "pdp.color": "Colour",
+  "pdp.chooseColor": "Choose your colour",
+  "pdp.changeColor": "Change colour",
+  "pdp.anyColor":
+    "Any colour possible — we mix the paint exactly to your chosen shade. Pick a colour to see it on the wall.",
+  "pdp.mixed.pre": "Will be ",
+  "pdp.mixed.bold": "professionally mixed to colour",
+  "pdp.mixed.inBase": " in {base}",
+  "pdp.mixed.post": ". Exact match, ready to use.",
+  "pdp.chooseColorTitle": "Choose a colour first",
+  "pdp.chooseColorBuy": "Select a colour before ordering this paint.",
+  "pdp.chooseColorAdd": "Select a colour before adding this paint.",
+  "pdp.addedToCart": "Added to cart",
+  "pdp.favAdded": "Added to favourites",
+  "pdp.favRemoved": "Removed from favourites",
+  "pdp.favSave": "Save for later",
+  "pdp.favSaved": "Saved to favourites",
+  "pdp.kluspasPrice": "KLUSRPAS price",
+  "pdp.profpasPrice": "ProfPas price",
+  "pdp.normalPrice": "Regular price",
+  "pdp.withoutAccount": "— without an account",
+  "pdp.surcharge": "Incl. {base} (+{amount} for a dark colour)",
+  "pdp.perLiter": "{price} per litre",
+  "pdp.perLiterCheaper": "larger tin is cheaper per litre",
+  "pdp.stockForBasePre": "Stock shown for ",
+  "pdp.stockForBasePost": " — each base has its own stock.",
+
+  "pdp.usp.freeShipping": "Free shipping from €50",
+  "pdp.usp.returns": "Free returns within 30 days",
+  "pdp.usp.afterpay": "Pay later available",
+
+  "pdp.tab.description": "Description",
+  "pdp.tab.specs": "Specifications",
+  "pdp.tab.reviews": "Reviews",
+  "pdp.tab.processing": "Application & advice",
+  "pdp.reviews.basedOnPre": "Based on ",
+  "pdp.reviews.basedOnPost": " reviews from verified DIYers.",
+  "pdp.reviews.verified": "Verified",
+  "pdp.reviews.none": "No reviews yet.",
+  "pdp.processing.title": "Advice from our former painters",
+
+  "price.advies": "RRP",
+  "price.normal": "Regular",
+  "price.inclVat": "incl. VAT",
+  "price.exclVat": "excl. VAT",
+  "price.from": "from",
+  "price.save": "You save {amount}",
+  "price.savePct": " ({pct}%)",
+  "price.vsAdvies": " on the RRP",
+  "price.vsAccount": " with your free KLUSR account",
 };
 
 const fr: Messages = {
@@ -2141,6 +2508,125 @@ const fr: Messages = {
   "notFound.popular.advice": "Conseils bricolage",
   "notFound.toHome": "Vers la page d'accueil",
   "notFound.customerService": "Service client",
+
+  "plp.filters": "Filtres",
+  "plp.clearFilters": "Effacer les filtres",
+  "plp.clearFiltersCount": "Effacer les filtres ({count})",
+  "plp.clearAll": "Effacer tous les filtres",
+  "plp.resultCount": "produits",
+  "plp.resultCountOne": "produit",
+  "plp.show": "Afficher {count} produits",
+  "plp.showOne": "Afficher {count} produit",
+  "plp.sortAria": "Trier",
+  "plp.sort.populair": "Populaire",
+  "plp.sort.priceAsc": "Prix croissant",
+  "plp.sort.priceDesc": "Prix décroissant",
+  "plp.sort.rating": "Les mieux notés",
+  "plp.sort.newest": "Les plus récents",
+
+  "plp.group.mengverf": "Peinture sur mesure",
+  "plp.group.productType": "Type de produit",
+  "plp.group.price": "Prix",
+  "plp.group.volume": "Contenance",
+  "plp.group.rating": "Évaluation",
+  "plp.group.dealsLabels": "Promotions & labels",
+  "plp.group.brand": "Marque",
+
+  "plp.facet.glans": "Brillance",
+  "plp.facet.materiaal": "Matériau",
+  "plp.facet.fitting": "Culot",
+  "plp.facet.dessin": "Motif",
+  "plp.facet.toepassing": "Utilisation",
+  "plp.facet.korrel": "Grain",
+  "plp.facet.lichtkleur": "Couleur de lumière",
+
+  "plp.priceBucket.lt25": "Jusqu'à € 25",
+  "plp.priceBucket.mid": "€ 25 – € 50",
+  "plp.priceBucket.high": "€ 50 – € 100",
+  "plp.priceBucket.top": "À partir de € 100",
+
+  "plp.rating.min4": "4 étoiles & plus",
+  "plp.rating.min45": "4,5 étoiles & plus",
+  "plp.ratingChip": "{rating}+ étoiles",
+
+  "plp.badge.actie": "Promo",
+  "plp.badge.bestseller": "Meilleure vente",
+  "plp.badge.proKeuze": "Choix pro",
+  "plp.badge.nieuw": "Nouveau",
+  "plp.badge.bundel": "Lot avantageux",
+
+  "plp.colorMixable": "Teintable sur mesure",
+  "plp.viewAria": "Affichage",
+  "plp.viewGrid": "Affichage en grille",
+  "plp.viewList": "Affichage en liste",
+  "plp.empty.title": "Aucun produit trouvé",
+  "plp.empty.text": "Ajustez vos filtres pour voir plus de résultats.",
+  "plp.favorite": "Ajouter aux favoris",
+
+  "finder.title": "Vous ne savez pas ce qu'il vous faut ?",
+  "finder.subtitle": "Décrivez brièvement vos travaux et nous trouvons tout de suite les bons produits pour vous.",
+  "finder.placeholder": "Ex. peinture pour mes châssis en bois à l'extérieur",
+  "finder.inputAria": "Décrivez vos travaux",
+  "finder.submit": "Trouver des produits",
+  "finder.submitShort": "Trouver",
+  "finder.applied": "Filtres appliqués à vos travaux.",
+  "finder.none": "Aucun filtre spécifique trouvé — précisez votre question ou utilisez les filtres.",
+  "finder.error": "Ça n'a pas fonctionné. Réessayez ou utilisez les filtres à gauche.",
+
+  "pdp.addToCart": "Au panier",
+  "pdp.buyNow": "Commander maintenant",
+  "pdp.reviewsLink": "{rating} · {count} avis",
+  "pdp.sizeLabel": "Taille / contenance :",
+  "pdp.color": "Couleur",
+  "pdp.chooseColor": "Choisissez votre couleur",
+  "pdp.changeColor": "Changer de couleur",
+  "pdp.anyColor":
+    "Toute couleur possible — nous teintons la peinture exactement selon la teinte choisie. Choisissez une couleur pour la voir sur le mur.",
+  "pdp.mixed.pre": "Sera ",
+  "pdp.mixed.bold": "teintée sur mesure de façon professionnelle",
+  "pdp.mixed.inBase": " en {base}",
+  "pdp.mixed.post": ". Correspondance exacte, prête à l'emploi.",
+  "pdp.chooseColorTitle": "Choisissez d'abord une couleur",
+  "pdp.chooseColorBuy": "Sélectionnez une couleur avant de commander cette peinture.",
+  "pdp.chooseColorAdd": "Sélectionnez une couleur avant d'ajouter cette peinture.",
+  "pdp.addedToCart": "Ajouté au panier",
+  "pdp.favAdded": "Ajouté aux favoris",
+  "pdp.favRemoved": "Retiré des favoris",
+  "pdp.favSave": "Garder pour plus tard",
+  "pdp.favSaved": "Enregistré dans les favoris",
+  "pdp.kluspasPrice": "Prix KLUSRPAS",
+  "pdp.profpasPrice": "Prix ProfPas",
+  "pdp.normalPrice": "Prix normal",
+  "pdp.withoutAccount": "— sans compte",
+  "pdp.surcharge": "Incl. {base} (+{amount} pour une couleur foncée)",
+  "pdp.perLiter": "{price} par litre",
+  "pdp.perLiterCheaper": "le plus grand pot est plus avantageux au litre",
+  "pdp.stockForBasePre": "Stock affiché pour ",
+  "pdp.stockForBasePost": " — chaque base a son propre stock.",
+
+  "pdp.usp.freeShipping": "Livraison gratuite dès €50",
+  "pdp.usp.returns": "Retours gratuits sous 30 jours",
+  "pdp.usp.afterpay": "Paiement différé possible",
+
+  "pdp.tab.description": "Description",
+  "pdp.tab.specs": "Caractéristiques",
+  "pdp.tab.reviews": "Avis",
+  "pdp.tab.processing": "Application & conseils",
+  "pdp.reviews.basedOnPre": "Basé sur ",
+  "pdp.reviews.basedOnPost": " avis de bricoleurs vérifiés.",
+  "pdp.reviews.verified": "Vérifié",
+  "pdp.reviews.none": "Pas encore d'avis.",
+  "pdp.processing.title": "Les conseils de nos anciens peintres",
+
+  "price.advies": "Prix conseillé",
+  "price.normal": "Normal",
+  "price.inclVat": "TVA incl.",
+  "price.exclVat": "hors TVA",
+  "price.from": "à partir de",
+  "price.save": "Vous économisez {amount}",
+  "price.savePct": " ({pct} %)",
+  "price.vsAdvies": " sur le prix conseillé",
+  "price.vsAccount": " avec votre compte KLUSR gratuit",
 };
 
 const de: Messages = {
@@ -2674,6 +3160,125 @@ const de: Messages = {
   "notFound.popular.advice": "Heimwerker-Beratung",
   "notFound.toHome": "Zur Startseite",
   "notFound.customerService": "Kundenservice",
+
+  "plp.filters": "Filter",
+  "plp.clearFilters": "Filter löschen",
+  "plp.clearFiltersCount": "Filter löschen ({count})",
+  "plp.clearAll": "Alle Filter löschen",
+  "plp.resultCount": "Produkte",
+  "plp.resultCountOne": "Produkt",
+  "plp.show": "{count} Produkte anzeigen",
+  "plp.showOne": "{count} Produkt anzeigen",
+  "plp.sortAria": "Sortieren",
+  "plp.sort.populair": "Beliebt",
+  "plp.sort.priceAsc": "Preis aufsteigend",
+  "plp.sort.priceDesc": "Preis absteigend",
+  "plp.sort.rating": "Beste Bewertung",
+  "plp.sort.newest": "Neueste",
+
+  "plp.group.mengverf": "Mischfarbe",
+  "plp.group.productType": "Produktart",
+  "plp.group.price": "Preis",
+  "plp.group.volume": "Inhalt",
+  "plp.group.rating": "Bewertung",
+  "plp.group.dealsLabels": "Aktionen & Labels",
+  "plp.group.brand": "Marke",
+
+  "plp.facet.glans": "Glanzgrad",
+  "plp.facet.materiaal": "Material",
+  "plp.facet.fitting": "Fassung",
+  "plp.facet.dessin": "Dessin",
+  "plp.facet.toepassing": "Anwendung",
+  "plp.facet.korrel": "Körnung",
+  "plp.facet.lichtkleur": "Lichtfarbe",
+
+  "plp.priceBucket.lt25": "Bis € 25",
+  "plp.priceBucket.mid": "€ 25 – € 50",
+  "plp.priceBucket.high": "€ 50 – € 100",
+  "plp.priceBucket.top": "Ab € 100",
+
+  "plp.rating.min4": "4 Sterne & mehr",
+  "plp.rating.min45": "4,5 Sterne & mehr",
+  "plp.ratingChip": "{rating}+ Sterne",
+
+  "plp.badge.actie": "Aktion",
+  "plp.badge.bestseller": "Bestseller",
+  "plp.badge.proKeuze": "Profi-Wahl",
+  "plp.badge.nieuw": "Neu",
+  "plp.badge.bundel": "Vorteilspaket",
+
+  "plp.colorMixable": "Nach Farbe mischbar",
+  "plp.viewAria": "Ansicht",
+  "plp.viewGrid": "Rasteransicht",
+  "plp.viewList": "Listenansicht",
+  "plp.empty.title": "Keine Produkte gefunden",
+  "plp.empty.text": "Passen Sie Ihre Filter an, um mehr Ergebnisse zu sehen.",
+  "plp.favorite": "Als Favorit speichern",
+
+  "finder.title": "Nicht sicher, was Sie brauchen?",
+  "finder.subtitle": "Beschreiben Sie kurz Ihr Projekt, dann finden wir gleich die passenden Produkte für Sie.",
+  "finder.placeholder": "Z. B. Farbe für meine Holzfenster außen",
+  "finder.inputAria": "Beschreiben Sie Ihr Projekt",
+  "finder.submit": "Produkte finden",
+  "finder.submitShort": "Finden",
+  "finder.applied": "Filter auf Ihr Projekt angewendet.",
+  "finder.none": "Kein spezifischer Filter gefunden — präzisieren Sie Ihre Frage oder nutzen Sie die Filter.",
+  "finder.error": "Das hat gerade nicht geklappt. Versuchen Sie es erneut oder nutzen Sie die Filter links.",
+
+  "pdp.addToCart": "In den Warenkorb",
+  "pdp.buyNow": "Direkt kaufen",
+  "pdp.reviewsLink": "{rating} · {count} Bewertungen",
+  "pdp.sizeLabel": "Größe / Inhalt:",
+  "pdp.color": "Farbe",
+  "pdp.chooseColor": "Wählen Sie Ihre Farbe",
+  "pdp.changeColor": "Farbe ändern",
+  "pdp.anyColor":
+    "Jede Farbe möglich — wir mischen die Farbe exakt nach Ihrer gewählten Nuance. Wählen Sie eine Farbe, um sie an der Wand zu sehen.",
+  "pdp.mixed.pre": "Wird ",
+  "pdp.mixed.bold": "professionell nach Farbe gemischt",
+  "pdp.mixed.inBase": " in {base}",
+  "pdp.mixed.post": ". Exakte Übereinstimmung, gebrauchsfertig.",
+  "pdp.chooseColorTitle": "Wählen Sie zuerst eine Farbe",
+  "pdp.chooseColorBuy": "Wählen Sie eine Farbe, bevor Sie diese Farbe bestellen.",
+  "pdp.chooseColorAdd": "Wählen Sie eine Farbe, bevor Sie diese Farbe hinzufügen.",
+  "pdp.addedToCart": "Zum Warenkorb hinzugefügt",
+  "pdp.favAdded": "Zu Favoriten hinzugefügt",
+  "pdp.favRemoved": "Aus Favoriten entfernt",
+  "pdp.favSave": "Für später speichern",
+  "pdp.favSaved": "In Favoriten gespeichert",
+  "pdp.kluspasPrice": "KLUSRPAS-Preis",
+  "pdp.profpasPrice": "ProfPas-Preis",
+  "pdp.normalPrice": "Normaler Preis",
+  "pdp.withoutAccount": "— ohne Konto",
+  "pdp.surcharge": "Inkl. {base} (+{amount} für dunkle Farbe)",
+  "pdp.perLiter": "{price} pro Liter",
+  "pdp.perLiterCheaper": "größerer Eimer ist günstiger pro Liter",
+  "pdp.stockForBasePre": "Bestand angezeigt für ",
+  "pdp.stockForBasePost": " — jede Basis hat einen eigenen Bestand.",
+
+  "pdp.usp.freeShipping": "Kostenloser Versand ab €50",
+  "pdp.usp.returns": "Kostenlose Rückgabe innerhalb von 30 Tagen",
+  "pdp.usp.afterpay": "Kauf auf Rechnung möglich",
+
+  "pdp.tab.description": "Beschreibung",
+  "pdp.tab.specs": "Spezifikationen",
+  "pdp.tab.reviews": "Bewertungen",
+  "pdp.tab.processing": "Verarbeitung & Beratung",
+  "pdp.reviews.basedOnPre": "Basierend auf ",
+  "pdp.reviews.basedOnPost": " Bewertungen von verifizierten Heimwerkern.",
+  "pdp.reviews.verified": "Verifiziert",
+  "pdp.reviews.none": "Noch keine Bewertungen.",
+  "pdp.processing.title": "Beratung von unseren ehemaligen Malern",
+
+  "price.advies": "UVP",
+  "price.normal": "Normal",
+  "price.inclVat": "inkl. MwSt.",
+  "price.exclVat": "exkl. MwSt.",
+  "price.from": "ab",
+  "price.save": "Sie sparen {amount}",
+  "price.savePct": " ({pct} %)",
+  "price.vsAdvies": " auf den UVP",
+  "price.vsAccount": " mit Ihrem kostenlosen KLUSR-Konto",
 };
 
 export const dictionaries: Record<Locale, Messages> = { nl, en, fr, de };
