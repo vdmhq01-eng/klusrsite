@@ -76,12 +76,72 @@ const GENERIC_SUBJECT =
   "in a modern Dutch home or workshop";
 
 /**
- * Bouw de volledige fal.ai-prompt voor een categorie-slug: onderwerp + de
- * gedeelde premium/cinematische stijlinstructie.
+ * Losse, NIET-categorie sfeerbeelden ("site-slots"): de homepage-banner en de
+ * advies/winkels-banden. Worden net als de categorie-hero's via de admin-tool
+ * gegenereerd en onder dezelfde `hero:<slug>`-KV-keys bewaard, zodat consumenten
+ * ze met getHeroImage(slug) kunnen ophalen en anders op de gradient terugvallen.
+ *
+ * Het `subject` staat bewust in het Engels (beter voor het model); de
+ * STYLE_SUFFIX (cinematic, soft natural light, geen tekst/watermark,
+ * fotorealistisch, wide banner) wordt er — net als bij de categorieën —
+ * automatisch achter geplakt door heroPrompt().
+ */
+const SITE_SLOT_SUBJECTS: Record<string, string> = {
+  "home-hero":
+    "a bright modern Dutch living room mid-renovation with fresh paint on the walls, " +
+    "a paint roller resting on a tray and colour swatches fanned out, warm natural " +
+    "daylight streaming in, premium and inviting — composed so the left side stays " +
+    "calm and uncluttered to sit behind a dark left-to-right gradient with white text",
+  advies:
+    "a cosy styled Dutch interior corner with a freshly painted accent wall and green " +
+    "plants, styled like an interior magazine spread, warm and inspiring",
+  winkels:
+    "a welcoming modern paint and DIY store interior with neat colour-swatch displays " +
+    "and tidy shelves, bright and friendly, inviting customers in",
+};
+
+/** Menselijke labels voor de site-slots (Nederlandse admin-UI). */
+const SITE_SLOT_LABELS: Record<string, string> = {
+  "home-hero": "Homepage-banner",
+  advies: "Advies & inspiratie",
+  winkels: "Winkels",
+};
+
+/**
+ * Bouw de volledige fal.ai-prompt voor een slug: onderwerp + de gedeelde
+ * premium/cinematische stijlinstructie. Werkt voor zowel categorie-slugs als de
+ * losse site-slots (home-hero / advies / winkels); valt anders terug op een
+ * generiek onderwerp.
  */
 export function heroPrompt(slug: string): string {
-  const subject = HERO_SUBJECTS[slug] ?? GENERIC_SUBJECT;
+  const subject = HERO_SUBJECTS[slug] ?? SITE_SLOT_SUBJECTS[slug] ?? GENERIC_SUBJECT;
   return `${subject}, ${STYLE_SUFFIX}`;
+}
+
+/**
+ * Registry van de losse site-sfeerbeelden voor de admin-UI: `{ slug, label,
+ * prompt }`. De volgorde is meteen de weergavevolgorde.
+ */
+export const SITE_IMAGE_SLOTS: { slug: string; label: string; prompt: string }[] = (
+  ["home-hero", "advies", "winkels"] as const
+).map((slug) => ({
+  slug,
+  label: SITE_SLOT_LABELS[slug] ?? slug,
+  prompt: heroPrompt(slug),
+}));
+
+/** Alleen de slugs van de site-slots (in weergavevolgorde). */
+export const SITE_IMAGE_SLUGS: string[] = SITE_IMAGE_SLOTS.map((s) => s.slug);
+
+/** Snelle membership-check: is dit een door ons beheerde slug (categorie ∪ site-slot)? */
+export const HERO_SLUG_SET: ReadonlySet<string> = new Set<string>([
+  ...HERO_CATEGORY_SLUGS,
+  ...SITE_IMAGE_SLUGS,
+]);
+
+/** Is dit een door ons beheerde slug (categorie of site-slot)? */
+export function isManagedHeroSlug(slug: string): boolean {
+  return HERO_SLUG_SET.has(slug);
 }
 
 /** Hele prompt-map (slug → prompt) voor de bekende hoofdcategorieën. */
@@ -114,16 +174,16 @@ export async function setHeroImage(slug: string, url: string): Promise<void> {
 }
 
 /**
- * Lees alle bekende hero-URL's als `{ slug: url }`. Mist een categorie een
- * afbeelding, dan staat 'ie simpelweg niet in het resultaat. Leeg bij storing.
+ * Lees de bewaarde URL's voor een set slugs als `{ slug: url }`. Mist een slug
+ * een afbeelding, dan staat 'ie simpelweg niet in het resultaat. Eén MGET i.p.v.
+ * N losse GET's; valt bij storing terug op de in-memory map. Gooit NOOIT.
  */
-export async function getAllHeroImages(): Promise<Record<string, string>> {
+async function readImagesForSlugs(slugs: string[]): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
   try {
     if (isKvEnabled()) {
-      // Eén MGET voor alle bekende slugs i.p.v. N losse GET's.
-      const raw = await kvMGet(HERO_CATEGORY_SLUGS.map(key));
-      HERO_CATEGORY_SLUGS.forEach((slug, i) => {
+      const raw = await kvMGet(slugs.map(key));
+      slugs.forEach((slug, i) => {
         const v = raw[i];
         if (typeof v !== "string" || !v) return;
         // KV bewaart JSON-strings; parse de gequote URL netjes terug.
@@ -140,9 +200,25 @@ export async function getAllHeroImages(): Promise<Record<string, string>> {
   } catch {
     /* val terug op memory */
   }
-  for (const slug of HERO_CATEGORY_SLUGS) {
+  for (const slug of slugs) {
     const v = mem.get(slug);
     if (v) out[slug] = v;
   }
   return out;
+}
+
+/**
+ * Lees alle categorie-hero-URL's als `{ slug: url }`. Mist een categorie een
+ * afbeelding, dan staat 'ie simpelweg niet in het resultaat. Leeg bij storing.
+ */
+export async function getAllHeroImages(): Promise<Record<string, string>> {
+  return readImagesForSlugs(HERO_CATEGORY_SLUGS);
+}
+
+/**
+ * Lees ALLE beheerde sfeerbeeld-URL's (categorieën ∪ site-slots) als
+ * `{ slug: url }`. Gebruikt door de admin-tool om beide secties te tonen.
+ */
+export async function getAllImages(): Promise<Record<string, string>> {
+  return readImagesForSlugs([...HERO_CATEGORY_SLUGS, ...SITE_IMAGE_SLUGS]);
 }

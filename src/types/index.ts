@@ -133,6 +133,8 @@ export interface CartItem {
   image: string;
   variantLabel: string;
   slug: string;
+  /** EAN/GTIN — getoond op de orderregel in het admin-overzicht. */
+  gtin?: string;
   quantity: number;
   price: number;
   kluspasPrice: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   Truck,
@@ -13,6 +13,8 @@ import {
   FileText,
   ListChecks,
   Mailbox,
+  ChevronDown,
+  Repeat,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { isBrievenbusOrder } from "@/lib/brievenbus";
@@ -63,6 +65,18 @@ export function OrdersPanel() {
   const [results, setResults] = useState<Record<string, LabelResult>>({});
   // Per order: keuze brievenbuspakje (default = heuristiek; medewerker kan overrulen).
   const [bbChoice, setBbChoice] = useState<Record<string, boolean>>({});
+  // Uitklapbare orderregels + bezorgadres.
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggle = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
+  // Hoe vaak deze klant (e-mail) heeft besteld — voor de 'terugkerend'-tag.
+  const orderCount = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const o of orders) {
+      const e = o.customer.email?.toLowerCase();
+      if (e) m[e] = (m[e] ?? 0) + 1;
+    }
+    return m;
+  }, [orders]);
 
   async function load() {
     setLoading(true);
@@ -180,11 +194,28 @@ export function OrdersPanel() {
                 const res = results[o.id];
                 const bbSuggested = isBrievenbusOrder(o.items);
                 const bb = bbChoice[o.id] ?? bbSuggested;
+                const email = o.customer.email?.toLowerCase() ?? "";
+                const isOpen = expanded[o.id];
                 return (
-                  <tr key={o.id} className={cn("border-b border-border align-top", needsLabel(o) && "bg-primary/5")}>
+                  <Fragment key={o.id}>
+                  <tr className={cn("border-b border-border align-top", needsLabel(o) && "bg-primary/5", isOpen && "bg-secondary/30")}>
                     <td className="py-3 pr-3">
-                      <div className="font-semibold">{o.reference}</div>
-                      <div className="text-xs text-muted-foreground">{formatDate(o.createdAt)}</div>
+                      <button
+                        type="button"
+                        onClick={() => toggle(o.id)}
+                        className="flex items-start gap-1.5 text-left"
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                            isOpen && "rotate-180",
+                          )}
+                        />
+                        <span>
+                          <span className="block font-semibold">{o.reference}</span>
+                          <span className="block text-xs text-muted-foreground">{formatDate(o.createdAt)}</span>
+                        </span>
+                      </button>
                       <a
                         href={`/pakbon/${o.id}`}
                         target="_blank"
@@ -199,6 +230,11 @@ export function OrdersPanel() {
                       <div className="text-xs text-muted-foreground">
                         {o.customer.postalCode} {o.customer.city}
                       </div>
+                      {orderCount[email] > 1 && (
+                        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-klusr-stock/10 px-2 py-0.5 text-[10px] font-semibold text-klusr-stock">
+                          <Repeat className="h-3 w-3" /> Terugkerend · {orderCount[email]}× besteld
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 pr-3">
                       <span
@@ -297,6 +333,77 @@ export function OrdersPanel() {
                       )}
                     </td>
                   </tr>
+                  {isOpen && (
+                    <tr className="border-b border-border bg-secondary/20">
+                      <td colSpan={5} className="px-3 py-4">
+                        <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+                          <div>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                              Orderregels
+                            </p>
+                            <ul className="space-y-2">
+                              {o.items.map((it) => (
+                                <li
+                                  key={it.key}
+                                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-2"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={it.image || "/icon.svg"}
+                                    alt=""
+                                    className="h-12 w-12 shrink-0 rounded border border-border bg-white object-contain"
+                                  />
+                                  <div className="min-w-0 flex-1 text-xs">
+                                    <p className="font-semibold">
+                                      {it.brand} {it.title}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      {it.variantLabel}
+                                      {it.selectedColor
+                                        ? ` · ${it.selectedColor.name}${it.selectedColor.code ? ` (${it.selectedColor.code})` : ""}${it.selectedColor.collection ? ` · ${it.selectedColor.collection}` : ""}`
+                                        : ""}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      EAN: {it.gtin || it.variantId || "—"}
+                                    </p>
+                                  </div>
+                                  <div className="shrink-0 text-right text-xs">
+                                    <p className="font-semibold">{it.quantity}×</p>
+                                    <p className="text-muted-foreground">
+                                      {formatPrice(it.kluspasPrice * it.quantity)}
+                                    </p>
+                                  </div>
+                                </li>
+                              ))}
+                              {o.items.length === 0 && (
+                                <li className="text-xs text-muted-foreground">
+                                  Geen orderregels (demo-order).
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                              Bezorgadres
+                            </p>
+                            <div className="rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground">
+                              <p className="font-semibold text-foreground">
+                                {o.customer.firstName} {o.customer.lastName}
+                              </p>
+                              <p>{o.customer.street}</p>
+                              <p>
+                                {o.customer.postalCode} {o.customer.city}
+                              </p>
+                              <p>{(o.customer.country || "NL").toUpperCase()}</p>
+                              <p className="mt-1 break-all">{o.customer.email}</p>
+                              {o.customer.phone && <p>{o.customer.phone}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
               {!loading && orders.length === 0 && (

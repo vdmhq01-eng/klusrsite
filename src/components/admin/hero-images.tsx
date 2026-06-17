@@ -3,17 +3,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image as ImageIcon, Loader2, Sparkles, KeyRound, AlertTriangle, Check } from "lucide-react";
 import { categories } from "@/lib/data";
+import { SITE_IMAGE_SLOTS } from "@/lib/store/hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 /**
- * Admin-kaart "Hero-afbeeldingen": genereer per categorie (of in één keer voor
- * alles) een brand-fitting sfeerbeeld via fal.ai en bewaar de URL in KV. Toont
- * de huidige afbeelding als thumbnail + per-categorie fouten/status.
+ * Admin-kaart "Sfeerafbeeldingen": genereer per slot (of in één keer voor alles)
+ * een brand-fitting sfeerbeeld via fal.ai en bewaar de URL in KV. Toont de
+ * huidige afbeelding als thumbnail + per-slot fouten/status.
+ *
+ * Twee secties:
+ *  - Sfeerafbeeldingen (site) — losse slots zoals de homepage-banner, advies en winkels.
+ *  - Categoriepagina's — de hero-band per hoofdcategorie.
  *
  * Degradeert netjes: zonder FAL_API_KEY toont 'ie een hint en blijven de knoppen
- * uitgeschakeld; de categoriepagina valt dan terug op de bestaande gradient.
+ * uitgeschakeld; de pagina's vallen dan terug op de bestaande gradient.
  */
 
 interface HeroResult {
@@ -29,10 +33,22 @@ interface HeroResponse {
   message?: string;
 }
 
+/** Eén beheerbaar sfeerbeeld-slot in de UI. */
+interface ImageSlot {
+  slug: string;
+  title: string;
+}
+
 /** Hoofdcategorieën waarvoor we hero's beheren ("acties" heeft een eigen blok). */
-const HERO_CATEGORIES = categories
+const HERO_CATEGORIES: ImageSlot[] = categories
   .filter((c) => c.slug !== "acties")
   .map((c) => ({ slug: c.slug, title: c.title }));
+
+/** Losse site-slots (homepage-banner, advies, winkels) uit de centrale registry. */
+const SITE_SLOTS: ImageSlot[] = SITE_IMAGE_SLOTS.map((s) => ({ slug: s.slug, title: s.label }));
+
+/** Alle slots samen — handig om bij "Genereer alle" alle fouten te wissen. */
+const ALL_SLOTS: ImageSlot[] = [...HERO_CATEGORIES, ...SITE_SLOTS];
 
 export function HeroImages() {
   const [configured, setConfigured] = useState<boolean | null>(null);
@@ -63,11 +79,11 @@ export function HeroImages() {
   async function generate(slug?: string) {
     const busyKey = slug ?? "all";
     setBusy((p) => ({ ...p, [busyKey]: true }));
-    // Wis eerdere fout(en) voor de betrokken categorie(ën).
+    // Wis eerdere fout(en) voor de betrokken slot(s).
     setErrors((p) => {
       const next = { ...p };
       if (slug) delete next[slug];
-      else for (const c of HERO_CATEGORIES) delete next[c.slug];
+      else for (const s of ALL_SLOTS) delete next[s.slug];
       return next;
     });
 
@@ -84,7 +100,7 @@ export function HeroImages() {
         const failMsg = data.message;
         setErrors((p) => {
           const next = { ...p };
-          for (const c of slug ? [{ slug }] : HERO_CATEGORIES) next[c.slug] = failMsg;
+          for (const s of slug ? [{ slug }] : ALL_SLOTS) next[s.slug] = failMsg;
           return next;
         });
       } else {
@@ -95,10 +111,10 @@ export function HeroImages() {
         }
       }
     } catch {
-      const failMsg = "Kon de hero-generator niet bereiken.";
+      const failMsg = "Kon de afbeelding-generator niet bereiken.";
       setErrors((p) => {
         const next = { ...p };
-        for (const c of slug ? [{ slug }] : HERO_CATEGORIES) next[c.slug] = failMsg;
+        for (const s of slug ? [{ slug }] : ALL_SLOTS) next[s.slug] = failMsg;
         return next;
       });
     } finally {
@@ -110,17 +126,73 @@ export function HeroImages() {
 
   const allBusy = !!busy["all"];
 
+  /** Render één slot-rij (thumbnail + status + Genereer-knop). */
+  function renderSlot(slot: ImageSlot) {
+    const url = images[slot.slug];
+    const isBusy = !!busy[slot.slug] || allBusy;
+    const error = errors[slot.slug];
+    return (
+      <li
+        key={slot.slug}
+        className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+      >
+        {/* Thumbnail van de huidige afbeelding, of een placeholder. */}
+        <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-md bg-secondary">
+          {url ? (
+            // Plain <img>: vermijdt remote-domain config voor de fal CDN.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt={slot.title} className="h-full w-full object-cover" />
+          ) : (
+            <span className="grid h-full w-full place-items-center text-muted-foreground">
+              <ImageIcon className="h-5 w-5" />
+            </span>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-semibold">{slot.title}</p>
+            {url && !error && <Check className="h-3.5 w-3.5 shrink-0 text-klusr-stock" />}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {url ? "Afbeelding ingesteld" : "Nog geen afbeelding"}
+          </p>
+          {error && (
+            <p className="mt-1 flex items-start gap-1 text-xs text-destructive">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+              <span className="break-words">{error}</span>
+            </p>
+          )}
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0"
+          disabled={configured === false || isBusy}
+          onClick={() => generate(slot.slug)}
+        >
+          {isBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          Genereer
+        </Button>
+      </li>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <ImageIcon className="h-4 w-4 text-primary" />
-          Hero-afbeeldingen
+          Sfeerafbeeldingen
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Genereer per categorie een brand-fitting sfeerbeeld (fal.ai) voor de hero-band op de
-          categoriepagina. De afbeelding verschijnt achter de donkere gradient, zodat de witte
-          tekst leesbaar blijft.
+          Genereer brand-fitting sfeerbeelden (fal.ai) voor de hero-banden. Elke afbeelding
+          verschijnt achter de donkere gradient, zodat de witte tekst leesbaar blijft.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -130,7 +202,8 @@ export function HeroImages() {
             <KeyRound className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               fal.ai is nog niet geconfigureerd. Zet <code className="font-mono">FAL_API_KEY</code> in
-              de omgeving (Vercel). Zolang dat ontbreekt valt de hero terug op de bestaande gradient.
+              de omgeving (Vercel). Zolang dat ontbreekt vallen de banners terug op de bestaande
+              gradient.
             </p>
           </div>
         )}
@@ -155,68 +228,25 @@ export function HeroImages() {
             )}
           </Button>
           <span className="text-xs text-muted-foreground">
-            Genereert elke hoofdcategorie opnieuw (kan even duren).
+            Genereert elke categorie én elk site-slot opnieuw (kan even duren).
           </span>
         </div>
 
-        {/* Per-categorie rijen */}
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {HERO_CATEGORIES.map((cat) => {
-            const url = images[cat.slug];
-            const isBusy = !!busy[cat.slug] || allBusy;
-            const error = errors[cat.slug];
-            return (
-              <li
-                key={cat.slug}
-                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
-              >
-                {/* Thumbnail van de huidige hero, of een placeholder. */}
-                <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-md bg-secondary">
-                  {url ? (
-                    // Plain <img>: vermijdt remote-domain config voor de fal CDN.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={url} alt={cat.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="grid h-full w-full place-items-center text-muted-foreground">
-                      <ImageIcon className="h-5 w-5" />
-                    </span>
-                  )}
-                </div>
+        {/* Sectie: site-sfeerbeelden (homepage-banner, advies, winkels) */}
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-bold">Sfeerafbeeldingen (site)</h3>
+          <p className="text-xs text-muted-foreground">
+            Losse banners, o.a. de homepage-banner. Ontbreekt er een afbeelding, dan blijft de
+            bestaande gradient/placeholder staan.
+          </p>
+          <ul className="grid gap-3 sm:grid-cols-2">{SITE_SLOTS.map(renderSlot)}</ul>
+        </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="truncate text-sm font-semibold">{cat.title}</p>
-                    {url && !error && <Check className="h-3.5 w-3.5 shrink-0 text-klusr-stock" />}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {url ? "Afbeelding ingesteld" : "Nog geen afbeelding"}
-                  </p>
-                  {error && (
-                    <p className="mt-1 flex items-start gap-1 text-xs text-destructive">
-                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                      <span className="break-words">{error}</span>
-                    </p>
-                  )}
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0"
-                  disabled={configured === false || isBusy}
-                  onClick={() => generate(cat.slug)}
-                >
-                  {isBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Genereer
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
+        {/* Sectie: categorie-hero's */}
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-bold">Categoriepagina&apos;s</h3>
+          <ul className="grid gap-3 sm:grid-cols-2">{HERO_CATEGORIES.map(renderSlot)}</ul>
+        </div>
 
         <p className="text-xs text-muted-foreground">
           De afbeeldingen worden gecachet in KV. Verlopen fal.media-URL&apos;s? Genereer ze hier
