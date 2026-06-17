@@ -87,6 +87,7 @@ const FACET_TITLE_KEY: Record<string, MessageKey> = {
   Toepassing: "plp.facet.toepassing",
   Korrel: "plp.facet.korrel",
   Lichtkleur: "plp.facet.lichtkleur",
+  Type: "plp.facet.type",
 };
 
 // Merk-waarden die geen echt merk zijn → niet als facet tonen.
@@ -243,6 +244,70 @@ const ATTRIBUTE_FACETS: AttrFacet[] = [
       { id: "warmwit", label: "Warmwit", re: /warm\s*wit|2[678]00\s*k|extra\s*warm/i },
       { id: "koelwit", label: "Koelwit", re: /koel\s*wit|4000\s*k|neutraal\s*wit/i },
       { id: "daglicht", label: "Daglicht", re: /daglicht|6[45]00\s*k/i },
+    ],
+  },
+  // Productsoort/Type — afgeleid uit de titel, per categorie. Geeft een fijne
+  // filter waar de subcategorie te grof is (bv. ijzerwaren: bouten/moeren/…).
+  {
+    key: "type-ijzer",
+    title: "Type",
+    categories: ["ijzerwaren"],
+    defs: [
+      { id: "schroeven", label: "Schroeven", re: /schroef|schroeven|spaanplaat|houtschroef|plaatschroef|spax|parker|luikschroef|vijs/i },
+      { id: "bouten", label: "Bouten", re: /\bbout|tapbout|slotbout|draadeind|draadstang|keilbout|binnenzeskant/i },
+      { id: "pluggen", label: "Pluggen", re: /\bplug|kozijnplug|hollewand|nagelplug/i },
+      { id: "moeren", label: "Moeren", re: /\bmoer|borgmoer|dopmoer|vleugelmoer|oogmoer/i },
+      { id: "haken", label: "Haken & ophang", re: /\bhaak|schroefoog|oogschroef|wandhaak|kaderhanger|katrol|spiegel.?bevest/i },
+      { id: "nagels", label: "Nagels & spijkers", re: /nagel|spijker|puntduim/i },
+      { id: "touw", label: "Touw & koord", re: /\btouw|koord|sisal|waslijn|streng/i },
+      { id: "kabel", label: "Kabel & ketting", re: /ketting|staalkabel|staaldraad|spankabel|draadklem|klinknagel|binddraad/i },
+      { id: "ringen", label: "Ringen", re: /\bring\b|sluitring|carrosserie|veerring|tandveer|kuipring|onderleg/i },
+      { id: "wielen", label: "Wielen", re: /\bwiel|zwenkwiel|bokwiel|luchtband/i },
+      { id: "spanbanden", label: "Spanbanden & klemmen", re: /spanband|spangordel|ratelspanner|slangklem|slangenklem|uitlaatklem/i },
+      { id: "ankers", label: "Ankers", re: /\banker|hulsanker|keilanker|slaganker|inslag/i },
+      { id: "sloten", label: "Sloten & sluitwerk", re: /\bslot|hangslot|cilinder|grendel|harpsluit|d-sluiting|scharnier|\bbeslag/i },
+    ],
+  },
+  {
+    key: "type-gereedschap",
+    title: "Type",
+    categories: ["gereedschap"],
+    defs: [
+      { id: "kwasten", label: "Kwasten", re: /kwast|penseel|patentpunt|bokkenpoot|blokkwast/i },
+      { id: "rollers", label: "Rollers & verfbakjes", re: /roller|verfrol|schuimroller|vachtrol|verfbak|inzetbak|inzetpot|cuvet|verfcassette/i },
+      { id: "schuur", label: "Schuurmateriaal", re: /schuur|glaspapier|schuurpapier|schuurblok|schuurspons|\bgrit\b|doorslijp|slijpschijf|lamellenwiel/i },
+      { id: "boren", label: "Boren & bits", re: /\bboor|borenset|\bbit\b|bitset|bithouder|gatzaag/i },
+      { id: "messen", label: "Messen & snijden", re: /\bmes\b|mesjes|stanleymes|afbreekmes|cutter|reservemes|stucadoorsmes/i },
+      { id: "sleutels", label: "Sleutels & ratels", re: /sleutel|ratel|steeksleutel|inbus|dopsleutel/i },
+      { id: "tangen", label: "Tangen", re: /\btang\b|combinatietang|waterpomptang|kniptang/i },
+      { id: "hamers", label: "Hamers & beitels", re: /hamer|moker|\bbijl\b|beitel/i },
+      { id: "zagen", label: "Zagen", re: /\bzaag|handzaag|figuurzaag|ijzerzaag/i },
+      { id: "meten", label: "Meten & aftekenen", re: /\bmeet|waterpas|rolmaat|duimstok|schietlood|winkelhaak/i },
+      { id: "tape", label: "Afplaktape & folie", re: /afplaktape|afplak|schilderstape|maskeer|afdekfolie|\btape\b/i },
+    ],
+  },
+  {
+    key: "type-behang",
+    title: "Type",
+    categories: ["behang"],
+    defs: [
+      { id: "vlies", label: "Vliesbehang", re: /vlies/i },
+      { id: "vinyl", label: "Vinylbehang", re: /vinyl/i },
+      { id: "glasweefsel", label: "Glasweefsel", re: /glasweefsel|glasvezel/i },
+      { id: "benodigdheden", label: "Behangbenodigdheden", re: /behanglijm|behangplaksel|naadroller|behangschaar|perfax|behangtafel|loodlijn|kwast|roller/i },
+      { id: "papier", label: "Papierbehang", re: /\bpapier/i },
+    ],
+  },
+  {
+    key: "type-elektra",
+    title: "Type",
+    categories: ["elektra"],
+    defs: [
+      { id: "verleng", label: "Verlengkabels & contactdozen", re: /verleng|haspel|contactdoos|stekkerdoos|verdeeldoos/i },
+      { id: "melders", label: "Rook- & CO-melders", re: /rookmelder|koolmonoxide|\bco-?melder|hittemelder|brandblusser|branddeken/i },
+      { id: "binders", label: "Kabelbinders & -goten", re: /kabelbinder|kabelschoen|tie-?wrap|kabelclip|kabelgoot/i },
+      { id: "stekkers", label: "Stekkers & adapters", re: /stekker|adapter|verloop|contrastekker/i },
+      { id: "batterijen", label: "Batterijen", re: /batterij|alkaline|knoopcel|oplaadbaar|\baccu\b/i },
     ],
   },
 ];
