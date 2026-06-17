@@ -152,12 +152,19 @@ const mollieIcon = (id: string) =>
   `https://www.mollie.com/external/icons/payment-methods/${id}.svg`;
 
 /** Statische fallback-lijst (demo / Mollie onbereikbaar) met officiële logo's. */
-const FALLBACK_METHODS: PaymentMethodInfo[] = [
-  { id: "ideal", label: "iDEAL", image: mollieIcon("ideal") },
-  { id: "bancontact", label: "Bancontact", image: mollieIcon("bancontact") },
-  { id: "creditcard", label: "Creditcard", image: mollieIcon("creditcard") },
-  { id: "klarna", label: "Achteraf betalen met Klarna", image: mollieIcon("klarna") },
-];
+/** Statische terugval (demo / methodenroute onbereikbaar). Landbewust: NL toont
+ *  iDEAL, BE toont Bancontact. Apple Pay & Google Pay altijd erbij. */
+function fallbackMethods(country?: string): PaymentMethodInfo[] {
+  const rest: PaymentMethodInfo[] = [
+    { id: "creditcard", label: "Creditcard", image: mollieIcon("creditcard") },
+    { id: "applepay", label: "Apple Pay", image: mollieIcon("applepay") },
+    { id: "googlepay", label: "Google Pay", image: mollieIcon("googlepay") },
+    { id: "klarna", label: "Achteraf betalen met Klarna", image: mollieIcon("klarna") },
+  ];
+  return country === "BE"
+    ? [{ id: "bancontact", label: "Bancontact", image: mollieIcon("bancontact") }, ...rest]
+    : [{ id: "ideal", label: "iDEAL", image: mollieIcon("ideal") }, ...rest];
+}
 
 export interface PaymentMethodsResult {
   /** True wanneer de lijst live uit Mollie komt (anders fallback). */
@@ -178,14 +185,24 @@ type RawMollieMethod = {
  * minimum/maximum (zoals Klarna) alleen verschijnen wanneer ze écht kunnen.
  * Valt terug op een statische lijst zonder credentials of bij een fout.
  */
-export async function listPaymentMethods(amount?: number): Promise<PaymentMethodsResult> {
+export async function listPaymentMethods(
+  amount?: number,
+  country?: string,
+): Promise<PaymentMethodsResult> {
+  const cc = country ? country.toUpperCase().slice(0, 2) : undefined;
   const mollie = getClient();
-  if (!mollie) return { configured: false, methods: FALLBACK_METHODS };
+  if (!mollie) return { configured: false, methods: fallbackMethods(cc) };
   try {
-    const params: Record<string, unknown> = { include: "issuers" };
+    const params: Record<string, unknown> = {
+      include: "issuers",
+      // Wallets (Apple Pay / Google Pay) komen alléén mee met includeWallets.
+      includeWallets: "applepay,googlepay",
+    };
     if (amount && amount > 0) {
       params.amount = { currency: "EUR", value: amount.toFixed(2) };
     }
+    // Land meegeven zodat Mollie de juiste (bv. Belgische) methoden teruggeeft.
+    if (cc) params.billingCountry = cc;
     const list = (await mollie.methods.list(params as never)) as unknown as RawMollieMethod[];
     const methods: PaymentMethodInfo[] = list.map((m) => ({
       id: m.id,
@@ -195,10 +212,10 @@ export async function listPaymentMethods(amount?: number): Promise<PaymentMethod
         ? m.issuers.map((i) => ({ id: i.id, name: i.name, image: i.image?.svg }))
         : undefined,
     }));
-    return { configured: true, methods: methods.length ? methods : FALLBACK_METHODS };
+    return { configured: true, methods: methods.length ? methods : fallbackMethods(cc) };
   } catch (err) {
     console.error("[mollie] methods list failed", err);
-    return { configured: false, methods: FALLBACK_METHODS };
+    return { configured: false, methods: fallbackMethods(cc) };
   }
 }
 
