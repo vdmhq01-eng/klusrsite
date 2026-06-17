@@ -1305,7 +1305,7 @@ const nl: Messages = {
   "pdp.withoutAccount": "— zonder account",
   "pdp.kluspas.title": "KLUSRPAS-prijs — gratis voor iedereen",
   "pdp.kluspas.body":
-    "Vraag de gratis KLUSRPAS in 30 seconden aan met je e-mail en betaal meteen deze prijs. Geen abonnement, geen verplichtingen.",
+    "Kies bij het afrekenen voor een gratis account, dan wordt de KLUSRPAS-korting direct verrekend. Geen abonnement, geen verplichtingen.",
   "pdp.kluspas.link": "Wat is de KLUSRPAS?",
   "pdp.surcharge": "Incl. {base} (+{amount} voor donkere kleur)",
   "pdp.perLiter": "{price} per liter",
@@ -1964,7 +1964,7 @@ const en: Messages = {
   "pdp.withoutAccount": "— without an account",
   "pdp.kluspas.title": "KLUSRPAS price — free for everyone",
   "pdp.kluspas.body":
-    "Get the free KLUSRPAS in 30 seconds with your email and pay this price right away. No subscription, no obligations.",
+    "Choose to create a free account at checkout and the KLUSRPAS discount is applied right away. No subscription, no obligations.",
   "pdp.kluspas.link": "What is the KLUSRPAS?",
   "pdp.surcharge": "Incl. {base} (+{amount} for a dark colour)",
   "pdp.perLiter": "{price} per litre",
@@ -2623,7 +2623,7 @@ const fr: Messages = {
   "pdp.withoutAccount": "— sans compte",
   "pdp.kluspas.title": "Prix KLUSRPAS — gratuit pour tous",
   "pdp.kluspas.body":
-    "Obtenez la KLUSRPAS gratuite en 30 secondes avec votre e-mail et payez immédiatement ce prix. Sans abonnement, sans engagement.",
+    "Lors du paiement, choisissez de créer un compte gratuit et la remise KLUSRPAS est appliquée immédiatement. Sans abonnement, sans engagement.",
   "pdp.kluspas.link": "Qu'est-ce que la KLUSRPAS ?",
   "pdp.surcharge": "Incl. {base} (+{amount} pour une couleur foncée)",
   "pdp.perLiter": "{price} par litre",
@@ -3282,7 +3282,7 @@ const de: Messages = {
   "pdp.withoutAccount": "— ohne Konto",
   "pdp.kluspas.title": "KLUSRPAS-Preis — kostenlos für alle",
   "pdp.kluspas.body":
-    "Hol dir die kostenlose KLUSRPAS in 30 Sekunden mit deiner E-Mail und zahle sofort diesen Preis. Kein Abo, keine Verpflichtungen.",
+    "Wähle beim Bezahlen ein kostenloses Konto und der KLUSRPAS-Rabatt wird sofort verrechnet. Kein Abo, keine Verpflichtungen.",
   "pdp.kluspas.link": "Was ist die KLUSRPAS?",
   "pdp.surcharge": "Inkl. {base} (+{amount} für dunkle Farbe)",
   "pdp.perLiter": "{price} pro Liter",
