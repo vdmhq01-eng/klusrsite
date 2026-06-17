@@ -29,6 +29,7 @@ import { OrdersPanel } from "./orders-panel";
 import { TicketsPanel } from "./tickets-panel";
 import { CustomersPanel } from "./customers-panel";
 import { AiContentManager } from "./ai-content-manager";
+import { HeroImages } from "./hero-images";
 import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
 
@@ -101,7 +102,12 @@ export function AdminDashboard() {
             <Reports orders={orders} />
           </div>
         )}
-        {section === "content" && <AiContentManager />}
+        {section === "content" && (
+          <div className="space-y-8">
+            <HeroImages />
+            <AiContentManager />
+          </div>
+        )}
         {section === "channable" && (
           <div className="space-y-6">
             <MollieTest />

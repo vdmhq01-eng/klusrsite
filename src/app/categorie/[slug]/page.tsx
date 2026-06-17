@@ -10,6 +10,7 @@ import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
 import { CategoryIcon } from "@/components/shared/category-icon";
 import { TopicImage } from "@/components/shared/topic-image";
 import { categoryKeywords } from "@/lib/topic-images";
+import { getHeroImage } from "@/lib/store/hero";
 
 interface CategoryPageProps {
   params: { slug: string };
@@ -39,13 +40,17 @@ export function generateMetadata({ params }: CategoryPageProps): Metadata {
   };
 }
 
-export default function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params }: CategoryPageProps) {
   const category = getCategory(params.slug);
   if (!category) notFound();
 
   const products = getProductsByCategory(category.slug);
   const subs = getSubCategories(category.slug);
   const isActies = category.slug === "acties";
+
+  // Door de owner gegenereerde fal.ai-hero (gecachet in KV). Ontbreekt 'ie of
+  // is KV uit, dan blijft de bestaande gradient-hero hieronder onveranderd.
+  const heroImage = await getHeroImage(category.slug);
 
   const breadcrumbItems = [
     { label: category.title, href: `/categorie/${category.slug}` },
@@ -67,6 +72,18 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             keywords={categoryKeywords(category.slug)}
             src={`/generated/categorie-${category.slug}.jpg`}
           />
+          {/* Gegenereerd fal.ai-sfeerbeeld (indien aanwezig) bovenop de fallback,
+              maar onder de donkere gradient zodat de witte tekst leesbaar blijft.
+              Plain <img> i.p.v. next/image om remote-domain config te vermijden. */}
+          {heroImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={heroImage}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-klusr-black/85 via-klusr-black/55 to-primary/30" />
           <div className="absolute inset-0 flex flex-col justify-center gap-3 p-6 sm:p-10">
             <div className="flex items-center gap-3">
