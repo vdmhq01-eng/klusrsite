@@ -305,6 +305,25 @@ export function magicLinkEmail(
   };
 }
 
+export function passwordResetEmail(
+  name: string,
+  url: string,
+): { subject: string; html: string; text: string } {
+  const hi = name ? `Hoi ${esc(name.split(" ")[0])},` : "Hoi,";
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Stel je wachtwoord opnieuw in</h1>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${hi} je (of iemand anders) heeft gevraagd om je KLUSR-wachtwoord opnieuw in te stellen. Klik op de knop om een nieuw wachtwoord te kiezen.</p>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Nieuw wachtwoord instellen", url)}</td></tr></table>` +
+    `<p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:${C.muted};">Werkt de knop niet? Plak deze link in je browser:</p>` +
+    `<p style="margin:0 0 18px;font-size:13px;line-height:1.6;"><a href="${url}" style="color:${C.red};word-break:break-all;">${esc(url)}</a></p>` +
+    `<p style="margin:0;font-size:12px;color:${C.muted};">Deze link is 60 minuten geldig en werkt één keer. Heb je dit niet aangevraagd? Negeer deze e-mail dan — je wachtwoord blijft ongewijzigd.</p>`;
+  return {
+    subject: "Stel je KLUSR-wachtwoord opnieuw in",
+    html: layout({ title: "Stel je wachtwoord opnieuw in", preheader: "Kies een nieuw wachtwoord voor je KLUSR-account", content }),
+    text: `${hi} stel je KLUSR-wachtwoord opnieuw in via deze link (60 min geldig):\n${url}\n\nHeb je dit niet aangevraagd? Negeer deze e-mail dan — je wachtwoord blijft ongewijzigd.`,
+  };
+}
+
 // --- Klantenservice / tickets ----------------------------------------------
 
 /** Escape + behoud regelovergangen voor weergave in HTML-mails. */

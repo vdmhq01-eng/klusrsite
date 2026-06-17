@@ -29,7 +29,7 @@ import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
 
 /** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
 const WHITE_COLOR = { name: "100% wit", code: "RAL 9010", hex: "#FFFFFF", collection: "Wit" } as const;
-import { isLightColor } from "@/lib/data/colors";
+import { isLightColor, findColor } from "@/lib/data/colors";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
 import { usePricingMode } from "@/lib/store/pricing-mode";
@@ -52,6 +52,16 @@ export function ProductBuybox({
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
   const [color, setColor] = useState<SelectedColor | undefined>();
   const [quantity, setQuantity] = useState(1);
+
+  // Voorkeuze van kleur via ?kleur=<code> (bijv. vanuit de Kleurenkiezer-funnel).
+  // Client-side gelezen zodat de productpagina statisch/ISR blijft.
+  useEffect(() => {
+    if (!product.colorMatchable) return;
+    const code = new URLSearchParams(window.location.search).get("kleur");
+    if (!code) return;
+    const found = findColor(code);
+    if (found) setColor(withBase(found));
+  }, [product.colorMatchable]);
 
   const addItem = useCart((s) => s.addItem);
   const toggleFavorite = useFavorites((s) => s.toggle);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Tag } from "lucide-react";
+import { ChevronDown, Tag, Palette, ArrowRight } from "lucide-react";
 import { navCategories } from "@/lib/data/categories";
 import { getSubCategories } from "@/lib/data/products";
 import { cn } from "@/lib/utils";
@@ -53,6 +53,26 @@ export function MainNav() {
           onMouseEnter={() => setOpenSlug(active.slug)}
         >
           <div className="container-klusr py-6">
+            {/* Kleurenkiezer-funnel uitgelicht in het verf-menu */}
+            {active.slug === "verf" && (
+              <Link
+                href="/kleurenkiezer"
+                className="group mb-5 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10"
+              >
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-white">
+                  <Palette className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-foreground">
+                    Kleurenkiezer — kies eerst je kleur, dan je verf
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    In 3 stappen naar verf die wij exact op jouw kleur mengen
+                  </span>
+                </span>
+                <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            )}
             {activeGroups && activeGroups.length > 0 ? (
               <>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">

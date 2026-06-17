@@ -39,6 +39,7 @@ const KEY = {
 
 const VERIFY_TTL = 24 * 60 * 60 * 1000; // 24 uur
 const MAGIC_TTL = 30 * 60 * 1000; // 30 minuten
+const RESET_TTL = 60 * 60 * 1000; // 60 min
 
 async function hashPassword(pw: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
@@ -96,6 +97,20 @@ export async function setVerified(email: string): Promise<void> {
   }
 }
 
+/**
+ * Stel een (nieuw) wachtwoord in voor een bestaande gebruiker. Een geslaagde
+ * reset bewijst e-mailbezit, dus markeren we het account meteen als bevestigd.
+ * Geeft false terug als er geen account met dit e-mailadres bestaat.
+ */
+export async function setPassword(email: string, password: string): Promise<boolean> {
+  const u = await getUser(email);
+  if (!u) return false;
+  u.passwordHash = await hashPassword(password);
+  u.verified = true;
+  await saveUser(u);
+  return true;
+}
+
 /** Controleer e-mail + wachtwoord. Geeft de user alleen terug als die bevestigd is. */
 export async function verifyPassword(email: string, password: string): Promise<User | null> {
   const u = await getUser(email);
@@ -125,4 +140,5 @@ async function consumeToken(token: string): Promise<string | null> {
 
 export const createVerifyToken = (email: string) => createToken(email, VERIFY_TTL);
 export const createMagicToken = (email: string) => createToken(email, MAGIC_TTL);
+export const createResetToken = (email: string) => createToken(email, RESET_TTL);
 export const consumeAuthToken = consumeToken;

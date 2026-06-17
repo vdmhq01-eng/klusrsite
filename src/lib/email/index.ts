@@ -5,6 +5,7 @@ import {
   welcomeEmail,
   verificationEmail,
   magicLinkEmail,
+  passwordResetEmail,
   abandonedCartEmail,
   supportConfirmationEmail,
   supportReplyEmail,
@@ -45,6 +46,16 @@ export async function sendMagicLink(input: {
   url: string;
 }): Promise<SendEmailResult> {
   const { subject, html, text } = magicLinkEmail(input.name ?? "", input.url);
+  return sendEmail({ to: input.email, subject, html, text });
+}
+
+/** Verstuur een wachtwoord-herstelmail. */
+export async function sendPasswordReset(input: {
+  email: string;
+  name?: string;
+  url: string;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = passwordResetEmail(input.name ?? "", input.url);
   return sendEmail({ to: input.email, subject, html, text });
 }
 
