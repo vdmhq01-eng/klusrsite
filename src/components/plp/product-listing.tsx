@@ -90,7 +90,9 @@ const FACET_TITLE_KEY: Record<string, MessageKey> = {
 };
 
 // Merk-waarden die geen echt merk zijn → niet als facet tonen.
-const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
+const JUNK_BRANDS = new Set([
+  "", "onbekend", "merk", "overig", "overige", "partijhandel", "partij",
+]);
 
 /** Total stock across all stores for a product. */
 function totalStock(product: Product): number {
