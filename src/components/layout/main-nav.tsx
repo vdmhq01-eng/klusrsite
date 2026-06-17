@@ -75,7 +75,7 @@ export function MainNav() {
             )}
             {activeGroups && activeGroups.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
                   {activeGroups.map((group) => (
                     <div key={group.slug}>
                       <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
