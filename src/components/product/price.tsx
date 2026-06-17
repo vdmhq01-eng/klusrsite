@@ -16,9 +16,9 @@ interface PriceProps {
 }
 
 /**
- * KLUSR price block. Modusbewust: particulier toont de KLUSRPAS-prijs incl. btw
- * met de normale prijs doorgestreept; zakelijk toont de ProfPas-prijs excl. btw.
- * Tot hydratie tonen we particulier (voorkomt hydration-mismatch).
+ * KLUSR price block. Modusbewust: particulier toont de KLUSR-prijs incl. btw met
+ * (indien aanwezig) de adviesprijs doorgestreept; zakelijk toont de ProfPas-prijs
+ * excl. btw. Tot hydratie tonen we particulier (voorkomt hydration-mismatch).
  */
 export function Price({
   price,

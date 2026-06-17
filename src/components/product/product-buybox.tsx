@@ -205,6 +205,16 @@ export function ProductBuybox({
           <p className="mt-1 text-sm font-semibold text-klusr-stock">
             Je bespaart {formatPrice(priceInfo.savings)}
             {priceInfo.savingsPct ? ` (${priceInfo.savingsPct}%)` : ""}
+            {priceInfo.badge === "KLUSRPAS" && " met je gratis KLUSR-account"}
+          </p>
+        )}
+        {priceInfo.normalPrice !== undefined && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Normale prijs{" "}
+            <span className="font-semibold text-foreground">
+              {formatPrice(priceInfo.normalPrice)}
+            </span>{" "}
+            <span className="text-xs">— zonder account</span>
           </p>
         )}
         {surcharge > 0 && (
