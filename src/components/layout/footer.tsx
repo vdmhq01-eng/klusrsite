@@ -4,6 +4,7 @@ import { Logo } from "./logo";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { navCategories } from "@/lib/data/categories";
+import { PaymentIcons, PostNlBadge } from "@/components/shared/payment-icons";
 import { t } from "@/lib/i18n/server";
 
 export function Footer() {
@@ -87,6 +88,26 @@ export function Footer() {
             </FooterLink>
           ))}
         </FooterColumn>
+      </div>
+
+      {/* Trust-band: betaalmethodes + verzendpartner */}
+      <div className="border-t border-white/10">
+        <div className="container-klusr flex flex-col gap-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">
+              {t("footer.trust.payTitle")}
+            </p>
+            <PaymentIcons />
+          </div>
+          <div className="sm:text-right">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">
+              {t("footer.trust.shipTitle")}
+            </p>
+            <div className="flex sm:justify-end">
+              <PostNlBadge />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Bottom bar */}

@@ -32,6 +32,7 @@ import type { Product } from "@/types";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
+import { PaymentIcons, PostNlBadge } from "@/components/shared/payment-icons";
 
 export function CartView() {
   const {
@@ -284,6 +285,19 @@ export function CartView() {
                 <ShieldCheck className="h-4 w-4 text-primary" /> {t("cart.usp.payment")}
               </li>
             </ul>
+
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("footer.trust.payTitle")}
+              </p>
+              <PaymentIcons />
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("footer.trust.shipTitle")}
+                </span>
+                <PostNlBadge />
+              </div>
+            </div>
           </div>
         </aside>
       </div>
