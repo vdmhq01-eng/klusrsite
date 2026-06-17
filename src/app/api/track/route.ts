@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { logEvent, recordVisit } from "@/lib/store/analytics";
+import { isExcludedIp, logEvent, recordVisit } from "@/lib/store/analytics";
 
 export const runtime = "nodejs";
 
@@ -13,12 +13,6 @@ const ALLOWED = new Set([
   "view_item",
 ]);
 
-// Eigen/interne IP's uitsluiten van de statistieken (INTERNAL_IPS="1.2.3.4, 5.6.7.8").
-const INTERNAL_IPS = (process.env.INTERNAL_IPS || "")
-  .split(/[\s,;]+/)
-  .map((s) => s.trim())
-  .filter(Boolean);
-
 function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
@@ -26,9 +20,9 @@ function clientIp(req: Request): string {
 }
 
 export async function POST(req: Request) {
-  // Eigen verkeer niet meetellen.
+  // Eigen/uitgesloten verkeer niet meetellen (env INTERNAL_IPS + admin-lijst in KV).
   const ip = clientIp(req);
-  if (ip && INTERNAL_IPS.includes(ip)) {
+  if (ip && (await isExcludedIp(ip))) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 

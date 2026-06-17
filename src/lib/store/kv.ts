@@ -78,9 +78,26 @@ export async function kvSAdd(key: string, member: string): Promise<void> {
   await cmd(["SADD", key, member]);
 }
 
+/** Verwijder een lid uit een set. */
+export async function kvSRem(key: string, member: string): Promise<void> {
+  await cmd(["SREM", key, member]);
+}
+
 export async function kvSMembers(key: string): Promise<string[]> {
   const res = await cmd<string[]>(["SMEMBERS", key]);
   return Array.isArray(res) ? res : [];
+}
+
+/** Zet een string met een TTL in seconden (EX). Voor kortlevende records. */
+export async function kvSetEx(key: string, value: string, seconds: number): Promise<void> {
+  await cmd(["SET", key, value, "EX", seconds]);
+}
+
+/** Lees meerdere keys in één keer (MGET). Mist een key → null op die positie. */
+export async function kvMGet(keys: string[]): Promise<(string | null)[]> {
+  if (keys.length === 0) return [];
+  const res = await cmd<(string | null)[]>(["MGET", ...keys]);
+  return Array.isArray(res) ? res : keys.map(() => null);
 }
 
 /** Push een JSON-waarde vooraan een lijst (voor event-logs). */

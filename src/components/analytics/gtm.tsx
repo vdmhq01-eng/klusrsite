@@ -58,9 +58,15 @@ function PageViewTracker() {
     trackVisit({ type: "pageview", path });
   }, [pathname, searchParams]);
 
-  // Houd de "live bezoekers" vers met een heartbeat zolang het tabblad open is.
+  // Houd de "live bezoekers" + huidige pagina vers met een heartbeat zolang het
+  // tabblad open is. Stuur het actuele pad mee zodat de live-sessie klopt.
   useEffect(() => {
-    const id = setInterval(() => trackVisit({ type: "heartbeat" }), 50_000);
+    const beat = () =>
+      trackVisit({
+        type: "heartbeat",
+        path: typeof window !== "undefined" ? window.location.pathname : undefined,
+      });
+    const id = setInterval(beat, 50_000);
     return () => clearInterval(id);
   }, []);
 
