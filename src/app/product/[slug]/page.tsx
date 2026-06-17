@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
-  getProduct,
   allProductSlugs,
   getRelatedProducts,
   getFrequentlyBoughtTogether,
   getGlansVariants,
 } from "@/lib/data/products";
+import { getLocalizedProduct } from "@/lib/data/products-i18n";
 import { getCategory } from "@/lib/data/categories";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductGallery } from "@/components/product/product-gallery";
@@ -38,7 +38,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const product = getProduct(params.slug);
+  const product = getLocalizedProduct(params.slug);
   if (!product) return { title: "Product niet gevonden" };
 
   const title = `${product.brand} ${product.title}`;
@@ -61,7 +61,7 @@ export async function generateMetadata({
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const product = getProduct(params.slug);
+  const product = getLocalizedProduct(params.slug);
   if (!product) notFound();
 
   const publishedContent = await getProductContent(product.id);
