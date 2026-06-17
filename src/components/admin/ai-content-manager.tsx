@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Sparkles,
@@ -11,6 +11,9 @@ import {
   ListChecks,
   HelpCircle,
   Search,
+  Server,
+  Play,
+  Square,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { AiContentStatus, Product } from "@/types";
@@ -258,11 +261,14 @@ export function AiContentManager() {
             </div>
           </div>
 
-          <p className="mb-4 text-xs text-muted-foreground">
-            Grote runs (de hele catalogus) kun je ook op de achtergrond draaien
-            via de GitHub Action &ldquo;Genereer content (SEO/FAQ)&rdquo; — dan
-            hoeft dit tabblad niet open te blijven.
+          <p className="mb-3 text-xs text-muted-foreground">
+            Grote runs (de hele catalogus) draai je op de server met de knop
+            hieronder — dan hoeft dit tabblad niet open te blijven.
           </p>
+
+          <div className="mb-4">
+            <ServerJobPanel />
+          </div>
 
           {bulk.running && (
             <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-secondary">
@@ -370,6 +376,163 @@ export function AiContentManager() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+type ServerJobProgress = {
+  total: number;
+  done: number;
+  generated: number;
+  failed: number;
+  status: "idle" | "running" | "done" | "stopped";
+  types?: string[];
+};
+
+type ServerJobState = {
+  enabled: boolean;
+  progress?: ServerJobProgress;
+};
+
+/**
+ * Achtergrond-generatie (server): start/stop een server-side job die de hele
+ * catalogus van SEO + FAQ voorziet. De job draait via een self-chaining worker
+ * door, dus de browser mag gewoon dicht. We pollen de status zolang hij loopt.
+ */
+function ServerJobPanel() {
+  const [state, setState] = useState<ServerJobState>({ enabled: false });
+  const [busy, setBusy] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/content-job", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as ServerJobState;
+      setState(data);
+    } catch {
+      /* poll is best-effort */
+    }
+  }, []);
+
+  // Bij mount: huidige status ophalen.
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  // Poll elke ~4s zolang de job loopt; stop met pollen als hij klaar/uit is.
+  useEffect(() => {
+    const running = state.enabled || state.progress?.status === "running";
+    if (running && !pollRef.current) {
+      pollRef.current = setInterval(() => {
+        void refresh();
+      }, 4000);
+    } else if (!running && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [state.enabled, state.progress?.status, refresh]);
+
+  async function send(action: "start" | "stop") {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/content-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = (await res.json()) as ServerJobState & { error?: string };
+      if (!res.ok) throw new Error(data?.error ?? "Actie mislukt");
+      setState(data);
+      if (action === "start") {
+        toast.success("Achtergrond-generatie gestart", {
+          description: "Draait op de server — je kunt dit tabblad sluiten.",
+        });
+        // Geef de worker even tijd en haal dan verse voortgang op.
+        setTimeout(() => void refresh(), 1500);
+      } else {
+        toast("Achtergrond-generatie gestopt", {
+          description: "De huidige batch rondt af en stopt daarna.",
+        });
+      }
+    } catch (err) {
+      toast.error("Actie mislukt", {
+        description: err instanceof Error ? err.message : "Onbekende fout",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const p = state.progress;
+  const running = state.enabled || p?.status === "running";
+  const pct = p && p.total > 0 ? Math.min(100, (p.done / p.total) * 100) : 0;
+  const statusLabel: Record<NonNullable<ServerJobProgress["status"]>, string> = {
+    idle: "Niet gestart",
+    running: "Bezig",
+    done: "Voltooid",
+    stopped: "Gestopt",
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-secondary/30 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <Server className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <p className="text-sm font-bold text-foreground">
+              Achtergrond-generatie (server)
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Genereert SEO + FAQ voor de hele catalogus op de server. Je kunt dit
+              tabblad sluiten — de generatie draait door en wordt automatisch
+              voortgezet.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {!running ? (
+            <Button size="sm" onClick={() => send("start")} disabled={busy} variant="dark">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              Start op server
+            </Button>
+          ) : (
+            <Button size="sm" onClick={() => send("stop")} disabled={busy} variant="outline">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
+              Stop
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {p && (p.status !== "idle" || running) && (
+        <div className="mt-3">
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span className="font-bold uppercase tracking-wide">
+              {statusLabel[p.status]}
+            </span>
+            <span className="tabular-nums">
+              {p.done}/{p.total} producten · {p.generated} gegenereerd
+              {p.failed > 0 ? ` · ${p.failed} mislukt` : ""}
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all",
+                p.status === "done" ? "bg-klusr-stock" : "bg-primary",
+              )}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
