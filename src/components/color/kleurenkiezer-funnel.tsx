@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -25,7 +25,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
-import { colorCollections, allColors, isLightColor } from "@/lib/data/colors";
+import { colorCollections, popularColors2026, isLightColor } from "@/lib/data/colors";
+import { fetchPortalColors } from "@/lib/portal-colors";
 import { withBase } from "@/lib/paint-bases";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
@@ -91,9 +92,29 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   // Stap 1 — kleur
-  const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
+  const [collections, setCollections] = useState(colorCollections);
+  const [activeCollections, setActiveCollections] = useState<Set<string>>(
+    () => new Set([colorCollections[0].id]),
+  );
   const [query, setQuery] = useState("");
   const [color, setColor] = useState<SelectedColor | null>(null);
+
+  // Live kleuren uit de portal (Gamma/AkzoNobel/RAL …); terugval op gecureerde set.
+  useEffect(() => {
+    let on = true;
+    fetchPortalColors().then((cols) => {
+      if (!on || !cols.length) return;
+      const merged = [popularColors2026, ...cols.filter((c) => c.id !== popularColors2026.id)];
+      setCollections(merged);
+      setActiveCollections((cur) => {
+        const valid = new Set([...cur].filter((id) => merged.some((c) => c.id === id)));
+        return valid.size ? valid : new Set([merged[0].id]);
+      });
+    });
+    return () => {
+      on = false;
+    };
+  }, []);
 
   // Stap 2/3 — klus + filters
   const [klus, setKlus] = useState<Klus | null>(null);
@@ -108,20 +129,53 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
   // Stap 4 — bijverkoop
   const [accSelected, setAccSelected] = useState<Set<string>>(new Set());
 
-  const collection = colorCollections.find((c) => c.id === activeCollection) ?? colorCollections[0];
   const searching = query.trim().length > 0;
   const q = query.trim().toLowerCase();
+  const BROWSE_CAP = 150;
+  const allColorsList = useMemo(() => collections.flatMap((c) => c.colors), [collections]);
+  const pickedCollections = useMemo(
+    () => collections.filter((c) => activeCollections.has(c.id)),
+    [collections, activeCollections],
+  );
+
   const shownColors = useMemo(() => {
-    if (!searching) return collection.colors;
-    return allColors
-      .filter((c) => `${c.name} ${c.code} ${c.collection ?? ""}`.toLowerCase().includes(q))
-      .slice(0, 48);
-  }, [searching, q, collection]);
+    if (searching) {
+      return allColorsList
+        .filter((c) => `${c.name} ${c.code} ${c.collection ?? ""}`.toLowerCase().includes(q))
+        .slice(0, 60);
+    }
+    const source = pickedCollections.length ? pickedCollections : collections;
+    const seen = new Set<string>();
+    const out: SelectedColor[] = [];
+    for (const c of source.flatMap((x) => x.colors)) {
+      const k = `${c.code}|${c.hex}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(c);
+      if (out.length >= BROWSE_CAP) break;
+    }
+    return out;
+  }, [searching, q, allColorsList, pickedCollections, collections]);
+
+  const browseTotal = useMemo(() => {
+    const source = pickedCollections.length ? pickedCollections : collections;
+    return source.reduce((n, c) => n + c.colors.length, 0);
+  }, [pickedCollections, collections]);
+
   // Suggesties terwijl je typt: collecties waarvan de naam matcht.
   const collectionSuggestions = useMemo(
-    () => (searching ? colorCollections.filter((c) => c.name.toLowerCase().includes(q)) : []),
-    [searching, q],
+    () => (searching ? collections.filter((c) => c.name.toLowerCase().includes(q)) : []),
+    [searching, q, collections],
   );
+
+  function toggleCollection(id: string) {
+    setActiveCollections((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function pickColor(c: SelectedColor) {
     setColor(withBase(c));
@@ -327,18 +381,37 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
           </div>
 
           {!searching && (
-            <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
-              {colorCollections.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setActiveCollection(c.id)}
-                  className={cn("shrink-0", chip(activeCollection === c.id))}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="no-scrollbar mb-2 flex gap-2 overflow-x-auto pb-1">
+                {collections.map((c) => {
+                  const on = activeCollections.has(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleCollection(c.id)}
+                      aria-pressed={on}
+                      className={cn("inline-flex shrink-0 items-center gap-1.5", chip(on))}
+                    >
+                      {on && <Check className="h-3.5 w-3.5" />}
+                      {c.name}
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 text-[10px] font-bold leading-4",
+                          on ? "bg-white/25" : "bg-secondary text-muted-foreground",
+                        )}
+                      >
+                        {c.colors.length}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Tik meerdere collecties aan om ze samen te bekijken
+                {browseTotal > shownColors.length ? ` · ${shownColors.length} van ${browseTotal} kleuren` : ""}
+              </p>
+            </>
           )}
 
           {searching && collectionSuggestions.length > 0 && (
@@ -352,7 +425,7 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                     key={c.id}
                     type="button"
                     onClick={() => {
-                      setActiveCollection(c.id);
+                      setActiveCollections((cur) => new Set([...cur, c.id]));
                       setQuery("");
                     }}
                     className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
@@ -393,7 +466,30 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
             })}
           </div>
           {searching && shownColors.length === 0 && (
-            <p className="text-sm text-muted-foreground">Geen kleur gevonden — probeer een andere zoekterm.</p>
+            <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-4">
+              <p className="text-sm font-semibold">Geen losse kleur gevonden voor &ldquo;{query}&rdquo;</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Kies hieronder een of meer collecties om in te bladeren:
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {collections.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveCollections((cur) => new Set([...cur, c.id]));
+                      setQuery("");
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {c.name}
+                    <span className="rounded-full bg-secondary px-1.5 text-[10px] font-bold leading-4 text-muted-foreground">
+                      {c.colors.length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </section>
       )}

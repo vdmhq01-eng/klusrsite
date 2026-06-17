@@ -16,7 +16,9 @@ export function GoogleTagManager() {
   if (!GTM_ID) return null;
   return (
     <>
-      <Script id="gtm-init" strategy="afterInteractive">
+      {/* lazyOnload: GTM laadt in browser-idle ná de pagina, scheelt fors in
+          Total Blocking Time op mobiel. dataLayer-events queuen tot het laadt. */}
+      <Script id="gtm-init" strategy="lazyOnload">
         {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
