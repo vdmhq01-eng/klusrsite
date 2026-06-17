@@ -46,7 +46,6 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "tickets", label: "Tickets", icon: MessageCircle },
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
-  { id: "inzichten", label: "Inzichten", icon: Search },
   { id: "content", label: "AI-content", icon: Sparkles },
   { id: "channable", label: "Koppelingen", icon: Send },
 ];
@@ -94,8 +93,12 @@ export function AdminDashboard() {
         {section === "orders" && <OrdersPanel />}
         {section === "tickets" && <TicketsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
-        {section === "rapportages" && <Reports orders={orders} />}
-        {section === "inzichten" && <Insights />}
+        {(section === "rapportages" || section === "inzichten") && (
+          <div className="space-y-8">
+            <Insights />
+            <Reports orders={orders} />
+          </div>
+        )}
         {section === "content" && <AiContentManager />}
         {section === "channable" && (
           <div className="space-y-6">
@@ -576,6 +579,13 @@ function Insights() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-black tracking-tight">Bezoekers &amp; statistieken</h2>
+        <p className="text-sm text-muted-foreground">
+          Live verkeer, paginaweergaven en IP-uitsluiting — ververst elke 15s.
+        </p>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
@@ -597,6 +607,8 @@ function Insights() {
       </div>
 
       <LiveSessionsCard />
+
+      <IpExclusionCard />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Search} label="Zoekopdrachten" value={String(data.searchCount)} />
@@ -660,8 +672,6 @@ function Insights() {
           </ul>
         </CardContent>
       </Card>
-
-      <IpExclusionCard />
 
       <p className="text-xs text-muted-foreground">
         Live ververst elke 15s. Bezoekers/weergaven o.b.v. anonieme bezoeker-id; eigen verkeer
