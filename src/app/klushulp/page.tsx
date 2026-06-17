@@ -9,13 +9,13 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Klushulp — advies van ex-schilders, nu ook met AI",
+  title: "Klushulp — direct advies van ex-schilders",
   description:
-    "Beschrijf je klus en KLUSR helpt je met een helder stappenplan, het juiste gereedschap en de beste verf. Advies van ex-schilders, nu ook met AI — gratis en zonder gedoe.",
+    "Beschrijf je klus en KLUSR helpt je met een helder stappenplan, het juiste gereedschap en de beste verf. Direct advies van ex-schilders — gratis en zonder gedoe.",
   openGraph: {
-    title: "Klushulp — advies van ex-schilders, nu ook met AI | KLUSR",
+    title: "Klushulp — direct advies van ex-schilders | KLUSR",
     description:
-      "Beschrijf je klus en krijg direct een stappenplan, het juiste gereedschap en de beste verf. Advies van ex-schilders, nu ook met AI.",
+      "Beschrijf je klus en krijg direct een stappenplan, het juiste gereedschap en de beste verf. Direct advies van ex-schilders.",
   },
 };
 
@@ -56,7 +56,7 @@ export default function KlushulpPage() {
               KLUSHULP
             </span>
             <h1 className="mt-4 max-w-2xl text-3xl font-black tracking-tight text-balance sm:text-4xl lg:text-5xl">
-              Klushulp — advies van ex-schilders, nu ook met AI
+              Klushulp — direct advies van ex-schilders
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
               Niet zeker waar je moet beginnen? Beschrijf je klus en KLUSR stelt
@@ -87,7 +87,7 @@ export default function KlushulpPage() {
                 <MessageCircle className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-sm font-bold leading-tight">KLUSR AI Assistent</p>
+                <p className="text-sm font-bold leading-tight">KLUSR Klushulp</p>
                 <p className="text-[11px] text-white/70">Advies van ex-schilders, 24/7</p>
               </div>
             </div>

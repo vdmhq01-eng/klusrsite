@@ -19,7 +19,7 @@ export function AiAssistantWidget() {
       {/* Launcher */}
       <button
         onClick={toggle}
-        aria-label="KLUSR AI assistent openen"
+        aria-label="KLUSR Klushulp openen"
         className={cn(
           "fixed bottom-20 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-card-hover transition-transform hover:scale-105 lg:bottom-6 lg:right-6",
           open && "scale-0 opacity-0",
@@ -49,7 +49,7 @@ export function AiAssistantWidget() {
               <MessageCircle className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-sm font-bold leading-tight">KLUSR AI Assistent</p>
+              <p className="text-sm font-bold leading-tight">KLUSR Klushulp</p>
               <p className="text-[11px] text-white/70">Advies van ex-schilders, 24/7</p>
             </div>
           </div>

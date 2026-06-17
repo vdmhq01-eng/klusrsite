@@ -96,7 +96,7 @@ export default async function AdviesPage() {
           <div className="mb-5 flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              Vers van de Klus-AI
+Vers van de werkplaats
             </span>
             <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
               Nieuwe klustips

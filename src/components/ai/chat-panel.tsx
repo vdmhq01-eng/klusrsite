@@ -40,7 +40,7 @@ const defaultSuggestions = [
 export function ChatPanel({
   context,
   suggestions = defaultSuggestions,
-  initialAssistantMessage = "Hoi! Ik ben de KLUSR assistent. Waarmee kan ik je helpen?",
+  initialAssistantMessage = "Hoi! Ik ben de KLUSR Klushulp. Waarmee kan ik je helpen?",
   className,
   compact = false,
   autoSendMessage,

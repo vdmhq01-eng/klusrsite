@@ -102,7 +102,7 @@ export function AiProductAdvice({
           <div>
             <h3 className="font-bold">{copy.heading}</h3>
             <p className="text-sm text-muted-foreground">
-              Stel je vraag aan onze AI-assistent — we helpen je de juiste keuze maken.
+              Stel je vraag aan onze klushulp — we helpen je de juiste keuze maken.
             </p>
           </div>
         </div>

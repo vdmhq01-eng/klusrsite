@@ -29,7 +29,7 @@ export function ProductGallery({ images, title, badges }: ProductGalleryProps) {
           alt={title}
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover"
+          className="object-contain p-4"
         />
       </div>
 
@@ -45,7 +45,7 @@ export function ProductGallery({ images, title, badges }: ProductGalleryProps) {
                 active === i ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/40",
               )}
             >
-              <ProductImage src={img} alt={title} showLabel={false} sizes="80px" className="object-cover" />
+              <ProductImage src={img} alt={title} showLabel={false} sizes="80px" className="object-contain p-1" />
             </button>
           ))}
         </div>
