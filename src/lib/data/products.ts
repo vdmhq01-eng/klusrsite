@@ -2,6 +2,23 @@ import type { Product, ProductVariant, Review, StoreStock } from "@/types";
 import { stores } from "./stores";
 import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
+import priceOverrides from "./price-overrides.generated.json";
+
+/** Adviesprijs/normale prijs per sku uit de prijsfeed (scripts/build-price-feed.mjs). */
+const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: number }>;
+
+/**
+ * Verrijkt een variant/product met de adviesprijs (RRP) uit de prijsfeed als
+ * doorgestreepte "van"-prijs — alleen wanneer die hoger is dan de verkoopprijs.
+ */
+function withAdviesPrice<T extends { id: string; price: number; compareAtPrice?: number }>(
+  v: T,
+): T {
+  const sku = v.id.replace(/^tilroy-/, "");
+  const o = PRICE_OVERRIDES[sku];
+  if (o?.a != null && o.a > v.price) return { ...v, compareAtPrice: o.a };
+  return v;
+}
 
 /**
  * Live productcatalogus uit de Tilroy/De Voordeelmarkt feeds (zie
@@ -80,12 +97,19 @@ function enrichDescription(p: Product): string {
 
 const feedProducts = (
   ((feedData as { products?: unknown[] }).products ?? []) as unknown as Product[]
-).map((p) => ({
-  ...p,
-  images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
-  variants: sortVariants(p.variants ?? []),
-  description: enrichDescription(p),
-}));
+).map((p) => {
+  const variants = sortVariants((p.variants ?? []).map(withAdviesPrice));
+  // De productprijs toont de goedkoopste variant → spiegel diens adviesprijs.
+  const base = variants.find((v) => v.price === p.price) ?? variants[0];
+  const compareAtPrice = base?.compareAtPrice ?? withAdviesPrice(p).compareAtPrice;
+  return {
+    ...p,
+    images: (p.images ?? []).map(resolveImageUrl).filter(Boolean),
+    variants,
+    ...(compareAtPrice != null ? { compareAtPrice } : {}),
+    description: enrichDescription(p),
+  };
+});
 
 /* ------------------------------------------------------------------ helpers */
 
