@@ -11,6 +11,7 @@ import {
   KeyRound,
   AlertTriangle,
   FileText,
+  ListChecks,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -119,10 +120,18 @@ export function OrdersPanel() {
               Openstaande orders en verzending. Maak per betaalde order een PostNL-verzendlabel aan.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            Ververs
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="dark" size="sm" asChild>
+              <a href="/looplijst" target="_blank" rel="noreferrer">
+                <ListChecks className="h-4 w-4" />
+                Looplijst
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              Ververs
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
