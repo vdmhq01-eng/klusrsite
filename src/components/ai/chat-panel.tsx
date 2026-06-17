@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles, Loader2 } from "lucide-react";
+import { Send, Sparkles, Loader2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/tracking";
 import { FormattedText } from "@/components/shared/formatted-text";
@@ -10,6 +11,11 @@ import { cn } from "@/lib/utils";
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** Tikbare vervolgsuggesties (alleen bij assistent-berichten). */
+  suggestions?: string[];
+  /** "Bekijk producten"-CTA afgeleid uit het gesprek. */
+  productHref?: string;
+  productLabel?: string;
 }
 
 interface ChatPanelProps {
@@ -89,7 +95,13 @@ export function ChatPanel({
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.reply ?? "Sorry, er ging iets mis." },
+        {
+          role: "assistant",
+          content: data.reply ?? "Sorry, er ging iets mis.",
+          suggestions: Array.isArray(data.suggestions) ? data.suggestions : undefined,
+          productHref: typeof data.productHref === "string" ? data.productHref : undefined,
+          productLabel: typeof data.productLabel === "string" ? data.productLabel : undefined,
+        },
       ]);
     } catch {
       setMessages((prev) => [
@@ -154,6 +166,37 @@ export function ChatPanel({
             ))}
           </div>
         )}
+
+        {/* Actieknoppen na het laatste assistent-antwoord */}
+        {!loading &&
+          messages.length > 1 &&
+          messages[messages.length - 1].role === "assistant" &&
+          (() => {
+            const last = messages[messages.length - 1];
+            return (
+              <div className="space-y-2 pt-1">
+                {last.productHref && (
+                  <Link
+                    href={last.productHref}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    {last.productLabel ?? "Bekijk producten"}
+                  </Link>
+                )}
+                {(last.suggestions ?? []).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => send(s)}
+                    className="flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left text-sm font-medium transition-colors hover:border-primary/40 hover:bg-secondary"
+                  >
+                    <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                    {s}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
 
         {loading && (
           <div className="flex justify-start">
