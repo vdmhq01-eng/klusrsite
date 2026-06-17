@@ -182,7 +182,8 @@ export type OrderStatus =
   | "delivered"
   | "canceled"
   | "failed"
-  | "expired";
+  | "expired"
+  | "refunded";
 
 export interface OrderCustomer {
   email: string;
@@ -215,6 +216,10 @@ export interface Order {
   paymentStatus: OrderStatus;
   paymentMethod?: string;
   molliePaymentId?: string;
+  /** Testbestelling (Mollie test-mode of demo-seed) — telt niet mee in de rapportage. */
+  isTest?: boolean;
+  /** (Deels) terugbetaald bedrag via Mollie (in euro's). */
+  refundedAmount?: number;
   subtotal: number;
   shipping: number;
   total: number;

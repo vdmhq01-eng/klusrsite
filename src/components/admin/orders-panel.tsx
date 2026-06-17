@@ -42,6 +42,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   canceled: "Geannuleerd",
   failed: "Mislukt",
   expired: "Verlopen",
+  refunded: "Terugbetaald",
 };
 
 const needsLabel = (o: Order) =>

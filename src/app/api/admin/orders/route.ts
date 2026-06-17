@@ -11,8 +11,10 @@ export async function GET() {
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // Testbestellingen (demo-seed / Mollie test-mode) tellen niet mee in het overzicht.
+  const orders = (await listOrders()).filter((o) => !o.isTest);
   return NextResponse.json({
-    orders: await listOrders(),
+    orders,
     postnlConfigured: isPostNLConfigured(),
   });
 }

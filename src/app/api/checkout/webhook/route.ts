@@ -39,9 +39,18 @@ export async function POST(req: Request) {
       (await getOrderByMollieId(paymentId));
     if (order) {
       const mapped = mapMollieStatus(status.status);
-      await updateOrderStatus(order.id, mapped);
-      // Once paid, push the order to Channable → Tilroy and confirm by e-mail.
-      if (mapped === "paid" || mapped === "authorized") {
+      // Terugbetaling herkennen: een (deels) gerefunde betaling.
+      const refunded = (status.amountRefunded ?? 0) > 0;
+      const fullyRefunded =
+        refunded && status.amount != null && (status.amountRefunded ?? 0) >= status.amount - 0.005;
+      const finalStatus = fullyRefunded ? "refunded" : mapped;
+      const isTest = status.mode === "test" ? true : undefined;
+      await updateOrderStatus(order.id, finalStatus, {
+        isTest,
+        refundedAmount: refunded ? status.amountRefunded : undefined,
+      });
+      // Alleen bij een échte, niet-terugbetaalde, niet-test betaling: fulfilen + mailen.
+      if (!refunded && !isTest && (mapped === "paid" || mapped === "authorized")) {
         const paidOrder = { ...order, paymentStatus: mapped };
         await fulfillPaidOrder(paidOrder);
         // Send the branded confirmation once (claim guards against retries).

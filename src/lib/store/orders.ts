@@ -136,10 +136,13 @@ export async function setMolliePaymentId(orderId: string, molliePaymentId: strin
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
+  patch?: Partial<Pick<Order, "isTest" | "refundedAmount">>,
 ): Promise<Order | undefined> {
   const order = await loadById(orderId);
   if (!order) return undefined;
   order.paymentStatus = status;
+  if (patch?.isTest != null) order.isTest = patch.isTest;
+  if (patch?.refundedAmount != null) order.refundedAmount = patch.refundedAmount;
   await persist(order);
   return order;
 }
@@ -242,6 +245,7 @@ export async function setShipped(
 export const seededOrders: Order[] = [
   {
     id: "ord_demo123",
+    isTest: true,
     reference: "KLR-204815",
     customer: {
       email: "klant@voorbeeld.nl",
@@ -263,6 +267,7 @@ export const seededOrders: Order[] = [
   },
   {
     id: "ord_demo456",
+    isTest: true,
     reference: "KLR-309184",
     customer: {
       email: "test@klus-r.nl",
