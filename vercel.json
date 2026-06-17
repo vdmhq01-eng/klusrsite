@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/blog",
       "schedule": "0 9 */3 * *"
+    },
+    {
+      "path": "/api/cron/mailchimp-sync",
+      "schedule": "0 6 * * *"
     }
   ]
 }
