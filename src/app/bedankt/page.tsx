@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { PurchaseTracker } from "@/components/checkout/purchase-tracker";
 import { ClearCart } from "@/components/checkout/clear-cart";
 import { ReorderUpsell } from "@/components/checkout/reorder-upsell";
+import { GoogleCustomerReviews } from "@/components/checkout/google-customer-reviews";
 import { getOrder } from "@/lib/store/orders";
 import { formatPrice, formatDate } from "@/lib/utils";
 
@@ -54,6 +55,19 @@ export default async function ThankYouPage({
         {order ? (
           <>
             <PurchaseTracker order={order} />
+
+            {/* Google Customer Reviews opt-in (alleen echte orders) */}
+            {!order.isTest && (
+              <GoogleCustomerReviews
+                orderId={order.reference}
+                email={order.customer.email}
+                country={(order.customer.country || "NL").toUpperCase().slice(0, 2)}
+                deliveryDate={(
+                  order.estimatedDelivery ||
+                  new Date(new Date(order.createdAt).getTime() + 2 * 86400000).toISOString()
+                ).slice(0, 10)}
+              />
+            )}
 
             {/* Order card */}
             <div className="mt-8 rounded-xl border border-border bg-card p-6">
