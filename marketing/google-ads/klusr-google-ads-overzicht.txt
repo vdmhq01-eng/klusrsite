@@ -1,0 +1,126 @@
+==========================================================================
+  KLUSR — Google Ads assets (sitelinks · structured snippets · tekst)
+  Klaar voor gebruik. Binnen de tekenlimieten van Google. Taal: NL.
+  Plaatsen in Google Ads:  Advertenties en assets  ▸  Assets  ▸  +  (blauwe knop)
+==========================================================================
+
+Tip: alle teksten hieronder zijn al op de juiste lengte. CSV-bestanden zitten
+ernaast voor wie liever importeert. Voor de meeste mensen is kopiëren-plakken
+in de Google Ads-webinterface het snelst.
+
+
+--------------------------------------------------------------------------
+1) SITELINKS  (assettype: Sitelink)
+   Limieten: sitelinktekst max 25 tekens · beschrijvingsregels max 35 tekens
+   Bestand: klusr-sitelinks.csv
+--------------------------------------------------------------------------
+
+• Kleur kiezen & mengen
+    Elke kleur exact gemengd
+    RAL, NCS en alle merkkleuren
+    → https://www.klusr.nl/kleurenkiezer
+
+• Verf op kleur gemengd
+    Profverf exact op maat
+    Klaar terwijl je wacht
+    → https://www.klusr.nl/mengverf
+
+• Gratis KLUSRPAS
+    Direct de scherpste prijs
+    Gratis aanmaken en sparen
+    → https://www.klusr.nl/kluspas
+
+• Zakelijk & ZZP
+    10% korting, prijs excl. btw
+    Eenvoudig op factuur
+    → https://www.klusr.nl/zakelijk
+
+• Klusadvies & tips
+    Advies van ex-schilders
+    Stap voor stap naar resultaat
+    → https://www.klusr.nl/advies
+
+• Onze winkels
+    Persoonlijk advies in de winkel
+    Meerdere vestigingen in NL
+    → https://www.klusr.nl/winkels
+
+
+--------------------------------------------------------------------------
+2) STRUCTURED SNIPPETS  (assettype: Gestructureerd fragment)
+   Limieten: kies een vaste kop · min. 3 waarden · waarde max 25 tekens
+   Bestand: klusr-structured-snippets.csv
+--------------------------------------------------------------------------
+
+Kop: Merken
+   Sikkens · Histor · Hammerite · Alabastine · Anza · Hg · Pattex · Fischer
+
+Kop: Soorten
+   Muurverf · Lakverf · Grondverf · Beits · Vloerverf · Plafondverf · Spuitverf · Behang
+
+Kop: Servicecatalogus
+   Kleur op maat mengen · Kleuradvies · Bezorgen of afhalen · Zakelijk op factuur · Retour in de winkel
+
+
+--------------------------------------------------------------------------
+3) CALLOUTS  (assettype: Highlight / tekstuitbreiding)
+   Limiet: max 25 tekens per callout. Voeg er minstens 4–6 toe.
+   Bestand: klusr-callouts.csv
+--------------------------------------------------------------------------
+
+   Morgen al in huis
+   Gratis bezorgd vanaf €50
+   Verf op kleur gemengd
+   Advies van ex-schilders
+   14 dagen gratis retour
+   Veilig betalen via Mollie
+   Topmerken scherp geprijsd
+   Gratis KLUSRPAS-voordeel
+   RAL, NCS & merkkleuren
+   iDEAL, Klarna & meer
+
+
+--------------------------------------------------------------------------
+4) TEKST — RESPONSIEVE ZOEKADVERTENTIE (RSA)
+   Limieten: kop max 30 tekens (tot 15 stuks) · beschrijving max 90 tekens
+   (tot 4) · pad max 15 tekens. Bestand: klusr-rsa-tekst.csv
+--------------------------------------------------------------------------
+
+KOPPEN (15):
+   1.  Verf op kleur gemengd
+   2.  Voor 19:00 besteld
+   3.  Gratis bezorgd vanaf €50
+   4.  Topmerken: Sikkens & Histor
+   5.  Advies van ex-schilders
+   6.  Elke kleur exact gemengd
+   7.  Gratis KLUSRPAS-voordeel
+   8.  RAL, NCS & merkkleuren
+   9.  Profverf voor de klusser
+   10. 14 dagen gratis retour
+   11. Veilig betalen met iDEAL
+   12. Bestel je verf online
+   13. Zakelijk? 10% korting
+   14. Klaar terwijl je wacht
+   15. Dé klusspecialist online
+
+BESCHRIJVINGEN (4):
+   1. Bestel verf, kwasten en gereedschap van topmerken. Voor 19:00 besteld, morgen in huis.
+   2. Elke kleur exact op maat gemengd: RAL, NCS en alle merkkleuren. Advies van ex-schilders.
+   3. Gratis verzending vanaf €50 (NL/BE). 14 dagen retour. Veilig betalen via Mollie.
+   4. Word gratis lid van de KLUSRPAS en krijg meteen de scherpste prijs op de hele collectie.
+
+WEERGAVEPAD:   www.klusr.nl/verf/op-kleur
+FINAL URL:     https://www.klusr.nl
+
+
+--------------------------------------------------------------------------
+TIPS
+--------------------------------------------------------------------------
+• Sitelinks, callouts en snippets kun je op accountniveau toevoegen, dan
+  gelden ze meteen voor al je campagnes.
+• Vul bij de RSA álle 15 koppen en 4 beschrijvingen in voor de hoogste
+  advertentiesterkte ("Uitstekend").
+• Controleer de Final URL's: ze wijzen nu naar www.klusr.nl. Pas ze aan als
+  je naar een specifieke landingspagina wilt sturen.
+• € en accenten (é) tellen in Google als 1 teken — alle teksten passen.
+==========================================================================
