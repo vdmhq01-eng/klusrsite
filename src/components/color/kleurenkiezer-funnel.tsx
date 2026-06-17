@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Palette,
   Check,
@@ -17,12 +18,18 @@ import {
   Info,
   SlidersHorizontal,
   Plus,
+  Search,
+  ShoppingCart,
+  Heart,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Product, SelectedColor } from "@/types";
-import { colorCollections, isLightColor } from "@/lib/data/colors";
+import type { Product, ProductVariant, SelectedColor } from "@/types";
+import { colorCollections, allColors, isLightColor } from "@/lib/data/colors";
 import { withBase } from "@/lib/paint-bases";
 import { useCart } from "@/lib/store/cart";
+import { useFavorites } from "@/lib/store/favorites";
+import { useUI } from "@/lib/store/ui";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn, formatPrice } from "@/lib/utils";
@@ -35,57 +42,82 @@ interface Klus {
   icon: typeof Home;
   include: string[];
   exclude?: string[];
+  /** Optioneel: verbreed naar een ruimere set (bv. plafond → alle muurverf). */
+  broaden?: { label: string; include: string[] };
 }
 
-// Klus → producttype. Match op categorie/subcategorie/titel (lowercased).
 const KLUSSEN: Klus[] = [
   { id: "binnenmuur", label: "Binnenmuur", sub: "Woonkamer, slaapkamer, gang", icon: Home, include: ["binnenmuur", "binnen", "muurverf", "muur", "latex"], exclude: ["buiten", "gevel"] },
   { id: "buitenmuur", label: "Buitenmuur & gevel", sub: "Buitenwerk dat tegen weer moet", icon: Building2, include: ["buitenmuur", "buiten", "gevel"] },
   { id: "hout", label: "Hout, kozijn & deur", sub: "Lak en beits voor houtwerk", icon: DoorOpen, include: ["lak", "beits", "hout", "kozijn", "deur", "meubel", "grondverf", "primer"] },
   { id: "vloer", label: "Vloer & beton", sub: "Vloeren, trappen en garage", icon: Layers, include: ["vloer", "beton", "garage", "trap"] },
-  { id: "plafond", label: "Plafond", sub: "Strak en mat naar boven", icon: PanelTop, include: ["plafond"] },
+  { id: "plafond", label: "Plafond", sub: "Strak en mat naar boven", icon: PanelTop, include: ["plafond"], broaden: { label: "Ook alle muurverf tonen", include: ["muurverf", "muur", "binnen", "latex"] } },
 ];
 
-function matchesKlus(product: Product, klus: Klus): boolean {
-  const hay = `${product.category} ${product.subCategory ?? ""} ${product.title}`.toLowerCase();
-  if (klus.exclude?.some((k) => hay.includes(k))) return false;
-  return klus.include.some((k) => hay.includes(k));
-}
-
 const hay = (p: Product) => `${p.category} ${p.subCategory ?? ""} ${p.title}`.toLowerCase();
+const matchesKlus = (p: Product, klus: Klus) => {
+  const h = hay(p);
+  if (klus.exclude?.some((k) => h.includes(k))) return false;
+  return klus.include.some((k) => h.includes(k));
+};
 const appliesOutside = (p: Product) => /buiten|gevel|tuin/.test(hay(p));
-const appliesInside = (p: Product) =>
-  /binnen|plafond|latex|muurverf/.test(hay(p)) || !appliesOutside(p);
+const appliesInside = (p: Product) => /binnen|plafond|latex|muurverf/.test(hay(p)) || !appliesOutside(p);
 
 type Toepassing = "alle" | "binnen" | "buiten";
 
-/** Goedkoopste prijs per liter-variant + eventuele basistoeslag. */
-function fromPrice(product: Product, color: SelectedColor): number {
-  const cheapest = Math.min(...product.variants.map((v) => v.kluspasPrice));
-  return cheapest + (color.base?.surcharge ?? 0);
-}
+const cheapestKluspas = (p: Product) => Math.min(...p.variants.map((v) => v.kluspasPrice));
+const variantPrice = (v: ProductVariant, color: SelectedColor | null) =>
+  v.kluspasPrice + (color?.base?.surcharge ?? 0);
 
 interface Props {
   colorProducts: Product[];
   accessories?: Product[];
 }
 
+const STEPS = [
+  { n: 1, label: "Kleur" },
+  { n: 2, label: "Klus" },
+  { n: 3, label: "Verf" },
+  { n: 4, label: "Erbij" },
+  { n: 5, label: "Overzicht" },
+] as const;
+
 export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const router = useRouter();
+  const addItem = useCart((s) => s.addItem);
+  const setCartOpen = useUI((s) => s.setCartOpen);
+  const toggleFavorite = useFavorites((s) => s.toggle);
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  // Stap 1 — kleur
   const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
+  const [query, setQuery] = useState("");
   const [color, setColor] = useState<SelectedColor | null>(null);
+
+  // Stap 2/3 — klus + filters
   const [klus, setKlus] = useState<Klus | null>(null);
   const [toepassing, setToepassing] = useState<Toepassing>("alle");
   const [brand, setBrand] = useState<string>("alle");
+  const [broaden, setBroaden] = useState(false);
 
-  const addItem = useCart((s) => s.addItem);
+  // Stap 3 — gekozen verf + maat
+  const [variantChoice, setVariantChoice] = useState<Record<string, string>>({});
+  const [paint, setPaint] = useState<{ product: Product; variant: ProductVariant } | null>(null);
 
-  const collection =
-    colorCollections.find((c) => c.id === activeCollection) ?? colorCollections[0];
+  // Stap 4 — bijverkoop
+  const [accSelected, setAccSelected] = useState<Set<string>>(new Set());
+
+  const collection = colorCollections.find((c) => c.id === activeCollection) ?? colorCollections[0];
+  const searching = query.trim().length > 0;
+  const shownColors = useMemo(() => {
+    if (!searching) return collection.colors;
+    const q = query.trim().toLowerCase();
+    return allColors.filter((c) => `${c.name} ${c.code}`.toLowerCase().includes(q)).slice(0, 48);
+  }, [searching, query, collection]);
 
   function pickColor(c: SelectedColor) {
-    const withBaseColor = withBase(c);
-    setColor(withBaseColor);
+    setColor(withBase(c));
     trackEvent("color_selected", { color: c.name, code: c.code, source: "kleurenkiezer" });
     setStep(2);
   }
@@ -94,29 +126,29 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
     setKlus(k);
     setToepassing("alle");
     setBrand("alle");
+    setBroaden(false);
     trackEvent("kleurenkiezer_klus", { klus: k.id });
     setStep(3);
   }
 
-  function addAccessory(p: Product) {
-    addItem({ product: p, variant: p.variants[0], quantity: 1 });
-    trackEvent("add_to_cart", { item_id: p.id, source: "kleurenkiezer_bijverkoop" });
-    toast.success("Toegevoegd aan winkelwagen", { description: p.title });
-  }
-
   const matches = useMemo(() => {
     if (!klus) return [];
-    const filtered = colorProducts.filter((p) => matchesKlus(p, klus));
-    return filtered.length > 0 ? filtered : colorProducts;
-  }, [klus, colorProducts]);
+    if (broaden && klus.broaden) {
+      return colorProducts.filter((p) => klus.broaden!.include.some((k) => hay(p).includes(k)));
+    }
+    const base = colorProducts.filter((p) => matchesKlus(p, klus));
+    return base.length > 0 ? base : colorProducts;
+  }, [klus, broaden, colorProducts]);
 
-  // Merken in de huidige resultaten (voor het merk-filter).
+  const usedFallback = klus
+    ? !broaden && colorProducts.filter((p) => matchesKlus(p, klus)).length === 0
+    : false;
+
   const brands = useMemo(
     () => Array.from(new Set(matches.map((p) => p.brand).filter(Boolean))).sort(),
     [matches],
   );
 
-  // Toepassing- + merkfilter op de resultaten.
   const filteredMatches = useMemo(
     () =>
       matches.filter((p) => {
@@ -128,15 +160,70 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
     [matches, toepassing, brand],
   );
 
-  const usedFallback = klus
-    ? colorProducts.filter((p) => matchesKlus(p, klus)).length === 0
-    : false;
+  function variantFor(p: Product): ProductVariant {
+    return p.variants.find((v) => v.id === variantChoice[p.id]) ?? p.variants[0];
+  }
 
-  const steps = [
-    { n: 1 as const, label: "Kies je kleur" },
-    { n: 2 as const, label: "Wat ga je verven?" },
-    { n: 3 as const, label: "Kies je verf" },
-  ];
+  function selectPaint(p: Product) {
+    const variant = variantFor(p);
+    setPaint({ product: p, variant });
+    trackEvent("select_item", { item_id: p.id, source: "kleurenkiezer" });
+    setStep(4);
+  }
+
+  function toggleAcc(id: string) {
+    setAccSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const chosenAccessories = accessories.filter((a) => accSelected.has(a.id));
+  const paintPrice = paint ? variantPrice(paint.variant, color) : 0;
+  const accTotal = chosenAccessories.reduce((s, a) => s + cheapestKluspas(a), 0);
+  const grandTotal = paintPrice + accTotal;
+
+  function addEverythingToCart() {
+    if (!paint || !color) return;
+    addItem({ product: paint.product, variant: paint.variant, quantity: 1, color });
+    for (const a of chosenAccessories) {
+      addItem({ product: a, variant: a.variants[0], quantity: 1 });
+    }
+  }
+
+  function handleCheckout() {
+    addEverythingToCart();
+    trackEvent("begin_checkout", { value: grandTotal });
+    router.push("/checkout");
+  }
+
+  function handleAddToCart() {
+    addEverythingToCart();
+    trackEvent("add_to_cart", { value: grandTotal, source: "kleurenkiezer" });
+    toast.success("Toegevoegd aan winkelwagen");
+    setCartOpen(true);
+  }
+
+  function handleSave() {
+    if (!paint) return;
+    toggleFavorite(paint.product.id);
+    trackEvent("save_for_later", { item_id: paint.product.id, source: "kleurenkiezer" });
+    toast.success("Opgeslagen", { description: `${paint.product.title} staat in je favorieten.` });
+  }
+
+  const reachable = (n: number) =>
+    n <= step ||
+    (n === 2 && color) ||
+    (n === 3 && color && klus) ||
+    (n >= 4 && paint);
+
+  const chip = (active: boolean) =>
+    cn(
+      "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+      active ? "bg-foreground text-background" : "bg-secondary text-muted-foreground hover:bg-secondary/70",
+    );
 
   return (
     <div className="flex flex-col gap-8 py-6 sm:py-8">
@@ -150,30 +237,29 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
           Eerst je kleur, dan je verf
         </h1>
         <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Kies in drie simpele stappen de juiste verf — wij mengen &apos;m exact op
-          jouw kleur. Voor 19:00 besteld, morgen in huis.
+          Kies je kleur, kies je verf en reken in een paar stappen af — wij mengen
+          &apos;m exact op kleur. Voor 19:00 besteld, morgen in huis.
         </p>
       </section>
 
       {/* Stepper */}
       <section className="container-klusr">
-        <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {steps.map((s, i) => {
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          {STEPS.map((s, i) => {
             const done = step > s.n;
             const current = step === s.n;
-            const reachable = s.n < step || (s.n === 2 && color) || (s.n === 3 && color && klus);
+            const ok = reachable(s.n);
             return (
-              <li key={s.n} className="flex items-center gap-3">
+              <li key={s.n} className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={!reachable && !current}
-                  onClick={() => reachable && setStep(s.n)}
+                  disabled={!ok && !current}
+                  onClick={() => ok && setStep(s.n as 1 | 2 | 3 | 4 | 5)}
                   className={cn(
                     "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
                     current && "bg-primary text-white",
                     done && "bg-primary/10 text-primary hover:bg-primary/20",
                     !current && !done && "bg-secondary text-muted-foreground",
-                    reachable && !current && "cursor-pointer",
                   )}
                 >
                   <span
@@ -186,37 +272,32 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                   </span>
                   {s.label}
                 </button>
-                {i < steps.length - 1 && <span className="h-px w-5 bg-border" aria-hidden />}
+                {i < STEPS.length - 1 && <span className="h-px w-4 bg-border" aria-hidden />}
               </li>
             );
           })}
         </ol>
 
-        {/* Keuze-samenvatting */}
-        {(color || klus) && (
+        {(color || klus || paint) && (
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
             {color && (
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-medium hover:border-primary/40"
-              >
-                <span
-                  className="h-4 w-4 rounded-full border border-black/10"
-                  style={{ backgroundColor: color.hex }}
-                />
+              <button type="button" onClick={() => setStep(1)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-medium hover:border-primary/40">
+                <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} />
                 {color.name}
                 <span className="text-xs text-muted-foreground">wijzig</span>
               </button>
             )}
             {klus && (
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-medium hover:border-primary/40"
-              >
+              <button type="button" onClick={() => setStep(2)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-medium hover:border-primary/40">
                 <klus.icon className="h-4 w-4 text-primary" />
                 {klus.label}
+                <span className="text-xs text-muted-foreground">wijzig</span>
+              </button>
+            )}
+            {paint && (
+              <button type="button" onClick={() => setStep(3)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-medium hover:border-primary/40">
+                <Sparkles className="h-4 w-4 text-primary" />
+                {paint.product.title} · {paint.variant.label}
                 <span className="text-xs text-muted-foreground">wijzig</span>
               </button>
             )}
@@ -224,29 +305,43 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
         )}
       </section>
 
-      {/* STAP 1 — Kleur */}
+      {/* STAP 1 — Kleur (zoekbaar + alle collecties) */}
       {step === 1 && (
         <section className="container-klusr">
-          <div className="mb-4 flex flex-wrap gap-2">
-            {colorCollections.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setActiveCollection(c.id)}
-                className={cn(
-                  "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
-                  activeCollection === c.id
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/70",
-                )}
-              >
-                {c.name}
-              </button>
-            ))}
+          <div className="relative mb-4 max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Zoek op kleur of RAL-code…"
+              className="w-full rounded-full border border-input bg-card py-2.5 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
           </div>
 
+          {!searching && (
+            <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
+              {colorCollections.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setActiveCollection(c.id)}
+                  className={cn("shrink-0", chip(activeCollection === c.id))}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {searching && (
+            <p className="mb-3 text-sm text-muted-foreground">
+              {shownColors.length} kleur{shownColors.length === 1 ? "" : "en"} gevonden
+            </p>
+          )}
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {collection.colors.map((c) => {
+            {shownColors.map((c) => {
               const light = isLightColor(c.hex);
               return (
                 <button
@@ -256,27 +351,17 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                   className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-xl border border-black/5 p-3 text-left shadow-sm ring-primary transition-all hover:scale-[1.02] hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2"
                   style={{ backgroundColor: c.hex }}
                 >
-                  <span
-                    className={cn(
-                      "rounded-md px-2 py-1 text-xs font-bold backdrop-blur",
-                      light ? "bg-black/5 text-black/80" : "bg-white/15 text-white",
-                    )}
-                  >
+                  <span className={cn("rounded-md px-2 py-1 text-xs font-bold backdrop-blur", light ? "bg-black/5 text-black/80" : "bg-white/15 text-white")}>
                     {c.name}
                     <span className="block text-[10px] font-medium opacity-70">{c.code}</span>
-                  </span>
-                  <span
-                    className={cn(
-                      "absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100",
-                      light ? "bg-black/10 text-black/70" : "bg-white/20 text-white",
-                    )}
-                  >
-                    <ArrowRight className="h-4 w-4" />
                   </span>
                 </button>
               );
             })}
           </div>
+          {searching && shownColors.length === 0 && (
+            <p className="text-sm text-muted-foreground">Geen kleur gevonden — probeer een andere zoekterm.</p>
+          )}
         </section>
       )}
 
@@ -302,32 +387,23 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Terug naar kleur
+          <button type="button" onClick={() => setStep(1)} className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary">
+            <ArrowLeft className="h-4 w-4" /> Terug naar kleur
           </button>
         </section>
       )}
 
-      {/* STAP 3 — Verf */}
+      {/* STAP 3 — Verf kiezen (incl. maat) */}
       {step === 3 && color && klus && (
         <section className="container-klusr">
           <div className="mb-5 flex items-center gap-3 rounded-2xl border border-border bg-secondary/40 p-4">
-            <span
-              className="h-12 w-12 shrink-0 rounded-xl border border-black/10 shadow-inner"
-              style={{ backgroundColor: color.hex }}
-            />
+            <span className="h-12 w-12 shrink-0 rounded-xl border border-black/10 shadow-inner" style={{ backgroundColor: color.hex }} />
             <div className="min-w-0">
               <p className="font-bold">
                 {color.name} <span className="font-medium text-muted-foreground">· {color.code}</span>
               </p>
               <p className="text-sm text-muted-foreground">
-                {filteredMatches.length} verfsoort{filteredMatches.length === 1 ? "" : "en"} voor{" "}
-                {klus.label.toLowerCase()} — op kleur gemengd
+                {filteredMatches.length} verfsoort{filteredMatches.length === 1 ? "" : "en"} voor {klus.label.toLowerCase()} — op kleur gemengd
               </p>
             </div>
           </div>
@@ -335,191 +411,251 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
           {usedFallback && (
             <div className="mb-4 flex items-start gap-2 rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              Geen exacte match voor deze klus — we tonen al onze mengbare verf in
-              jouw kleur.
+              Geen exacte match voor deze klus — we tonen al onze mengbare verf in jouw kleur.
             </div>
           )}
 
-          {/* Filters: toepassing (binnen/buiten) + merk */}
+          {/* Filters */}
           <div className="mb-5 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filter
+              <SlidersHorizontal className="h-4 w-4" /> Filter
             </span>
             {([
               { id: "alle", label: "Alle" },
               { id: "binnen", label: "Binnen" },
               { id: "buiten", label: "Buiten" },
             ] as const).map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setToepassing(t.id)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
-                  toepassing === t.id
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/70",
-                )}
-              >
+              <button key={t.id} type="button" onClick={() => setToepassing(t.id)} className={chip(toepassing === t.id)}>
                 {t.label}
               </button>
             ))}
             {brands.length > 1 && (
               <>
                 <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-                <button
-                  type="button"
-                  onClick={() => setBrand("alle")}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
-                    brand === "alle"
-                      ? "bg-primary text-white"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/70",
-                  )}
-                >
+                <button type="button" onClick={() => setBrand("alle")} className={cn(brand === "alle" ? "bg-primary text-white" : "bg-secondary text-muted-foreground hover:bg-secondary/70", "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors")}>
                   Alle merken
                 </button>
                 {brands.map((b) => (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setBrand(b)}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
-                      brand === b
-                        ? "bg-primary text-white"
-                        : "bg-secondary text-muted-foreground hover:bg-secondary/70",
-                    )}
-                  >
+                  <button key={b} type="button" onClick={() => setBrand(b)} className={cn(brand === b ? "bg-primary text-white" : "bg-secondary text-muted-foreground hover:bg-secondary/70", "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors")}>
                     {b}
                   </button>
                 ))}
               </>
+            )}
+            {klus.broaden && (
+              <button
+                type="button"
+                onClick={() => setBroaden((v) => !v)}
+                className={cn("ml-auto rounded-full px-3 py-1.5 text-sm font-semibold transition-colors", broaden ? "bg-primary text-white" : "border border-primary/30 text-primary hover:bg-primary/5")}
+              >
+                {broaden ? "Toon alleen plafondverf" : klus.broaden.label}
+              </button>
             )}
           </div>
 
           {filteredMatches.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
               Geen verf gevonden met deze filters.{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setToepassing("alle");
-                  setBrand("alle");
-                }}
-                className="font-semibold text-primary hover:underline"
-              >
+              <button type="button" onClick={() => { setToepassing("alle"); setBrand("alle"); }} className="font-semibold text-primary hover:underline">
                 Filters wissen
               </button>
             </div>
           ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredMatches.map((p) => (
-              <Card key={p.id} className="flex flex-col overflow-hidden">
-                <div className="relative aspect-square bg-secondary/30">
-                  {p.images[0] && (
-                    <Image
-                      src={p.images[0]}
-                      alt={p.title}
-                      fill
-                      sizes="(max-width: 640px) 50vw, 33vw"
-                      className="object-contain p-4"
-                    />
-                  )}
-                  {/* Gekozen kleur als swatch op de kaart */}
-                  <span
-                    className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-1 text-[11px] font-bold shadow-sm backdrop-blur"
-                    style={{ color: "#1a1a1a" }}
-                  >
-                    <span
-                      className="h-3.5 w-3.5 rounded-full border border-black/10"
-                      style={{ backgroundColor: color.hex }}
-                    />
-                    {color.name}
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {p.brand}
-                  </p>
-                  <p className="mt-0.5 line-clamp-2 font-bold leading-snug">{p.title}</p>
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <Sparkles className="h-3 w-3 text-primary" />
-                    Professioneel op kleur gemengd
-                  </p>
-                  <div className="mt-3 flex items-end justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      vanaf{" "}
-                      <span className="text-base font-black text-foreground">
-                        {formatPrice(fromPrice(p, color))}
-                      </span>
-                    </span>
-                  </div>
-                  <Button asChild className="mt-3 w-full">
-                    <Link
-                      href={`/product/${p.slug}?kleur=${encodeURIComponent(color.code)}`}
-                      onClick={() =>
-                        trackEvent("select_item", { item_id: p.id, source: "kleurenkiezer" })
-                      }
-                    >
-                      Kies deze verf
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-          )}
-
-          {/* Bijverkoop — vergeet je gereedschap niet */}
-          {accessories.length > 0 && (
-            <div className="mt-10">
-              <h3 className="text-lg font-extrabold tracking-tight">Vergeet je gereedschap niet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Met het juiste materiaal verft het sneller en strakker.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {accessories.map((a) => (
-                  <div key={a.id} className="flex flex-col rounded-xl border border-border bg-card p-3">
-                    <Link
-                      href={`/product/${a.slug}`}
-                      className="relative mb-2 block aspect-square overflow-hidden rounded-lg bg-secondary/30"
-                    >
-                      {a.images[0] && (
-                        <Image
-                          src={a.images[0]}
-                          alt={a.title}
-                          fill
-                          sizes="160px"
-                          className="object-contain p-2"
-                        />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredMatches.map((p) => {
+                const v = variantFor(p);
+                return (
+                  <Card key={p.id} className="flex flex-col overflow-hidden">
+                    <div className="relative aspect-square bg-secondary/30">
+                      {p.images[0] && (
+                        <Image src={p.images[0]} alt={p.title} fill sizes="(max-width: 640px) 50vw, 33vw" className="object-contain p-4" />
                       )}
-                    </Link>
-                    <p className="line-clamp-2 text-sm font-semibold leading-snug">{a.title}</p>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-sm font-black">
-                        {formatPrice(Math.min(...a.variants.map((v) => v.kluspasPrice)))}
+                      <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-1 text-[11px] font-bold text-neutral-900 shadow-sm backdrop-blur">
+                        <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} />
+                        {color.name}
                       </span>
-                      <Button size="sm" variant="outline" onClick={() => addAccessory(a)}>
-                        <Plus className="h-4 w-4" /> In mandje
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.brand}</p>
+                      <p className="mt-0.5 line-clamp-2 font-bold leading-snug">{p.title}</p>
+
+                      {/* Maat kiezen */}
+                      {p.variants.length > 1 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {p.variants.map((vr) => (
+                            <button
+                              key={vr.id}
+                              type="button"
+                              onClick={() => setVariantChoice((prev) => ({ ...prev, [p.id]: vr.id }))}
+                              className={cn(
+                                "rounded-md border px-2 py-1 text-xs font-semibold transition-colors",
+                                v.id === vr.id ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/40",
+                              )}
+                            >
+                              {vr.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex items-end justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {p.variants.length > 1 ? "" : "vanaf "}
+                          <span className="text-base font-black text-foreground">{formatPrice(variantPrice(v, color))}</span>
+                        </span>
+                      </div>
+
+                      <Button onClick={() => selectPaint(p)} className="mt-3 w-full">
+                        Selecteer deze verf
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                      <Link
+                        href={`/product/${p.slug}?kleur=${encodeURIComponent(color.code)}`}
+                        className="mt-2 text-center text-xs font-medium text-muted-foreground hover:text-primary"
+                      >
+                        Bekijk productdetails
+                      </Link>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Andere klus kiezen
+          <button type="button" onClick={() => setStep(2)} className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary">
+            <ArrowLeft className="h-4 w-4" /> Andere klus kiezen
           </button>
+        </section>
+      )}
+
+      {/* STAP 4 — Bijverkoop (overslaanbaar) */}
+      {step === 4 && paint && (
+        <section className="container-klusr">
+          <h2 className="text-xl font-extrabold tracking-tight">Vergeet je gereedschap niet</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Met het juiste materiaal verft het sneller en strakker. Selecteer wat je nodig hebt — of sla deze stap over.
+          </p>
+
+          {accessories.length > 0 ? (
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {accessories.map((a) => {
+                const on = accSelected.has(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => toggleAcc(a.id)}
+                    className={cn(
+                      "flex flex-col rounded-xl border bg-card p-3 text-left transition-colors",
+                      on ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/40",
+                    )}
+                  >
+                    <div className="relative mb-2 aspect-square overflow-hidden rounded-lg bg-secondary/30">
+                      {a.images[0] && <Image src={a.images[0]} alt={a.title} fill sizes="160px" className="object-contain p-2" />}
+                      <span className={cn("absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full border text-white transition-colors", on ? "border-primary bg-primary" : "border-border bg-white/80 text-transparent")}>
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-sm font-semibold leading-snug">{a.title}</p>
+                    <span className="mt-1 text-sm font-black">{formatPrice(cheapestKluspas(a))}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">Geen extra's beschikbaar.</p>
+          )}
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button onClick={() => setStep(5)}>
+              Verder naar overzicht
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <button type="button" onClick={() => setStep(5)} className="text-sm font-semibold text-muted-foreground hover:text-primary">
+              Overslaan
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* STAP 5 — Overzicht + afronden */}
+      {step === 5 && paint && color && (
+        <section className="container-klusr">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="text-lg font-extrabold tracking-tight">Je samenstelling</h2>
+
+              {/* Verf */}
+              <div className="mt-4 flex gap-4">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-white">
+                  {paint.product.images[0] && <Image src={paint.product.images[0]} alt={paint.product.title} fill sizes="80px" className="object-contain p-2" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{paint.product.brand}</p>
+                  <p className="font-bold leading-snug">{paint.product.title}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {paint.variant.label} ·{" "}
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} />
+                      {color.name} ({color.code})
+                    </span>
+                  </p>
+                </div>
+                <span className="font-black">{formatPrice(paintPrice)}</span>
+              </div>
+
+              {/* Accessoires */}
+              {chosenAccessories.length > 0 && (
+                <ul className="mt-4 space-y-2 border-t border-border pt-4">
+                  {chosenAccessories.map((a) => (
+                    <li key={a.id} className="flex items-center gap-3 text-sm">
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-border bg-white">
+                        {a.images[0] && <Image src={a.images[0]} alt={a.title} fill sizes="40px" className="object-contain p-1" />}
+                      </div>
+                      <span className="min-w-0 flex-1 truncate">{a.title}</span>
+                      <span className="font-semibold">{formatPrice(cheapestKluspas(a))}</span>
+                      <button type="button" onClick={() => toggleAcc(a.id)} className="text-xs text-muted-foreground hover:text-primary">
+                        verwijder
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <button type="button" onClick={() => setStep(4)} className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary">
+                <Plus className="h-4 w-4" /> Gereedschap toevoegen
+              </button>
+            </div>
+
+            {/* Afronden */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-secondary/40 p-5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Verf</span>
+                <span className="font-semibold">{formatPrice(paintPrice)}</span>
+              </div>
+              {accTotal > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Gereedschap</span>
+                  <span className="font-semibold">{formatPrice(accTotal)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between border-t border-border pt-3">
+                <span className="font-bold">Totaal (KLUSR-prijs)</span>
+                <span className="text-xl font-black">{formatPrice(grandTotal)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Incl. btw · op kleur gemengd · voor 19:00 besteld, morgen in huis.</p>
+
+              <Button size="lg" className="mt-1 w-full" onClick={handleCheckout}>
+                <CreditCard className="h-5 w-5" /> Direct afrekenen
+              </Button>
+              <Button size="lg" variant="outline" className="w-full" onClick={handleAddToCart}>
+                <ShoppingCart className="h-5 w-5" /> In winkelwagen
+              </Button>
+              <Button size="lg" variant="ghost" className="w-full" onClick={handleSave}>
+                <Heart className="h-5 w-5" /> Opslaan voor later
+              </Button>
+            </div>
+          </div>
         </section>
       )}
     </div>
