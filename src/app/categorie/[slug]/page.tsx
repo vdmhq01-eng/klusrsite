@@ -6,7 +6,6 @@ import { categories, getCategory } from "@/lib/data";
 import { getProductsByCategory, getSubCategories } from "@/lib/data";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
-import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
 import { CategoryIcon } from "@/components/shared/category-icon";
 import { TopicImage } from "@/components/shared/topic-image";
 import { categoryKeywords } from "@/lib/topic-images";
@@ -144,10 +143,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </section>
       )}
 
-      {/* Klushulp funnel */}
-      <KlushulpFunnel compact categorySlug={category.slug} />
-
-      {/* Product listing */}
+      {/* Product listing (met AI-productzoeker bovenaan) */}
       <ProductListing products={products} listName={category.title} />
 
       {/* SEO text block */}

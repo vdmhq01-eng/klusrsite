@@ -11,7 +11,6 @@ import {
 } from "@/lib/data";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
-import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
 import { getVerfLeafContent } from "@/lib/data/verf-content";
 
 interface SubPageProps {
@@ -88,9 +87,6 @@ export default function SubCategoryPage({ params }: SubPageProps) {
             `${subCategory.title} van topmerken bij KLUSR — met deskundig advies en voor 19:00 besteld morgen in huis.`}
         </p>
       </section>
-
-      {/* Klushulp funnel */}
-      <KlushulpFunnel compact categorySlug={category.slug} />
 
       {/* Fallback notice when the subcategory has no dedicated products yet */}
       {usesFallback && (
