@@ -28,6 +28,8 @@ export type TrackEventName =
   | "color_selected"
   | "kleurenkiezer_klus"
   | "ai_chat_started"
+  | "ai_chat_teaser_shown"
+  | "ai_chat_teaser_clicked"
   | "ai_product_suggestion_clicked"
   | "save_for_later"
   | "exit_intent_shown";
