@@ -1,4 +1,5 @@
 import { isKvEnabled, kvGetJSON, kvSetJSON } from "./kv";
+import { sendPushToAdmins } from "@/lib/push";
 
 /**
  * Gespreksstore voor de website-chat ("de Klushulp"). Net als de orderstore
@@ -110,6 +111,8 @@ export async function appendTurn(id: string, input: AppendTurnInput): Promise<vo
     const assistantReply = String(input.assistantReply ?? "");
 
     const existing = await loadById(cid);
+    // Een ontbrekend bestaand gesprek = dit is een NIEUW gesprek (eerste beurt).
+    const isNewConversation = existing === undefined;
     const conv: StoredConversation = existing ?? {
       id: cid,
       startedAt: now,
@@ -147,6 +150,17 @@ export async function appendTurn(id: string, input: AppendTurnInput): Promise<vo
       await kvSetJSON(KEY.index, upsertIndexEntry(index, entry));
     } else {
       memIndex = upsertIndexEntry(memIndex, entry);
+    }
+
+    // Alleen bij een NIEUW gesprek de beheerders een push sturen (niet bij elke
+    // beurt — dat zou spammen). Best-effort en afgeschermd (gooit nooit).
+    if (isNewConversation) {
+      const preview = previewOf(userMessage) || "Nieuw chatbericht";
+      void sendPushToAdmins({
+        title: "Nieuw gesprek met de Klushulp",
+        body: preview,
+        url: "/admin",
+      });
     }
   } catch (err) {
     console.error("[conversations] appendTurn failed", err);
