@@ -14,7 +14,11 @@ import type { PricingMode } from "@/lib/store/pricing-mode";
 
 export const VAT_RATE = 0.21;
 export const PROFPAS_DISCOUNT = 0.1;
-/** KLUSRPAS (particulier): vaste 5% korting op de normale prijs over de hele collectie. */
+/**
+ * Nominale KLUSRPAS-korting (5%) — de merkbelofte/marketingrate. Het werkelijk
+ * getoonde percentage wordt per product afgeleid uit de echte pasprijs (zie
+ * `passDiscountPct`), omdat die per product kan verschillen.
+ */
 export const KLUSPAS_DISCOUNT = 0.05;
 
 /** Bedrag exclusief btw uit een incl.-btw-bedrag. */
@@ -26,6 +30,19 @@ export const vatPart = (inclVat: number): number => inclVat - exVat(inclVat);
 /** Bruto prijs (incl. btw) die een zakelijke ProfPas-klant betaalt: 10% korting. */
 export const profGrossPrice = (normalInclVat: number): number =>
   normalInclVat * (1 - PROFPAS_DISCOUNT);
+
+/**
+ * KLUSRPAS-korting in hele procenten, afgeleid van de ECHTE bedragen (niet de
+ * nominale 5%-rate), zodat het getoonde percentage altijd overeenkomt met het
+ * euro-verschil. De pasprijs is per product handmatig gezet en kan dus meer dan
+ * 5% schelen. Undefined bij een verwaarloosbaar verschil (<1%), zodat de UI dan
+ * geen "(0%)" toont.
+ */
+function passDiscountPct(price: number, kluspasPrice: number): number | undefined {
+  if (!(price > 0) || !(kluspasPrice < price)) return undefined;
+  const pct = Math.round(((price - kluspasPrice) / price) * 100);
+  return pct >= 1 ? pct : undefined;
+}
 
 export interface PriceInput {
   price: number;
@@ -116,9 +133,9 @@ export function priceView(input: PriceInput, mode: PricingMode, member = false):
       vatSuffix: "incl. btw",
       normalPrice: price,
       savings: savingsAmt,
-      // Vast 5% (de korting-rate), niet uit afgeronde centen herleid — zo leest
-      // het ook op kleine bedragen netjes als "5%".
-      savingsPct: Math.round(KLUSPAS_DISCOUNT * 100),
+      // Percentage uit de ÉCHTE bedragen, zodat € en % altijd overeenkomen
+      // (de pasprijs varieert per product en is niet overal exact 5%).
+      savingsPct: passDiscountPct(price, kluspasPrice!),
       savingsVsAdvies: undefined,
     };
   }
@@ -138,7 +155,7 @@ export function priceView(input: PriceInput, mode: PricingMode, member = false):
     savingsVsAdvies: undefined,
     passAmount: hasPass ? kluspasPrice! : undefined,
     passSavings: hasPass ? price - kluspasPrice! : undefined,
-    passSavingsPct: hasPass ? Math.round(KLUSPAS_DISCOUNT * 100) : undefined,
+    passSavingsPct: hasPass ? passDiscountPct(price, kluspasPrice!) : undefined,
   };
 }
 
