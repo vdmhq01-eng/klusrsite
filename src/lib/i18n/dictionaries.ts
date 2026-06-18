@@ -662,7 +662,7 @@ export type Messages = {
   // KLUSRPAS-teaser voor gasten (de pasprijs is een ingelogd voordeel).
   "pdp.kluspas.teaserTitle": string; // {price}
   "pdp.kluspas.teaserCta": string;
-  "pdp.kluspas.teaserSave": string; // {amount}
+  "pdp.kluspas.teaserSave": string; // {amount}, {pct}
   "pdp.surcharge": string; // {base} {amount}
   "pdp.perLiter": string; // {price}
   "pdp.discountBadge": string; // {pct}
@@ -1354,7 +1354,7 @@ const nl: Messages = {
   "pdp.kluspas.drawer.more": "Lees meer over de KLUSRPAS",
   "pdp.kluspas.teaserTitle": "{price} met KLUSRPAS",
   "pdp.kluspas.teaserCta": "Log in of maak gratis een account",
-  "pdp.kluspas.teaserSave": "Bespaar {amount} · 5% korting",
+  "pdp.kluspas.teaserSave": "Bespaar {amount} · {pct}% korting",
   "pdp.surcharge": "Incl. {base} (+{amount} voor donkere kleur)",
   "pdp.perLiter": "{price} per liter",
   "pdp.discountBadge": "{pct}% KORTING",
@@ -2042,7 +2042,7 @@ const en: Messages = {
   "pdp.kluspas.drawer.more": "Read more about the KLUSRPAS",
   "pdp.kluspas.teaserTitle": "{price} with KLUSRPAS",
   "pdp.kluspas.teaserCta": "Log in or create a free account",
-  "pdp.kluspas.teaserSave": "Save {amount} · 5% off",
+  "pdp.kluspas.teaserSave": "Save {amount} · {pct}% off",
   "pdp.surcharge": "Incl. {base} (+{amount} for a dark colour)",
   "pdp.perLiter": "{price} per litre",
   "pdp.discountBadge": "{pct}% OFF",
@@ -2730,7 +2730,7 @@ const fr: Messages = {
   "pdp.kluspas.drawer.more": "En savoir plus sur la KLUSRPAS",
   "pdp.kluspas.teaserTitle": "{price} avec KLUSRPAS",
   "pdp.kluspas.teaserCta": "Connectez-vous ou créez un compte gratuit",
-  "pdp.kluspas.teaserSave": "Économisez {amount} · 5 %",
+  "pdp.kluspas.teaserSave": "Économisez {amount} · {pct} %",
   "pdp.surcharge": "Incl. {base} (+{amount} pour une couleur foncée)",
   "pdp.perLiter": "{price} par litre",
   "pdp.discountBadge": "-{pct} %",
@@ -3418,7 +3418,7 @@ const de: Messages = {
   "pdp.kluspas.drawer.more": "Mehr über die KLUSRPAS erfahren",
   "pdp.kluspas.teaserTitle": "{price} mit KLUSRPAS",
   "pdp.kluspas.teaserCta": "Anmelden oder kostenloses Konto erstellen",
-  "pdp.kluspas.teaserSave": "Spare {amount} · 5% Rabatt",
+  "pdp.kluspas.teaserSave": "Spare {amount} · {pct}% Rabatt",
   "pdp.surcharge": "Inkl. {base} (+{amount} für dunkle Farbe)",
   "pdp.perLiter": "{price} pro Liter",
   "pdp.discountBadge": "{pct}% RABATT",

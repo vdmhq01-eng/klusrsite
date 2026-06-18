@@ -133,7 +133,7 @@ function PassTeaserBox({
             {t("pdp.kluspas.teaserTitle", { price: formatPrice(amount) })}
           </p>
           <p className="mt-1 text-sm font-semibold">
-            {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings) })}
+            {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings), pct })}
           </p>
         </div>
         <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
