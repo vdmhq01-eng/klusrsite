@@ -252,6 +252,14 @@ export function ProductBuybox({
 
       {/* Price */}
       <div>
+        {/* Adviesprijs (RRP) — doorgestreept boven de normale prijs. Mode-correct:
+            alleen particulier met een échte adviesprijs (referenceLabel "Adviesprijs"). */}
+        {priceInfo.referenceLabel === "Adviesprijs" && priceInfo.reference != null && (
+          <p className="mb-1 text-sm text-muted-foreground">
+            {t("price.advies")}{" "}
+            <span className="font-medium line-through">{formatPrice(priceInfo.reference)}</span>
+          </p>
+        )}
         {/* Normale prijs — prominent (GAMMA-stijl) */}
         <div className="flex items-end gap-2.5">
           <span className="text-4xl font-black leading-none">
