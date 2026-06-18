@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getPaymentStatus, mapMollieStatus } from "@/lib/payments";
 import { getOrder, getOrderByMollieId, updateOrderStatus } from "@/lib/store/orders";
 import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
+import { sendPushToAdmins } from "@/lib/push";
+import { formatPrice } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -55,6 +57,13 @@ export async function POST(req: Request) {
         await fulfillPaidOrder(paidOrder);
         // Send the branded confirmation once (claim guards against retries).
         await sendOrderConfirmationEmail(paidOrder);
+        // Beheerders een push sturen over de nieuwe bestelling. Best-effort en
+        // afgeschermd (gooit nooit) zodat het de webhook-respons niet raakt.
+        void sendPushToAdmins({
+          title: "Nieuwe bestelling",
+          body: `${order.reference} · ${formatPrice(order.total)}`,
+          url: "/admin",
+        });
       }
     }
 

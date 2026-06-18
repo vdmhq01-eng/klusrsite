@@ -4,12 +4,24 @@ import { redirect } from "next/navigation";
 import { LayoutDashboard, ShieldCheck, ShieldAlert, LogOut } from "lucide-react";
 import { getSession, isAdminEmail, signOut } from "@/auth";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
+import { AdminAppControls } from "@/components/admin/admin-app-controls";
 import { Button } from "@/components/ui/button";
 
+// Manifest + iOS-instellingen worden ALLEEN hier (op /admin) gekoppeld, zodat de
+// installeerbare app de beheeromgeving is en niet de webshop.
 export const metadata: Metadata = {
   title: "KLUSR Beheer",
   description: "Beheer orders, klanten, rapportages, AI-content en koppelingen voor de KLUSR webshop.",
   robots: { index: false, follow: false },
+  manifest: "/manifest.webmanifest",
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "KLUSR Beheer",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default async function AdminPage() {
@@ -56,17 +68,20 @@ export default async function AdminPage() {
                 </p>
               </div>
             </div>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <Button type="submit" variant="outline" size="sm" className="gap-1.5">
-                <LogOut className="h-4 w-4" />
-                Uitloggen
-              </Button>
-            </form>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <AdminAppControls />
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
+              >
+                <Button type="submit" variant="outline" size="sm" className="gap-1.5">
+                  <LogOut className="h-4 w-4" />
+                  Uitloggen
+                </Button>
+              </form>
+            </div>
           </div>
           <div className="flex w-fit items-center gap-1.5 rounded-full bg-klusr-stock/10 px-3 py-1 text-xs font-semibold text-klusr-stock">
             <ShieldCheck className="h-3.5 w-3.5" />
