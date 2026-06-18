@@ -1112,10 +1112,30 @@ const curatedProducts: Product[] = [
 ];
 
 /**
- * The active catalogus: real Tilroy feed products when available, otherwise the
- * curated fallback set. Helpers below operate on this combined source.
+ * KLUSRPAS = vaste 5% korting op de normale prijs, over de HÉLE collectie. We
+ * dwingen dit hier centraal af (op het product én elke variant), zodat de
+ * weergave, winkelwagen, checkout én de Google-feed altijd exact 5% tonen —
+ * ongeacht de (wisselende) kluspasPrice die in de feed/curated data staat.
  */
-export const products: Product[] = feedProducts.length ? feedProducts : curatedProducts;
+const KLUSPAS_RATE = 0.05;
+const fivePctPrice = (price: number) =>
+  Math.round(price * (1 - KLUSPAS_RATE) * 100) / 100;
+function enforceKluspasDiscount(p: Product): Product {
+  return {
+    ...p,
+    kluspasPrice: fivePctPrice(p.price),
+    variants: p.variants.map((v) => ({ ...v, kluspasPrice: fivePctPrice(v.price) })),
+  };
+}
+
+/**
+ * The active catalogus: real Tilroy feed products when available, otherwise the
+ * curated fallback set. Helpers below operate on this combined source. De
+ * KLUSRPAS-prijs wordt centraal op een vaste 5% korting gezet.
+ */
+export const products: Product[] = (
+  feedProducts.length ? feedProducts : curatedProducts
+).map(enforceKluspasDiscount);
 
 /* ------------------------------------------------------------------ lookups */
 
