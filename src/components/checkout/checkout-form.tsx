@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { ColorChip } from "@/components/cart/color-chip";
 import { PaymentMethods } from "./payment-methods";
 import { MollieCard, type MollieCardHandle } from "./mollie-card";
+import { CheckoutTrust } from "./checkout-trust";
 import type { PaymentMethodInfo } from "@/types";
 import {
   useCart,
@@ -846,6 +847,7 @@ export function CheckoutForm({
               </li>
             </ul>
           </div>
+          <CheckoutTrust className="mt-4" />
         </aside>
       </form>
     </div>

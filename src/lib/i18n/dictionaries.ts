@@ -269,6 +269,11 @@ export type Messages = {
   "checkout.usp.freeReturn": string;
   "checkout.usp.fastDelivery": string;
 
+  // Vertrouwen / klantbeoordelingen (trust-panel op de checkout)
+  "checkout.trust.heading": string;
+  "checkout.trust.based": string; // {average} {count}
+  "checkout.trust.verified": string;
+
   // Validatie / fouten (binnen de component bereikbaar)
   "checkout.error.choosePayment": string;
   "checkout.error.chooseBank": string;
@@ -917,6 +922,10 @@ const nl: Messages = {
   "checkout.choosePaymentHint": "Kies eerst een betaalmethode.",
   "checkout.usp.freeReturn": "Gratis retour",
   "checkout.usp.fastDelivery": "Snelle levering",
+
+  "checkout.trust.heading": "Wat klanten over KLUSR zeggen",
+  "checkout.trust.based": "{average} — gebaseerd op {count} beoordelingen",
+  "checkout.trust.verified": "Geverifieerde aankoop",
 
   "checkout.error.choosePayment": "Kies eerst een betaalmethode.",
   "checkout.error.chooseBank": "Kies eerst je bank voor iDEAL.",
@@ -1587,6 +1596,10 @@ const en: Messages = {
   "checkout.usp.freeReturn": "Free returns",
   "checkout.usp.fastDelivery": "Fast delivery",
 
+  "checkout.trust.heading": "What customers say about KLUSR",
+  "checkout.trust.based": "{average} — based on {count} reviews",
+  "checkout.trust.verified": "Verified purchase",
+
   "checkout.error.choosePayment": "Please choose a payment method first.",
   "checkout.error.chooseBank": "Please choose your bank for iDEAL first.",
   "checkout.error.accountPassword":
@@ -2256,6 +2269,10 @@ const fr: Messages = {
   "checkout.usp.freeReturn": "Retour gratuit",
   "checkout.usp.fastDelivery": "Livraison rapide",
 
+  "checkout.trust.heading": "Ce que disent nos clients",
+  "checkout.trust.based": "{average} — sur la base de {count} avis",
+  "checkout.trust.verified": "Achat vérifié",
+
   "checkout.error.choosePayment": "Veuillez d'abord choisir un mode de paiement.",
   "checkout.error.chooseBank": "Veuillez d'abord choisir votre banque pour iDEAL.",
   "checkout.error.accountPassword":
@@ -2924,6 +2941,10 @@ const de: Messages = {
   "checkout.choosePaymentHint": "Bitte wählen Sie zuerst eine Zahlungsart.",
   "checkout.usp.freeReturn": "Kostenlose Rückgabe",
   "checkout.usp.fastDelivery": "Schnelle Lieferung",
+
+  "checkout.trust.heading": "Was Kunden über KLUSR sagen",
+  "checkout.trust.based": "{average} — basierend auf {count} Bewertungen",
+  "checkout.trust.verified": "Verifizierter Kauf",
 
   "checkout.error.choosePayment": "Bitte wählen Sie zuerst eine Zahlungsart.",
   "checkout.error.chooseBank": "Bitte wählen Sie zuerst Ihre Bank für iDEAL.",
