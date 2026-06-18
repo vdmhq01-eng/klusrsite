@@ -115,9 +115,8 @@ export function CheckoutForm({
   // 15-min nabestelvenster → geen extra verzendkosten.
   const { active: reorderFree } = useReorderActive();
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
-  // Geen voorgekozen methode — de klant kiest bewust zelf.
+  // Voorselectie van de gangbaarste methode gebeurt zodra de methodenlijst laadt.
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-  const [issuer, setIssuer] = useState<string | null>(null);
   const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
   const [methodsLoading, setMethodsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -143,8 +142,6 @@ export function CheckoutForm({
 
   function selectMethod(id: string) {
     setPaymentMethod(id);
-    // Bank-keuze alleen relevant voor iDEAL.
-    if (id !== "ideal") setIssuer(null);
   }
 
   // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
@@ -237,18 +234,24 @@ export function CheckoutForm({
     if (total > 0) params.set("amount", total.toFixed(2));
     params.set("country", country);
     setMethodsLoading(true);
+    const apply = (list: PaymentMethodInfo[]) => {
+      if (!active) return;
+      setMethods(list);
+      setMethodsLoading(false);
+      // Voorselecteer de gangbaarste methode (iDEAL/NL, Bancontact/BE) zodat de
+      // "Betaal"-knop meteen actief is → minder afhakers in de checkout.
+      setPaymentMethod((cur) => {
+        if (cur) return cur;
+        const preferred = country === "BE" ? "bancontact" : "ideal";
+        return list.find((m) => m.id === preferred)?.id ?? list[0]?.id ?? null;
+      });
+    };
     fetch(`/api/checkout/payment-methods?${params.toString()}`)
       .then((r) => r.json())
-      .then((d: { methods?: PaymentMethodInfo[] }) => {
-        if (!active) return;
-        setMethods(d.methods?.length ? d.methods : fallbackFor(country));
-        setMethodsLoading(false);
-      })
-      .catch(() => {
-        if (!active) return;
-        setMethods(fallbackFor(country));
-        setMethodsLoading(false);
-      });
+      .then((d: { methods?: PaymentMethodInfo[] }) =>
+        apply(d.methods?.length ? d.methods : fallbackFor(country)),
+      )
+      .catch(() => apply(fallbackFor(country)));
     return () => {
       active = false;
     };
@@ -308,18 +311,13 @@ export function CheckoutForm({
   const payableTotal = Math.round((summary.total + billieSurcharge) * 100) / 100;
 
   const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
-  const selectedMethod = methods.find((m) => m.id === paymentMethod);
-  // iDEAL met banklijst → eerst een bank kiezen voordat je kunt betalen.
-  const needsIssuer = paymentMethod === "ideal" && (selectedMethod?.issuers?.length ?? 0) > 0;
-  const canPay = Boolean(paymentMethod) && (!needsIssuer || Boolean(issuer));
+  // Mollie's nieuwe iDEAL kiest de bank op zijn eigen pagina; we vragen niet meer
+  // vooraf om een bank. De knop is actief zodra er een methode gekozen is.
+  const canPay = Boolean(paymentMethod);
 
   async function onSubmit(values: FormValues) {
     if (!paymentMethod) {
       setError(t("checkout.error.choosePayment"));
-      return;
-    }
-    if (needsIssuer && !issuer) {
-      setError(t("checkout.error.chooseBank"));
       return;
     }
     setSubmitting(true);
@@ -427,7 +425,6 @@ export function CheckoutForm({
           surcharge: billieSurcharge,
           kluspasSavings: summary.savings,
           method: paymentMethod,
-          ...(issuer && paymentMethod === "ideal" ? { issuer } : {}),
           ...(cardToken ? { cardToken } : {}),
         }),
       });
@@ -706,8 +703,6 @@ export function CheckoutForm({
               methods={mode === "zakelijk" ? methods : methods.filter((m) => m.id !== "billie")}
               value={paymentMethod}
               onChange={selectMethod}
-              issuer={issuer}
-              onIssuerChange={setIssuer}
               loading={methodsLoading}
             />
             {useMollieComponents && (
@@ -830,7 +825,7 @@ export function CheckoutForm({
             </Button>
             {!canPay && (
               <p className="mt-2 text-center text-xs text-muted-foreground">
-                {needsIssuer ? t("checkout.chooseBankHint") : t("checkout.choosePaymentHint")}
+                {t("checkout.choosePaymentHint")}
               </p>
             )}
 
