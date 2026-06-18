@@ -84,6 +84,19 @@
 /* Reduce layout shift while web fonts load */
 html {
   scroll-behavior: smooth;
+  /* iOS-vangnet tegen horizontaal meeschuiven: Safari propageert
+     `overflow-x: clip` van <body> niet altijd naar de viewport, dus zetten we
+     het óók op de root. `clip` maakt (anders dan `hidden`) geen scroll-container,
+     dus de sticky header blijft gewoon werken. */
+  overflow-x: clip;
+}
+
+/* Heel oude browsers zonder `clip`-ondersteuning vallen terug op `hidden`. */
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 
 /* --- Toegankelijkheid (WCAG 2.1 AA) ------------------------------------- */
