@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Search,
   MessageCircle,
+  MessagesSquare,
   Eye,
   Radio,
   ShoppingCart,
@@ -27,6 +28,7 @@ import { formatPrice, formatDate, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrdersPanel } from "./orders-panel";
 import { TicketsPanel } from "./tickets-panel";
+import { ConversationsPanel } from "./conversations-panel";
 import { CustomersPanel } from "./customers-panel";
 import { AiContentManager } from "./ai-content-manager";
 import { HeroImages } from "./hero-images";
@@ -37,6 +39,7 @@ type SectionId =
   | "overzicht"
   | "orders"
   | "tickets"
+  | "gesprekken"
   | "klanten"
   | "rapportages"
   | "inzichten"
@@ -47,6 +50,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "tickets", label: "Tickets", icon: MessageCircle },
+  { id: "gesprekken", label: "Gesprekken", icon: MessagesSquare },
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "content", label: "AI-content", icon: Sparkles },
@@ -95,6 +99,7 @@ export function AdminDashboard() {
         {section === "overzicht" && <Overview orders={orders} onGo={setSection} />}
         {section === "orders" && <OrdersPanel />}
         {section === "tickets" && <TicketsPanel />}
+        {section === "gesprekken" && <ConversationsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {(section === "rapportages" || section === "inzichten") && (
           <div className="space-y-8">

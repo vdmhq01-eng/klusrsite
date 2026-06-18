@@ -54,10 +54,36 @@ export function ChatPanel({
   const [started, setStarted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
+  const cidRef = useRef<string | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
+
+  /**
+   * Stabiele gespreks-id per browser: één keer aangemaakt en bewaard in
+   * localStorage onder `klusr_chat_cid`, daarna hergebruikt over sessies/bezoeken
+   * heen. Best-effort — als localStorage faalt valt het terug op een tijdelijke
+   * id voor deze sessie.
+   */
+  function getConversationId(): string {
+    if (cidRef.current) return cidRef.current;
+    let cid = "";
+    try {
+      cid = localStorage.getItem("klusr_chat_cid") ?? "";
+      if (!cid) {
+        cid =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `cid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem("klusr_chat_cid", cid);
+      }
+    } catch {
+      cid = cid || `cid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    }
+    cidRef.current = cid;
+    return cid;
+  }
 
   // Stuur een vooraf ingevulde vraag (bv. vanuit de hero) één keer automatisch in.
   useEffect(() => {
@@ -90,6 +116,8 @@ export function ChatPanel({
         body: JSON.stringify({
           messages: next.filter((m) => m.role === "user" || m.role === "assistant"),
           context,
+          conversationId: getConversationId(),
+          page: typeof window !== "undefined" ? window.location.pathname : undefined,
         }),
       });
       const data = await res.json();
