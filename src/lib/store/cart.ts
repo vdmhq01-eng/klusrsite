@@ -33,6 +33,8 @@ interface CartState {
   saveForLater: (key: string) => void;
   moveToCart: (key: string) => void;
   toggleKLUSRPAS: () => void;
+  /** Zet de KLUSRPAS-status op basis van de login (zie membership-sync). */
+  setMembership: (active: boolean) => void;
   clear: () => void;
   pushRecentlyViewed: (productId: string) => void;
 }
@@ -51,7 +53,11 @@ export const useCart = create<CartState>()(
     (set, get) => ({
       items: [],
       savedForLater: [],
-      kluspasActive: true,
+      // Gasten betalen de normale prijs; de KLUSRPAS-prijs is een ingelogd
+      // voordeel. Wordt bij het laden afgeleid van de sessie (membership-sync)
+      // en bewust NIET gepersisteerd (zie partialize), zodat hij altijd vers
+      // begint en de inlogstatus volgt.
+      kluspasActive: false,
       recentlyViewed: [],
 
       addItem: ({ product, variant, quantity = 1, color, useKLUSRPAS }) => {
@@ -131,6 +137,8 @@ export const useCart = create<CartState>()(
 
       toggleKLUSRPAS: () => set({ kluspasActive: !get().kluspasActive }),
 
+      setMembership: (active) => set({ kluspasActive: active }),
+
       clear: () => set({ items: [] }),
 
       pushRecentlyViewed: (productId) =>
@@ -143,10 +151,12 @@ export const useCart = create<CartState>()(
     }),
     {
       name: "klusr-cart",
+      // `kluspasActive` bewust NIET persisteren: het is een ingelogd voordeel dat
+      // bij elke load uit de sessie wordt afgeleid (membership-sync). Zo kan een
+      // uitgelogde bezoeker nooit met een gepersisteerde "true" de pasprijs zien.
       partialize: (state) => ({
         items: state.items,
         savedForLater: state.savedForLater,
-        kluspasActive: state.kluspasActive,
         recentlyViewed: state.recentlyViewed,
       }),
     },

@@ -25,6 +25,7 @@ import {
   cartSummary,
   displayLine,
   linePrice,
+  kluspasSavings,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
@@ -74,6 +75,12 @@ export function CartView() {
   }
 
   const summary = cartSummary(items, mode, kluspasActive);
+  // Login-nudge voor gasten: de KLUSRPAS-prijs is een ingelogd voordeel, dus als
+  // de pas niet actief is maar er wél te besparen valt (particulier), tonen we
+  // hoeveel inloggen oplevert i.p.v. de toegepaste kortingsregel.
+  const potentialSavings = kluspasSavings(items);
+  const showKluspasNudge =
+    summary.vatIncluded && !kluspasActive && potentialSavings > 0;
 
   if (items.length === 0) {
     return (
@@ -235,6 +242,15 @@ export function CartView() {
                 </div>
               )}
             </dl>
+            {showKluspasNudge && (
+              <Link
+                href={`/inloggen?redirect=${encodeURIComponent("/winkelwagen")}`}
+                className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+              >
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{t("cart.kluspas.nudge", { amount: formatPrice(potentialSavings) })}</span>
+              </Link>
+            )}
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">{t("cart.total")}</span>

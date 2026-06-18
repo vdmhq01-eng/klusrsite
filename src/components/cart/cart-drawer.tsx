@@ -20,6 +20,7 @@ import {
   useCart,
   cartSummary,
   displayLine,
+  kluspasSavings,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
@@ -48,6 +49,10 @@ export function CartDrawer() {
   const savings = mounted ? summary.savings : 0;
   const shipping = mounted ? summary.shipping : 0;
   const total = subtotal + shipping;
+  // Login-nudge voor gasten (de KLUSRPAS-prijs is een ingelogd voordeel).
+  const potentialSavings = mounted ? kluspasSavings(items) : 0;
+  const showKluspasNudge =
+    mounted && summary.vatIncluded && !kluspasActive && potentialSavings > 0;
 
   // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
   // drawer opens, so the catalogus stays out of the global bundle.
@@ -183,6 +188,16 @@ export function CartDrawer() {
                   </span>
                   <span className="font-bold text-primary">-{formatPrice(savings)}</span>
                 </div>
+              )}
+              {showKluspasNudge && (
+                <Link
+                  href={`/inloggen?redirect=${encodeURIComponent("/winkelwagen")}`}
+                  onClick={() => setCartOpen(false)}
+                  className="mb-2 flex items-start gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                >
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{t("cart.kluspas.nudge", { amount: formatPrice(potentialSavings) })}</span>
+                </Link>
               )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">

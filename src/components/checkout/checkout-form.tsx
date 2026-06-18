@@ -30,6 +30,7 @@ import {
   cartSummary,
   displayLine,
   shippingFor,
+  kluspasSavings,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
@@ -302,6 +303,13 @@ export function CheckoutForm({
       ? 0
       : shippingForCountry(grossSubtotalForShipping, country, { brievenbus });
   const summary = cartSummary(items, mode, kluspasActive, shippingOverride);
+
+  // Login-nudge voor gasten: de KLUSRPAS-prijs is een ingelogd voordeel. Inloggen
+  // (de inline-login hierboven) zet via membership-sync `kluspasActive` aan,
+  // waardoor de totalen automatisch meebewegen.
+  const potentialKluspasSavings = kluspasSavings(items);
+  const showKluspasNudge =
+    summary.vatIncluded && !kluspasActive && potentialKluspasSavings > 0;
 
   // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
   const billieSurcharge =
@@ -773,6 +781,16 @@ export function CheckoutForm({
                 </div>
               )}
             </dl>
+            {showKluspasNudge && (
+              <button
+                type="button"
+                onClick={() => setShowLogin(true)}
+                className="mt-3 flex w-full items-start gap-1.5 rounded-lg border border-primary/30 bg-primary/5 p-3 text-left text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+              >
+                <UserRound className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{t("cart.kluspas.nudge", { amount: formatPrice(potentialKluspasSavings) })}</span>
+              </button>
+            )}
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">{t("cart.total")}</span>
