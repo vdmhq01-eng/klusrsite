@@ -645,6 +645,14 @@ export type Messages = {
   "pdp.kluspas.title": string;
   "pdp.kluspas.body": string;
   "pdp.kluspas.link": string;
+  "pdp.kluspas.drawer.intro": string;
+  "pdp.kluspas.drawer.benefit1": string;
+  "pdp.kluspas.drawer.benefit2": string;
+  "pdp.kluspas.drawer.benefit3": string;
+  "pdp.kluspas.drawer.benefit4": string;
+  "pdp.kluspas.drawer.how": string;
+  "pdp.kluspas.drawer.cta": string;
+  "pdp.kluspas.drawer.more": string;
   "pdp.surcharge": string; // {base} {amount}
   "pdp.perLiter": string; // {price}
   "pdp.perLiterCheaper": string;
@@ -1307,6 +1315,16 @@ const nl: Messages = {
   "pdp.kluspas.body":
     "Kies bij het afrekenen voor een gratis account, dan wordt de KLUSRPAS-korting direct verrekend. Geen abonnement, geen verplichtingen.",
   "pdp.kluspas.link": "Wat is de KLUSRPAS?",
+  "pdp.kluspas.drawer.intro":
+    "De KLUSRPAS is de gratis voordeelpas van KLUSR. Pashouders betalen altijd de laagste prijs op het hele assortiment.",
+  "pdp.kluspas.drawer.benefit1": "Altijd de laagste KLUSRPAS-prijs",
+  "pdp.kluspas.drawer.benefit2": "Exclusieve acties en aanbiedingen",
+  "pdp.kluspas.drawer.benefit3": "Gratis persoonlijk kleuradvies",
+  "pdp.kluspas.drawer.benefit4": "Klustegoed sparen bij elke aankoop",
+  "pdp.kluspas.drawer.how":
+    "Maak gratis een account aan; de korting wordt bij het afrekenen direct verrekend. Geen verplichtingen.",
+  "pdp.kluspas.drawer.cta": "Account aanmaken",
+  "pdp.kluspas.drawer.more": "Lees meer over de KLUSRPAS",
   "pdp.surcharge": "Incl. {base} (+{amount} voor donkere kleur)",
   "pdp.perLiter": "{price} per liter",
   "pdp.perLiterCheaper": "grotere bus is voordeliger per liter",
@@ -1966,6 +1984,16 @@ const en: Messages = {
   "pdp.kluspas.body":
     "Choose to create a free account at checkout and the KLUSRPAS discount is applied right away. No subscription, no obligations.",
   "pdp.kluspas.link": "What is the KLUSRPAS?",
+  "pdp.kluspas.drawer.intro":
+    "The KLUSRPAS is KLUSR's free loyalty pass. Pass holders always pay the lowest price across the entire range.",
+  "pdp.kluspas.drawer.benefit1": "Always the lowest KLUSRPAS price",
+  "pdp.kluspas.drawer.benefit2": "Exclusive deals and offers",
+  "pdp.kluspas.drawer.benefit3": "Free personal colour advice",
+  "pdp.kluspas.drawer.benefit4": "Earn klustegoed on every purchase",
+  "pdp.kluspas.drawer.how":
+    "Create a free account; the discount is applied right away at checkout. No obligations.",
+  "pdp.kluspas.drawer.cta": "Create an account",
+  "pdp.kluspas.drawer.more": "Read more about the KLUSRPAS",
   "pdp.surcharge": "Incl. {base} (+{amount} for a dark colour)",
   "pdp.perLiter": "{price} per litre",
   "pdp.perLiterCheaper": "larger tin is cheaper per litre",
@@ -2625,6 +2653,16 @@ const fr: Messages = {
   "pdp.kluspas.body":
     "Lors du paiement, choisissez de créer un compte gratuit et la remise KLUSRPAS est appliquée immédiatement. Sans abonnement, sans engagement.",
   "pdp.kluspas.link": "Qu'est-ce que la KLUSRPAS ?",
+  "pdp.kluspas.drawer.intro":
+    "La KLUSRPAS est la carte avantage gratuite de KLUSR. Les détenteurs paient toujours le prix le plus bas sur tout l'assortiment.",
+  "pdp.kluspas.drawer.benefit1": "Toujours le prix KLUSRPAS le plus bas",
+  "pdp.kluspas.drawer.benefit2": "Promotions et offres exclusives",
+  "pdp.kluspas.drawer.benefit3": "Conseil couleur personnalisé gratuit",
+  "pdp.kluspas.drawer.benefit4": "Cumulez du klustegoed à chaque achat",
+  "pdp.kluspas.drawer.how":
+    "Créez un compte gratuit ; la remise est appliquée directement au paiement. Sans engagement.",
+  "pdp.kluspas.drawer.cta": "Créer un compte",
+  "pdp.kluspas.drawer.more": "En savoir plus sur la KLUSRPAS",
   "pdp.surcharge": "Incl. {base} (+{amount} pour une couleur foncée)",
   "pdp.perLiter": "{price} par litre",
   "pdp.perLiterCheaper": "le plus grand pot est plus avantageux au litre",
@@ -3284,6 +3322,16 @@ const de: Messages = {
   "pdp.kluspas.body":
     "Wähle beim Bezahlen ein kostenloses Konto und der KLUSRPAS-Rabatt wird sofort verrechnet. Kein Abo, keine Verpflichtungen.",
   "pdp.kluspas.link": "Was ist die KLUSRPAS?",
+  "pdp.kluspas.drawer.intro":
+    "Die KLUSRPAS ist die kostenlose Vorteilskarte von KLUSR. Karteninhaber zahlen immer den niedrigsten Preis im gesamten Sortiment.",
+  "pdp.kluspas.drawer.benefit1": "Immer der niedrigste KLUSRPAS-Preis",
+  "pdp.kluspas.drawer.benefit2": "Exklusive Aktionen und Angebote",
+  "pdp.kluspas.drawer.benefit3": "Kostenlose persönliche Farbberatung",
+  "pdp.kluspas.drawer.benefit4": "Klustegoed bei jedem Einkauf sammeln",
+  "pdp.kluspas.drawer.how":
+    "Erstelle ein kostenloses Konto; der Rabatt wird beim Bezahlen sofort verrechnet. Keine Verpflichtungen.",
+  "pdp.kluspas.drawer.cta": "Konto erstellen",
+  "pdp.kluspas.drawer.more": "Mehr über die KLUSRPAS erfahren",
   "pdp.surcharge": "Inkl. {base} (+{amount} für dunkle Farbe)",
   "pdp.perLiter": "{price} pro Liter",
   "pdp.perLiterCheaper": "größerer Eimer ist günstiger pro Liter",

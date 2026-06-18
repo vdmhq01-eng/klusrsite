@@ -12,12 +12,25 @@ import {
   Sparkles,
   CreditCard,
   Palette,
+  Tag,
+  Gift,
+  PiggyBank,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
 import type { GlansVariant } from "@/lib/data/products";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { StarRating } from "./star-rating";
 import { StockStatus } from "./stock-status";
 import { QuantityStepper } from "@/components/cart/quantity-stepper";
@@ -239,20 +252,64 @@ export function ProductBuybox({
           </p>
         )}
         {priceInfo.badge === "KLUSRPAS" && (
-          <Link
-            href="/kluspas"
-            className="mt-2 block rounded-lg border border-primary/20 bg-primary/5 p-3 transition-colors hover:border-primary/40 hover:bg-primary/10"
-          >
-            <p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-              <CreditCard className="h-3.5 w-3.5 shrink-0 text-primary" />
-              {t("pdp.kluspas.title")}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">{t("pdp.kluspas.body")}</p>
-            <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              {t("pdp.kluspas.link")}
-              <span aria-hidden>→</span>
-            </span>
-          </Link>
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="mt-2 block w-full cursor-pointer rounded-lg border border-primary/20 bg-primary/5 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/10"
+              >
+                <p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                  <CreditCard className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  {t("pdp.kluspas.title")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("pdp.kluspas.body")}</p>
+                <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                  {t("pdp.kluspas.link")}
+                  <span aria-hidden>→</span>
+                </span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="flex flex-col gap-0 overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 shrink-0 text-primary" />
+                  {t("pdp.kluspas.link")}
+                </SheetTitle>
+                <SheetDescription>{t("pdp.kluspas.drawer.intro")}</SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 px-5 pb-5">
+                <ul className="grid gap-3">
+                  {[
+                    { icon: Tag, key: "pdp.kluspas.drawer.benefit1" as MessageKey },
+                    { icon: Gift, key: "pdp.kluspas.drawer.benefit2" as MessageKey },
+                    { icon: Palette, key: "pdp.kluspas.drawer.benefit3" as MessageKey },
+                    { icon: PiggyBank, key: "pdp.kluspas.drawer.benefit4" as MessageKey },
+                  ].map(({ icon: Icon, key }) => (
+                    <li key={key} className="flex items-start gap-3 text-sm font-medium">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="pt-1.5">{t(key)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-5 rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground">
+                  {t("pdp.kluspas.drawer.how")}
+                </p>
+              </div>
+              <SheetFooter>
+                <Button asChild size="lg">
+                  <Link href="/registreren">
+                    {t("pdp.kluspas.drawer.cta")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/kluspas">{t("pdp.kluspas.drawer.more")}</Link>
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         )}
         {surcharge > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
