@@ -381,3 +381,61 @@ export function getArticle(slug: string): Article | undefined {
 export function getRelatedArticles(article: Article, limit = 3): Article[] {
   return articles.filter((a) => a.id !== article.id).slice(0, limit);
 }
+
+/**
+ * Product-categorie (slug) → relevante artikel-onderwerpen (de menselijk
+ * leesbare `category`-waarden uit de artikelen hierboven). Bewust gebaseerd op
+ * de daadwerkelijk aanwezige categorieën: Verven, Gereedschap, Inspiratie,
+ * Tuin, Elektra, Vloeren, Buiten. (Er is geen "Onderhoud", dus reiniging valt
+ * terug op Gereedschap.)
+ */
+const ARTICLE_TOPICS_BY_PRODUCT_CATEGORY: Record<string, string[]> = {
+  verf: ["Verven", "Inspiratie"],
+  behang: ["Inspiratie", "Verven"],
+  gereedschap: ["Gereedschap"],
+  ijzerwaren: ["Gereedschap"],
+  tuin: ["Tuin", "Buiten"],
+  elektra: ["Elektra"],
+  verlichting: ["Elektra", "Inspiratie"],
+  "vloeren-raam": ["Vloeren", "Inspiratie"],
+  "afbouw-fijnbouw": ["Gereedschap", "Verven"],
+  reiniging: ["Gereedschap"],
+};
+
+/** Nieuwste eerst; stabiel en deterministisch (tie-break op id). */
+function byDateDesc(a: Article, b: Article): number {
+  if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
+ * Artikelen die relevant zijn voor een productcategorie. Selecteert eerst de
+ * artikelen waarvan de `category` in de gemapte onderwerpen valt (nieuwste
+ * eerst) en vult daarna aan met de meest recente overige artikelen
+ * (gededupliceerd) tot `limit`. Zo toont de sectie altijd minimaal 2 —
+ * idealiter `limit` — kaarten, met de relevante artikelen bovenaan. Puur en
+ * deterministisch.
+ */
+export function relatedArticles(categorySlug: string, limit = 3): Article[] {
+  const topics = ARTICLE_TOPICS_BY_PRODUCT_CATEGORY[categorySlug] ?? [];
+  const matched = articles
+    .filter((a) => topics.includes(a.category))
+    .sort(byDateDesc);
+
+  const selected = matched.slice(0, limit);
+
+  // Vul aan met de nieuwste overige artikelen zodat we (waar mogelijk) op
+  // `limit` uitkomen — en hoe dan ook op de minimaal gewenste 2.
+  if (selected.length < limit) {
+    const seen = new Set(selected.map((a) => a.id));
+    const fallback = articles
+      .filter((a) => !seen.has(a.id))
+      .sort(byDateDesc);
+    for (const article of fallback) {
+      if (selected.length >= limit) break;
+      selected.push(article);
+    }
+  }
+
+  return selected;
+}

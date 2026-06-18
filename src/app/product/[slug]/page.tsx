@@ -8,6 +8,8 @@ import {
 } from "@/lib/data/products";
 import { getLocalizedProduct } from "@/lib/data/products-i18n";
 import { getCategory } from "@/lib/data/categories";
+import { relatedArticles } from "@/lib/data/articles";
+import { ArticleCard } from "@/components/content/article-card";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductBuybox } from "@/components/product/product-buybox";
@@ -71,6 +73,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const alternatives = getRelatedProducts(product, 8).filter(
     (p) => !companions.some((c) => c.id === p.id),
   );
+  const klustips = relatedArticles(product.category, 3);
 
   const breadcrumbItems = [
     ...(category ? [{ label: category.title, href: `/categorie/${category.slug}` }] : []),
@@ -226,6 +229,23 @@ export default async function ProductPage({ params }: { params: { slug: string }
         <section className="mt-12">
           <SectionHeading title="Alternatieven" subtitle="Vergelijkbare producten" />
           <ProductCarousel products={alternatives} listName="Alternatieven" />
+        </section>
+      )}
+
+      {/* Handige klustips — relevante blogartikelen bij dit product */}
+      {klustips.length > 0 && (
+        <section className="mt-12">
+          <SectionHeading
+            title="Handige klustips"
+            subtitle="Lees hoe je dit product als een pro gebruikt"
+            href="/advies"
+            linkLabel="Alle adviezen"
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {klustips.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
         </section>
       )}
 
