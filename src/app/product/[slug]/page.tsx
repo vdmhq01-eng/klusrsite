@@ -87,6 +87,16 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   const totalStock = product.stockByStore.reduce((s, x) => s + x.quantity, 0);
 
+  // Prijsrange over alle maten: de Merchant-feed stuurt per maat de KLUSRPAS-prijs,
+  // dus de structured data moet die hele range dekken (AggregateOffer) om een
+  // "niet-overeenkomende productprijs" in Google te voorkomen.
+  const variantPrices = product.variants
+    .map((v) => (v.kluspasPrice > 0 ? v.kluspasPrice : v.price))
+    .filter((p) => p > 0);
+  const lowPrice = variantPrices.length ? Math.min(...variantPrices) : product.kluspasPrice;
+  const highPrice = variantPrices.length ? Math.max(...variantPrices) : product.kluspasPrice;
+  const multiPrice = highPrice > lowPrice;
+
   // Product structured data (schema.org/Product)
   const productJsonLd = {
     "@context": "https://schema.org",
@@ -109,11 +119,19 @@ export default async function ProductPage({ params }: { params: { slug: string }
       reviewBody: r.body,
     })),
     offers: {
-      "@type": "Offer",
+      "@type": multiPrice ? "AggregateOffer" : "Offer",
       url: `${SITE_URL}/product/${product.slug}`,
       priceCurrency: "EUR",
-      price: product.kluspasPrice.toFixed(2),
-      priceValidUntil: `${new Date().getFullYear()}-12-31`,
+      ...(multiPrice
+        ? {
+            lowPrice: lowPrice.toFixed(2),
+            highPrice: highPrice.toFixed(2),
+            offerCount: product.variants.length,
+          }
+        : {
+            price: lowPrice.toFixed(2),
+            priceValidUntil: `${new Date().getFullYear()}-12-31`,
+          }),
       itemCondition: "https://schema.org/NewCondition",
       availability:
         totalStock > 0
