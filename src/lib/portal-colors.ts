@@ -67,12 +67,35 @@ async function loadFrom(url: string): Promise<ColorCollection[] | null> {
   }
 }
 
+/**
+ * Vult de portal-set aan met de gecureerde collecties die de portal NIET (op
+ * naam) levert. Zo blijven onze vaste families — met name **RAL Classic**, maar
+ * ook grijs/blauw/groen/pastels enz. — altijd zichtbaar, ook wanneer de live
+ * portal-set aanslaat. Voorheen verving de portal de hele lijst, waardoor RAL
+ * en de kleurfamilies in productie verdwenen. Portal-collecties staan voorop
+ * (live, actueel), de ontbrekende gecureerde collecties worden eronder
+ * aangevuld, ontdubbeld op collectienaam.
+ */
+function mergeCurated(portal: ColorCollection[]): ColorCollection[] {
+  const seen = new Set(portal.map((c) => c.name.trim().toLowerCase()));
+  const merged = [...portal];
+  for (const c of colorCollections) {
+    const key = c.name.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(c);
+  }
+  return merged;
+}
+
 export async function fetchPortalColors(): Promise<ColorCollection[]> {
   if (cache) return cache;
-  cache =
+  const portal =
     (await loadFrom(PROXY_URL)) ||
     (await loadFrom(FEED_URL)) ||
-    (await loadFrom(FALLBACK_URL)) ||
-    colorCollections;
+    (await loadFrom(FALLBACK_URL));
+  // Portal-set vooraan, aangevuld met ontbrekende gecureerde collecties (o.a.
+  // RAL Classic). Geen portal beschikbaar? Dan de volledige gecureerde set.
+  cache = portal ? mergeCurated(portal) : colorCollections;
   return cache;
 }
