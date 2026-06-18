@@ -90,14 +90,15 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   const totalStock = product.stockByStore.reduce((s, x) => s + x.quantity, 0);
 
-  // Prijsrange over alle maten: de Merchant-feed stuurt per maat de KLUSRPAS-prijs,
-  // dus de structured data moet die hele range dekken (AggregateOffer) om een
+  // Prijsrange over alle maten: de Merchant-feed stuurt per maat de NORMALE prijs
+  // (de 5% KLUSRPAS-korting is een ingelogd voordeel en hoort niet in de feed),
+  // dus de structured data moet díe hele range dekken (AggregateOffer) om een
   // "niet-overeenkomende productprijs" in Google te voorkomen.
   const variantPrices = product.variants
-    .map((v) => (v.kluspasPrice > 0 ? v.kluspasPrice : v.price))
+    .map((v) => (v.price > 0 ? v.price : v.kluspasPrice))
     .filter((p) => p > 0);
-  const lowPrice = variantPrices.length ? Math.min(...variantPrices) : product.kluspasPrice;
-  const highPrice = variantPrices.length ? Math.max(...variantPrices) : product.kluspasPrice;
+  const lowPrice = variantPrices.length ? Math.min(...variantPrices) : product.price;
+  const highPrice = variantPrices.length ? Math.max(...variantPrices) : product.price;
   const multiPrice = highPrice > lowPrice;
 
   // Product structured data (schema.org/Product)

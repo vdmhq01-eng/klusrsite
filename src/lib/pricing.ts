@@ -51,10 +51,30 @@ export interface PriceView {
   savingsPct?: number;
   /** True wanneer de besparing t.o.v. de adviesprijs is (commerciële framing). */
   savingsVsAdvies?: boolean;
+  /**
+   * KLUSRPAS-teaser (alleen particulier, alléén als gast): het bedrag dat een
+   * ingelogde KLUSRPAS-klant zou betalen. Gevuld wanneer er een pasprijs is maar
+   * de bezoeker niet is ingelogd — de UI gebruikt dit om de "log in voor 5%"-
+   * nudge te tonen zonder de pasprijs al toe te passen.
+   */
+  passAmount?: number;
+  /** Teaser: te besparen bedrag met KLUSRPAS (normale prijs − pasprijs). */
+  passSavings?: number;
+  /** Teaser: kortingspercentage van de KLUSRPAS (vast 5%). */
+  passSavingsPct?: number;
 }
 
-/** Bereken alles wat de UI nodig heeft om een prijs in een modus te tonen. */
-export function priceView(input: PriceInput, mode: PricingMode): PriceView {
+/**
+ * Bereken alles wat de UI nodig heeft om een prijs in een modus te tonen.
+ *
+ * `member` = of de bezoeker is ingelogd (elke geregistreerde gebruiker heeft de
+ * gratis KLUSRPAS). De KLUSRPAS-prijs (5%) is een **ingelogd voordeel**:
+ *  - `member = true`  → particulier krijgt de pasprijs toegepast (huidig gedrag).
+ *  - `member = false` (gast) → particulier ziet de normale prijs + een teaser
+ *    (`passAmount`/`passSavings`) zodat de UI kan aansporen tot inloggen.
+ * Zakelijk negeert `member`: ProfPas blijft volledig modus-gestuurd.
+ */
+export function priceView(input: PriceInput, mode: PricingMode, member = false): PriceView {
   const { price, kluspasPrice, compareAtPrice } = input;
 
   if (mode === "zakelijk") {
@@ -76,30 +96,49 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
   //  - Adviesprijs (compareAtPrice)  → doorgestreepte referentie (RRP)
   //  - Normale prijs (price)         → wat een gast/zonder account betaalt
   //  - KLUSRPAS-prijs (kluspasPrice) → normale prijs − vaste 5% (geregistreerd)
-  const member = kluspasPrice !== undefined && kluspasPrice < price;
-  const amount = member ? kluspasPrice! : price;
+  // De KLUSRPAS-prijs is een INGELOGD voordeel: alleen toepassen als `member`.
+  const hasPass = kluspasPrice !== undefined && kluspasPrice < price;
   // Doorstrepen = uitsluitend de adviesprijs (RRP), nooit de normale prijs. De
   // adviesprijs blijft als context staan, maar wordt NIET als besparing benoemd.
+  // Onafhankelijk van `member`: de adviesprijs geldt voor iedereen.
   const hasAdvies = compareAtPrice !== undefined && compareAtPrice > price;
+  const reference = hasAdvies ? compareAtPrice! : undefined;
+  const referenceLabel = hasAdvies ? "Adviesprijs" : undefined;
 
-  // De benoemde besparing is altijd de vaste KLUSRPAS-korting (5%) t.o.v. de
-  // normale prijs — consistent met "5% korting op de hele collectie".
-  const savingsAmt = member && price > amount ? price - amount : 0;
+  if (member && hasPass) {
+    // Ingelogd → pasprijs TOEGEPAST (exact het gedrag van vroeger).
+    const savingsAmt = price - kluspasPrice!;
+    return {
+      amount: kluspasPrice!,
+      reference,
+      referenceLabel,
+      badge: "KLUSRPAS",
+      vatSuffix: "incl. btw",
+      normalPrice: price,
+      savings: savingsAmt,
+      // Vast 5% (de korting-rate), niet uit afgeronde centen herleid — zo leest
+      // het ook op kleine bedragen netjes als "5%".
+      savingsPct: Math.round(KLUSPAS_DISCOUNT * 100),
+      savingsVsAdvies: undefined,
+    };
+  }
 
+  // Gast (of geen pasprijs) → normale prijs, geen toegepaste korting/badge.
+  // Met een pasprijs vullen we de teaservelden zodat de UI kan aansporen tot
+  // inloggen ("log in voor 5%") zónder de korting al te rekenen.
   return {
-    amount,
-    reference: hasAdvies ? compareAtPrice! : undefined,
-    referenceLabel: hasAdvies ? "Adviesprijs" : undefined,
-    badge: member ? "KLUSRPAS" : undefined,
+    amount: price,
+    reference,
+    referenceLabel,
+    badge: undefined,
     vatSuffix: "incl. btw",
-    // Toon de normale prijs apart wanneer de KLUSRPAS-prijs lager is.
-    normalPrice: member ? price : undefined,
-    savings: savingsAmt > 0 ? savingsAmt : undefined,
-    // Vast 5% (de korting-rate), niet uit afgeronde centen herleid — zo leest het
-    // ook op kleine bedragen netjes als "5%".
-    savingsPct: savingsAmt > 0 ? Math.round(KLUSPAS_DISCOUNT * 100) : undefined,
-    // Besparing is t.o.v. de normale prijs (KLUSRPAS), niet de adviesprijs.
+    normalPrice: undefined,
+    savings: undefined,
+    savingsPct: undefined,
     savingsVsAdvies: undefined,
+    passAmount: hasPass ? kluspasPrice! : undefined,
+    passSavings: hasPass ? price - kluspasPrice! : undefined,
+    passSavingsPct: hasPass ? Math.round(KLUSPAS_DISCOUNT * 100) : undefined,
   };
 }
 

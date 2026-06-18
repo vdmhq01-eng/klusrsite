@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Check,
@@ -104,6 +105,57 @@ function PassDiscountBox({
   );
 }
 
+/**
+ * Gast-variant van het GAMMA-stijl kortingsblok: zelfde rode look-and-feel met de
+ * "5% KORTING"-badge, maar in plaats van de toegepaste pasprijs een aansporing om
+ * in te loggen. De KLUSRPAS-prijs is een ingelogd voordeel, dus we tonen wat het
+ * kan opleveren + een knop naar inloggen/registreren (met redirect terug hierheen).
+ */
+function PassTeaserBox({
+  amount,
+  savings,
+  pct,
+  redirect,
+  t,
+}: {
+  amount: number;
+  savings: number;
+  pct: number;
+  redirect: string;
+  t: ReturnType<typeof useT>;
+}) {
+  const loginHref = `/inloggen?redirect=${encodeURIComponent(redirect)}`;
+  return (
+    <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-2xl font-black leading-none text-primary">
+            {t("pdp.kluspas.teaserTitle", { price: formatPrice(amount) })}
+          </p>
+          <p className="mt-1 text-sm font-semibold">
+            {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings) })}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+          {t("pdp.discountBadge", { pct })}
+        </span>
+      </div>
+      <Button asChild size="sm" className="mt-3 w-full">
+        <Link href={loginHref}>
+          {t("pdp.kluspas.teaserCta")}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        {t("pdp.kluspas.body")}{" "}
+        <Link href="/registreren" className="font-semibold text-primary underline-offset-2 hover:underline">
+          {t("pdp.kluspas.drawer.cta")}
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 const usps: { icon: typeof Truck; labelKey: MessageKey }[] = [
   { icon: Truck, labelKey: "pdp.usp.freeShipping" },
   { icon: RotateCcw, labelKey: "pdp.usp.returns" },
@@ -148,6 +200,11 @@ export function ProductBuybox({
       ? baseStockByStore(variant.stockByStore, color.base.id)
       : variant.stockByStore;
 
+  // De KLUSRPAS-prijs (5%) is een ingelogd voordeel: alleen ingelogde bezoekers
+  // krijgen 'm toegepast. Gasten zien de normale prijs + een teaser (zie onder).
+  const { data: session } = useSession();
+  const member = mounted && Boolean(session);
+
   const mode = usePricingMode((s) => s.mode);
   const priceInfo = priceView(
     {
@@ -157,12 +214,16 @@ export function ProductBuybox({
         variant.compareAtPrice !== undefined ? variant.compareAtPrice + surcharge : undefined,
     },
     mounted ? mode : "particulier",
+    member,
   );
 
   // GAMMA-stijl prijsweergave: normale prijs prominent bovenaan, de pasprijs in
   // een apart kortingsblok met "X% KORTING"-badge. De pasprijs (priceInfo.amount)
   // is mode-correct (KLUSRPAS incl. btw, ProfPas excl. btw).
   const showPass = Boolean(priceInfo.badge && priceInfo.savings && priceInfo.savings > 0);
+  // Gast-teaser: er is een pasprijs maar de bezoeker is niet ingelogd → toon de
+  // "log in voor 5%"-aansporing in plaats van de toegepaste pasprijs.
+  const showTeaser = Boolean(priceInfo.passAmount && priceInfo.passSavings && priceInfo.passSavings > 0);
   const isKlusPass = priceInfo.badge === "KLUSRPAS";
   const passName = isKlusPass ? "KLUSRPAS" : "ProfPas";
   const headlinePrice = priceInfo.normalPrice ?? priceInfo.amount;
@@ -344,6 +405,15 @@ export function ProductBuybox({
               t={t}
             />
           ))}
+        {showTeaser && (
+          <PassTeaserBox
+            amount={priceInfo.passAmount!}
+            savings={priceInfo.passSavings!}
+            pct={priceInfo.passSavingsPct ?? 0}
+            redirect={`/product/${product.slug}`}
+            t={t}
+          />
+        )}
         {surcharge > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
             {t("pdp.surcharge", {

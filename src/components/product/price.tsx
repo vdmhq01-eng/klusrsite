@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { formatPrice, cn } from "@/lib/utils";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
@@ -48,9 +49,15 @@ export function Price({
   const t = useT();
   const mode = usePricingMode((s) => s.mode);
   const mounted = useMounted();
+  // De KLUSRPAS-prijs is een ingelogd voordeel. Tot hydratie (en voor gasten)
+  // tonen we de normale prijs; ingelogde bezoekers krijgen de pasprijs ook op
+  // de kaarten. Bij gasten verschijnt een subtiele "met KLUSRPAS"-hint.
+  const { data: session } = useSession();
+  const member = mounted && Boolean(session);
   const view = priceView(
     { price, kluspasPrice, compareAtPrice },
     mounted ? mode : "particulier",
+    member,
   );
 
   const mainSize = {
@@ -88,6 +95,13 @@ export function Price({
           {t("price.save", { amount: formatPrice(view.savings) })}
           {view.savingsPct ? t("price.savePct", { pct: view.savingsPct }) : ""}
           {view.savingsVsAdvies ? t("price.vsAdvies") : ""}
+        </span>
+      )}
+      {/* Gast-hint: de pasprijs is een ingelogd voordeel. Subtiel, geen losse
+          knoppen op de kaart — de CTA staat op de PDP/in de winkelwagen. */}
+      {view.passAmount !== undefined && (
+        <span className="text-[11px] font-semibold text-primary">
+          {t("pdp.kluspas.teaserTitle", { price: formatPrice(view.passAmount) })}
         </span>
       )}
     </div>
