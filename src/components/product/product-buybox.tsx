@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Check,
   ShoppingCart,
@@ -51,18 +51,58 @@ import { useT } from "@/components/i18n/locale-provider";
 import type { MessageKey } from "@/lib/i18n/dictionaries";
 
 /**
- * `pricing.ts` levert `referenceLabel` ("Adviesprijs"/"Normaal") en `vatSuffix`
- * ("incl. btw"/"excl. btw") als vaste NL-strings. We veranderen die return-waarden
- * niet, maar mappen ze hier naar vertaalsleutels (NL blijft identiek, rest vertaalt).
+ * `pricing.ts` levert `vatSuffix` ("incl. btw"/"excl. btw") als vaste NL-string;
+ * die mappen we hier naar een vertaalsleutel (NL blijft identiek, rest vertaalt).
  */
-const REFERENCE_LABEL_KEY: Record<string, MessageKey> = {
-  Adviesprijs: "price.advies",
-  Normaal: "price.normal",
-};
 const VAT_SUFFIX_KEY: Record<string, MessageKey> = {
   "incl. btw": "price.inclVat",
   "excl. btw": "price.exclVat",
 };
+
+/**
+ * GAMMA-stijl kortingsblok: pasprijs prominent + "X% KORTING"-badge + (optioneel)
+ * prijs per liter en een uitleg-link. Werkt voor zowel KLUSRPAS als ProfPas.
+ */
+function PassDiscountBox({
+  amount,
+  passName,
+  pct,
+  perLiter,
+  link,
+  t,
+}: {
+  amount: number;
+  passName: string;
+  pct: number;
+  perLiter: number | null;
+  link?: ReactNode;
+  t: ReturnType<typeof useT>;
+}) {
+  return (
+    <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-2xl font-black leading-none text-primary">
+            {formatPrice(amount)}
+          </p>
+          <p className="mt-1 text-sm font-semibold">{t("pdp.withPass", { pass: passName })}</p>
+        </div>
+        <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+          {t("pdp.discountBadge", { pct })}
+        </span>
+      </div>
+      {perLiter !== null && (
+        <p className="mt-1.5 text-sm font-semibold text-primary">
+          {t("pdp.perLiter", { price: formatPrice(perLiter) })}
+        </p>
+      )}
+      <p className="mt-2 text-xs leading-snug text-muted-foreground">
+        {t("pdp.passExplain", { pct, pass: passName })}
+        {link ? <> {link}</> : null}
+      </p>
+    </div>
+  );
+}
 
 const usps: { icon: typeof Truck; labelKey: MessageKey }[] = [
   { icon: Truck, labelKey: "pdp.usp.freeShipping" },
@@ -119,17 +159,17 @@ export function ProductBuybox({
     mounted ? mode : "particulier",
   );
 
-  // "Voordeliger per liter" upsell — compare cheapest €/L variant.
-  const perLiter = useMemo(() => {
-    if (!variant.size) return null;
-    return variant.kluspasPrice / variant.size;
-  }, [variant]);
-
-  const bestPerLiter = useMemo(() => {
-    const sized = product.variants.filter((v) => v.size);
-    if (sized.length < 2) return null;
-    return Math.min(...sized.map((v) => v.kluspasPrice / (v.size ?? 1)));
-  }, [product.variants]);
+  // GAMMA-stijl prijsweergave: normale prijs prominent bovenaan, de pasprijs in
+  // een apart kortingsblok met "X% KORTING"-badge. De pasprijs (priceInfo.amount)
+  // is mode-correct (KLUSRPAS incl. btw, ProfPas excl. btw).
+  const showPass = Boolean(priceInfo.badge && priceInfo.savings && priceInfo.savings > 0);
+  const isKlusPass = priceInfo.badge === "KLUSRPAS";
+  const passName = isKlusPass ? "KLUSRPAS" : "ProfPas";
+  const headlinePrice = priceInfo.normalPrice ?? priceInfo.amount;
+  // Prijs per liter (alleen voor producten met een inhoud), afgeleid van de
+  // getoonde bedragen zodat ze de juiste btw-modus volgen.
+  const normalPerLiter = variant.size ? headlinePrice / variant.size : null;
+  const memberPerLiter = variant.size && showPass ? priceInfo.amount / variant.size : null;
 
   function buildItem() {
     return addItem({ product, variant, quantity, color });
@@ -212,121 +252,96 @@ export function ProductBuybox({
 
       {/* Price */}
       <div>
-        {priceInfo.reference && (
-          <p className="text-sm text-muted-foreground">
-            {priceInfo.referenceLabel ? t(REFERENCE_LABEL_KEY[priceInfo.referenceLabel]) : null}{" "}
-            <span className="line-through">{formatPrice(priceInfo.reference)}</span>
-          </p>
-        )}
-        <div className="flex items-end gap-3">
-          <span className="text-4xl font-black leading-none text-primary">
-            {formatPrice(priceInfo.amount)}
+        {/* Normale prijs — prominent (GAMMA-stijl) */}
+        <div className="flex items-end gap-2.5">
+          <span className="text-4xl font-black leading-none">
+            {formatPrice(headlinePrice)}
           </span>
-          {priceInfo.badge && (
-            <span className="mb-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase text-primary">
-              {priceInfo.badge === "ProfPas" ? t("pdp.profpasPrice") : t("pdp.kluspasPrice")}
-            </span>
-          )}
           <span className="mb-1.5 text-xs font-medium text-muted-foreground">
             {t(VAT_SUFFIX_KEY[priceInfo.vatSuffix])}
           </span>
         </div>
-        {priceInfo.savings !== undefined && priceInfo.savings > 0 && (
-          <p className="mt-1 text-sm font-semibold text-klusr-stock">
-            {t("price.save", { amount: formatPrice(priceInfo.savings) })}
-            {priceInfo.savingsPct ? t("price.savePct", { pct: priceInfo.savingsPct }) : ""}
-            {priceInfo.savingsVsAdvies
-              ? t("price.vsAdvies")
-              : priceInfo.badge === "KLUSRPAS"
-                ? t("price.vsAccount")
-                : ""}
-          </p>
-        )}
-        {priceInfo.normalPrice !== undefined && (
+        {normalPerLiter !== null && (
           <p className="mt-1 text-sm text-muted-foreground">
-            {t("pdp.normalPrice")}{" "}
-            <span className="font-semibold text-foreground">
-              {formatPrice(priceInfo.normalPrice)}
-            </span>{" "}
-            <span className="text-xs">{t("pdp.withoutAccount")}</span>
+            {t("pdp.perLiter", { price: formatPrice(normalPerLiter) })}
           </p>
         )}
-        {priceInfo.badge === "KLUSRPAS" && (
-          <Sheet>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="mt-2 block w-full cursor-pointer rounded-lg border border-primary/20 bg-primary/5 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/10"
-              >
-                <p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                  <CreditCard className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  {t("pdp.kluspas.title")}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{t("pdp.kluspas.body")}</p>
-                <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                  {t("pdp.kluspas.link")}
-                  <span aria-hidden>→</span>
-                </span>
-              </button>
-            </SheetTrigger>
-            <SheetContent side="right" className="flex flex-col gap-0 overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 shrink-0 text-primary" />
-                  {t("pdp.kluspas.link")}
-                </SheetTitle>
-                <SheetDescription>{t("pdp.kluspas.drawer.intro")}</SheetDescription>
-              </SheetHeader>
-              <div className="flex-1 px-5 pb-5">
-                <ul className="grid gap-3">
-                  {[
-                    { icon: Tag, key: "pdp.kluspas.drawer.benefit1" as MessageKey },
-                    { icon: Gift, key: "pdp.kluspas.drawer.benefit2" as MessageKey },
-                    { icon: Palette, key: "pdp.kluspas.drawer.benefit3" as MessageKey },
-                    { icon: PiggyBank, key: "pdp.kluspas.drawer.benefit4" as MessageKey },
-                  ].map(({ icon: Icon, key }) => (
-                    <li key={key} className="flex items-start gap-3 text-sm font-medium">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="pt-1.5">{t(key)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-5 rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground">
-                  {t("pdp.kluspas.drawer.how")}
-                </p>
-              </div>
-              <SheetFooter>
-                <Button asChild size="lg">
-                  <Link href="/registreren">
-                    {t("pdp.kluspas.drawer.cta")}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/kluspas">{t("pdp.kluspas.drawer.more")}</Link>
-                </Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        )}
+        {showPass &&
+          (isKlusPass ? (
+            <Sheet>
+              <PassDiscountBox
+                amount={priceInfo.amount}
+                passName={passName}
+                pct={priceInfo.savingsPct ?? 0}
+                perLiter={memberPerLiter}
+                t={t}
+                link={
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      className="font-semibold text-primary underline-offset-2 hover:underline"
+                    >
+                      {t("pdp.kluspas.link")}
+                    </button>
+                  </SheetTrigger>
+                }
+              />
+              <SheetContent side="right" className="flex flex-col gap-0 overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 shrink-0 text-primary" />
+                    {t("pdp.kluspas.link")}
+                  </SheetTitle>
+                  <SheetDescription>{t("pdp.kluspas.drawer.intro")}</SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 px-5 pb-5">
+                  <ul className="grid gap-3">
+                    {[
+                      { icon: Tag, key: "pdp.kluspas.drawer.benefit1" as MessageKey },
+                      { icon: Gift, key: "pdp.kluspas.drawer.benefit2" as MessageKey },
+                      { icon: Palette, key: "pdp.kluspas.drawer.benefit3" as MessageKey },
+                      { icon: PiggyBank, key: "pdp.kluspas.drawer.benefit4" as MessageKey },
+                    ].map(({ icon: Icon, key }) => (
+                      <li key={key} className="flex items-start gap-3 text-sm font-medium">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span className="pt-1.5">{t(key)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-5 rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground">
+                    {t("pdp.kluspas.drawer.how")}
+                  </p>
+                </div>
+                <SheetFooter>
+                  <Button asChild size="lg">
+                    <Link href="/registreren">
+                      {t("pdp.kluspas.drawer.cta")}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/kluspas">{t("pdp.kluspas.drawer.more")}</Link>
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <PassDiscountBox
+              amount={priceInfo.amount}
+              passName={passName}
+              pct={priceInfo.savingsPct ?? 0}
+              perLiter={memberPerLiter}
+              t={t}
+            />
+          ))}
         {surcharge > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
             {t("pdp.surcharge", {
               base: color?.base?.label.toLowerCase() ?? "",
               amount: formatPrice(surcharge),
             })}
-          </p>
-        )}
-        {perLiter && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("pdp.perLiter", { price: formatPrice(perLiter) })}
-            {bestPerLiter && perLiter > bestPerLiter + 0.01 && (
-              <span className="ml-1 font-medium text-primary">
-                · {t("pdp.perLiterCheaper")}
-              </span>
-            )}
           </p>
         )}
       </div>

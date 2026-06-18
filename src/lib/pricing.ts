@@ -14,6 +14,8 @@ import type { PricingMode } from "@/lib/store/pricing-mode";
 
 export const VAT_RATE = 0.21;
 export const PROFPAS_DISCOUNT = 0.1;
+/** KLUSRPAS (particulier): vaste 5% korting op de normale prijs over de hele collectie. */
+export const KLUSPAS_DISCOUNT = 0.05;
 
 /** Bedrag exclusief btw uit een incl.-btw-bedrag. */
 export const exVat = (inclVat: number): number => inclVat / (1 + VAT_RATE);
@@ -60,6 +62,7 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
     const profEx = exVat(profGrossPrice(price));
     return {
       amount: profEx,
+      normalPrice: normalEx,
       reference: normalEx > profEx ? normalEx : undefined,
       referenceLabel: "Normaal",
       badge: "ProfPas",
@@ -70,19 +73,18 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
   }
 
   // Particulier (incl. btw). Drie tiers:
-  //  - Adviesprijs (compareAtPrice)  → doorgestreepte referentie
+  //  - Adviesprijs (compareAtPrice)  → doorgestreepte referentie (RRP)
   //  - Normale prijs (price)         → wat een gast/zonder account betaalt
-  //  - KLUSR-prijs (kluspasPrice)    → wat een geregistreerde klant betaalt
+  //  - KLUSRPAS-prijs (kluspasPrice) → normale prijs − vaste 5% (geregistreerd)
   const member = kluspasPrice !== undefined && kluspasPrice < price;
   const amount = member ? kluspasPrice! : price;
-  // Doorstrepen = uitsluitend de adviesprijs (RRP), nooit de normale prijs.
+  // Doorstrepen = uitsluitend de adviesprijs (RRP), nooit de normale prijs. De
+  // adviesprijs blijft als context staan, maar wordt NIET als besparing benoemd.
   const hasAdvies = compareAtPrice !== undefined && compareAtPrice > price;
 
-  // Besparing: commercieel t.o.v. de adviesprijs als die er is (groter, mooier),
-  // anders de KLUSR-korting t.o.v. de normale prijs.
-  const savingsBase = hasAdvies ? compareAtPrice! : price;
-  const savingsAmt = savingsBase > amount ? savingsBase - amount : 0;
-  const showSavings = hasAdvies ? savingsAmt > 0 : member && savingsAmt > 0;
+  // De benoemde besparing is altijd de vaste KLUSRPAS-korting (5%) t.o.v. de
+  // normale prijs — consistent met "5% korting op de hele collectie".
+  const savingsAmt = member && price > amount ? price - amount : 0;
 
   return {
     amount,
@@ -90,11 +92,14 @@ export function priceView(input: PriceInput, mode: PricingMode): PriceView {
     referenceLabel: hasAdvies ? "Adviesprijs" : undefined,
     badge: member ? "KLUSRPAS" : undefined,
     vatSuffix: "incl. btw",
-    // Toon de normale prijs apart wanneer de KLUSR-prijs lager is.
+    // Toon de normale prijs apart wanneer de KLUSRPAS-prijs lager is.
     normalPrice: member ? price : undefined,
-    savings: showSavings ? savingsAmt : undefined,
-    savingsPct: showSavings ? Math.round((savingsAmt / savingsBase) * 100) : undefined,
-    savingsVsAdvies: hasAdvies && showSavings ? true : undefined,
+    savings: savingsAmt > 0 ? savingsAmt : undefined,
+    // Vast 5% (de korting-rate), niet uit afgeronde centen herleid — zo leest het
+    // ook op kleine bedragen netjes als "5%".
+    savingsPct: savingsAmt > 0 ? Math.round(KLUSPAS_DISCOUNT * 100) : undefined,
+    // Besparing is t.o.v. de normale prijs (KLUSRPAS), niet de adviesprijs.
+    savingsVsAdvies: undefined,
   };
 }
 

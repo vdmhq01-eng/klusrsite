@@ -660,6 +660,9 @@ export type Messages = {
   "pdp.kluspas.drawer.more": string;
   "pdp.surcharge": string; // {base} {amount}
   "pdp.perLiter": string; // {price}
+  "pdp.discountBadge": string; // {pct}
+  "pdp.withPass": string; // {pass}
+  "pdp.passExplain": string; // {pct} {pass}
   "pdp.perLiterCheaper": string;
   "pdp.stockForBasePre": string;
   "pdp.stockForBasePost": string;
@@ -1336,6 +1339,9 @@ const nl: Messages = {
   "pdp.kluspas.drawer.more": "Lees meer over de KLUSRPAS",
   "pdp.surcharge": "Incl. {base} (+{amount} voor donkere kleur)",
   "pdp.perLiter": "{price} per liter",
+  "pdp.discountBadge": "{pct}% KORTING",
+  "pdp.withPass": "met {pass}",
+  "pdp.passExplain": "{pct}% korting op de hele collectie met je gratis {pass}.",
   "pdp.perLiterCheaper": "grotere bus is voordeliger per liter",
   "pdp.stockForBasePre": "Voorraad getoond voor ",
   "pdp.stockForBasePost": " — elke basis heeft een eigen voorraad.",
@@ -2009,6 +2015,9 @@ const en: Messages = {
   "pdp.kluspas.drawer.more": "Read more about the KLUSRPAS",
   "pdp.surcharge": "Incl. {base} (+{amount} for a dark colour)",
   "pdp.perLiter": "{price} per litre",
+  "pdp.discountBadge": "{pct}% OFF",
+  "pdp.withPass": "with {pass}",
+  "pdp.passExplain": "{pct}% off the entire range with your free {pass}.",
   "pdp.perLiterCheaper": "larger tin is cheaper per litre",
   "pdp.stockForBasePre": "Stock shown for ",
   "pdp.stockForBasePost": " — each base has its own stock.",
@@ -2682,6 +2691,9 @@ const fr: Messages = {
   "pdp.kluspas.drawer.more": "En savoir plus sur la KLUSRPAS",
   "pdp.surcharge": "Incl. {base} (+{amount} pour une couleur foncée)",
   "pdp.perLiter": "{price} par litre",
+  "pdp.discountBadge": "-{pct} %",
+  "pdp.withPass": "avec {pass}",
+  "pdp.passExplain": "{pct} % de réduction sur toute la gamme avec votre {pass} gratuit.",
   "pdp.perLiterCheaper": "le plus grand pot est plus avantageux au litre",
   "pdp.stockForBasePre": "Stock affiché pour ",
   "pdp.stockForBasePost": " — chaque base a son propre stock.",
@@ -3355,6 +3367,9 @@ const de: Messages = {
   "pdp.kluspas.drawer.more": "Mehr über die KLUSRPAS erfahren",
   "pdp.surcharge": "Inkl. {base} (+{amount} für dunkle Farbe)",
   "pdp.perLiter": "{price} pro Liter",
+  "pdp.discountBadge": "{pct}% RABATT",
+  "pdp.withPass": "mit {pass}",
+  "pdp.passExplain": "{pct}% Rabatt auf das gesamte Sortiment mit deiner kostenlosen {pass}.",
   "pdp.perLiterCheaper": "größerer Eimer ist günstiger pro Liter",
   "pdp.stockForBasePre": "Bestand angezeigt für ",
   "pdp.stockForBasePost": " — jede Basis hat einen eigenen Bestand.",
