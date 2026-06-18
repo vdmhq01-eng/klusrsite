@@ -698,6 +698,15 @@ export type Messages = {
   "price.savePct": string; // {pct}
   "price.vsAdvies": string;
   "price.vsAccount": string;
+
+  // ── Proactieve chat-teaser (ai-assistant-widget.tsx) ─────────────────────
+  "chat.teaser.product": string;
+  "chat.teaser.category": string;
+  "chat.teaser.cart": string;
+  "chat.teaser.general": string;
+  "chat.teaser.cta": string;
+  "chat.teaser.openAria": string;
+  "chat.teaser.dismissAria": string;
 };
 
 const nl: Messages = {
@@ -1378,6 +1387,14 @@ const nl: Messages = {
   "price.savePct": " ({pct}%)",
   "price.vsAdvies": " op de adviesprijs",
   "price.vsAccount": " met je gratis KLUSR-account",
+
+  "chat.teaser.product": "Vragen over dit product? Ik help je graag.",
+  "chat.teaser.category": "Hulp bij het kiezen? Vraag het de Klushulp.",
+  "chat.teaser.cart": "Nog twijfels voor je afrekent? Ik denk mee.",
+  "chat.teaser.general": "Hoi! 👋 Vragen over je klus? Stel ze gerust.",
+  "chat.teaser.cta": "Chat met de Klushulp",
+  "chat.teaser.openAria": "Open de chat met de Klushulp",
+  "chat.teaser.dismissAria": "Sluit de chatuitnodiging",
 };
 
 const en: Messages = {
@@ -2058,6 +2075,14 @@ const en: Messages = {
   "price.savePct": " ({pct}%)",
   "price.vsAdvies": " on the RRP",
   "price.vsAccount": " with your free KLUSR account",
+
+  "chat.teaser.product": "Questions about this product? I'm happy to help.",
+  "chat.teaser.category": "Need help choosing? Just ask the Klushulp.",
+  "chat.teaser.cart": "Still unsure before you check out? I'll think along.",
+  "chat.teaser.general": "Hi there! 👋 Questions about your project? Feel free to ask.",
+  "chat.teaser.cta": "Chat with the Klushulp",
+  "chat.teaser.openAria": "Open the chat with the Klushulp",
+  "chat.teaser.dismissAria": "Close the chat invitation",
 };
 
 const fr: Messages = {
@@ -2738,6 +2763,14 @@ const fr: Messages = {
   "price.savePct": " ({pct} %)",
   "price.vsAdvies": " sur le prix conseillé",
   "price.vsAccount": " avec votre compte KLUSR gratuit",
+
+  "chat.teaser.product": "Des questions sur ce produit ? Je vous aide volontiers.",
+  "chat.teaser.category": "Besoin d'aide pour choisir ? Demandez à la Klushulp.",
+  "chat.teaser.cart": "Encore des doutes avant de payer ? Je vous conseille.",
+  "chat.teaser.general": "Bonjour ! 👋 Des questions sur vos travaux ? N'hésitez pas.",
+  "chat.teaser.cta": "Discuter avec la Klushulp",
+  "chat.teaser.openAria": "Ouvrir le chat avec la Klushulp",
+  "chat.teaser.dismissAria": "Fermer l'invitation au chat",
 };
 
 const de: Messages = {
@@ -3418,6 +3451,14 @@ const de: Messages = {
   "price.savePct": " ({pct} %)",
   "price.vsAdvies": " auf den UVP",
   "price.vsAccount": " mit Ihrem kostenlosen KLUSR-Konto",
+
+  "chat.teaser.product": "Fragen zu diesem Produkt? Ich helfe Ihnen gern.",
+  "chat.teaser.category": "Hilfe bei der Auswahl? Fragen Sie die Klushulp.",
+  "chat.teaser.cart": "Noch Zweifel vor dem Bezahlen? Ich denke mit.",
+  "chat.teaser.general": "Hallo! 👋 Fragen zu Ihrem Projekt? Fragen Sie ruhig.",
+  "chat.teaser.cta": "Mit der Klushulp chatten",
+  "chat.teaser.openAria": "Chat mit der Klushulp öffnen",
+  "chat.teaser.dismissAria": "Chat-Einladung schließen",
 };
 
 export const dictionaries: Record<Locale, Messages> = { nl, en, fr, de };
