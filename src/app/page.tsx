@@ -29,14 +29,18 @@ export default async function HomePage() {
     <div className="flex flex-col gap-10 py-6 sm:gap-12">
       <Hero heroImage={heroImage} />
 
+      {/* 1. Binnenkomst: "wat ga je doen?" */}
       <KlushulpFunnel />
 
+      {/* 2. Navigeren: eerst de verftypes (kernassortiment), dan alle categorieën —
+             de twee browse-blokken staan nu bij elkaar i.p.v. uit elkaar. */}
       <VerfCategories />
 
-      {/* Persoonlijke aanbevelingen voor terugkerende klanten (verborgen voor nieuwe bezoekers) */}
-      <ForYouSection />
+      <CategoryTiles />
 
-      <TrendingSection />
+      {/* 3. Producten ontdekken — eerst persoonlijk (terugkerende klanten), dan de
+             generieke selecties; bewust niet langer onderbroken door de banner. */}
+      <ForYouSection />
 
       {/* Populaire producten */}
       <section className="container-klusr">
@@ -50,7 +54,7 @@ export default async function HomePage() {
         <ProductCarousel products={bestsellers} listName="Populaire producten" />
       </section>
 
-      <KluspasBanner />
+      <TrendingSection />
 
       {/* Acties */}
       <section className="container-klusr">
@@ -62,7 +66,8 @@ export default async function HomePage() {
         <ProductCarousel products={acties} listName="Acties" />
       </section>
 
-      <CategoryTiles />
+      {/* 4. Loyaliteit + 5. inspiratie sluiten de pagina af. */}
+      <KluspasBanner />
 
       <InspirationSection />
     </div>

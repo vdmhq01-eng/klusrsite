@@ -456,8 +456,10 @@ export function CheckoutForm({
       <h1 className="mb-6 text-2xl font-extrabold sm:text-3xl">{t("checkout.title")}</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
-        {/* Left: details */}
-        <div className="space-y-6">
+        {/* Left: details. min-w-0 zodat de kolom nooit breder wordt dan de
+            viewport (grid-items hebben standaard min-width:auto → anders kan
+            inhoud de hele pagina op mobiel naar rechts duwen). */}
+        <div className="min-w-0 space-y-6">
           {/* Particulier of zakelijk bestellen */}
           <div className="flex rounded-xl border border-border bg-secondary/40 p-1">
             {(["particulier", "zakelijk"] as const).map((m) => (
@@ -722,7 +724,7 @@ export function CheckoutForm({
         </div>
 
         {/* Right: order summary */}
-        <aside className="lg:sticky lg:top-28 lg:self-start">
+        <aside className="min-w-0 lg:sticky lg:top-28 lg:self-start">
           <div className="rounded-xl border border-border bg-card p-5">
             <h2 className="mb-4 text-lg font-bold">{t("checkout.summary.title")}</h2>
             <ul className="max-h-72 space-y-3 overflow-y-auto">
