@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { chat, type ChatMessage } from "@/lib/ai/client";
 import { logEvent } from "@/lib/store/analytics";
+import { appendTurn } from "@/lib/store/conversations";
 
 export const runtime = "nodejs";
 
@@ -76,6 +77,18 @@ export async function POST(req: Request) {
 
     const { reply, suggestions } = extractSuggestions(text);
     const { productHref, productLabel } = deriveProductLink(lastUser?.content ?? "", reply);
+
+    // Bewaar de beurt zodat de admin het gesprek kan teruglezen — best-effort en
+    // volledig afgeschermd zodat opslag de chatrespons NOOIT kan breken.
+    const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
+    if (conversationId) {
+      const page = typeof body.page === "string" ? body.page : undefined;
+      void appendTurn(conversationId, {
+        userMessage: lastUser?.content ?? "",
+        assistantReply: reply,
+        page,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ reply, suggestions, productHref, productLabel, source });
   } catch (err) {
