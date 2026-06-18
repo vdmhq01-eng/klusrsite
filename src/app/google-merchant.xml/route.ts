@@ -117,10 +117,12 @@ function buildItems(): string {
       .join("");
 
     for (const v of p.variants) {
-      // KLUSRPAS-prijs naar Merchant; val terug op de reguliere prijs.
+      // De feed-prijs = de KLUSRPAS-prijs (terugval op de reguliere prijs). Dit is
+      // exact wat de productpagina in haar structured data zet, zodat Google geen
+      // "niet-overeenkomende productprijs" meldt. Géén adviesprijs als g:price:
+      // die staat niet op de pagina en veroorzaakt juist de mismatch.
       const feedPrice = v.kluspasPrice > 0 ? v.kluspasPrice : v.price;
       if (!(feedPrice > 0)) continue;
-      const advies = p.compareAtPrice && p.compareAtPrice > feedPrice ? p.compareAtPrice : 0;
       const id = multi ? `${p.id}-${v.id}` : p.id;
       // Verrijkte titel: merk vooraan + glans/kleur/maat als die er nog niet in
       // staan (beter voor Shopping). Zonder dubbeling.
@@ -150,9 +152,7 @@ function buildItems(): string {
         `<g:image_link>${xml(image)}</g:image_link>`,
         extraImages,
         `<g:availability>${inStock ? "in_stock" : "out_of_stock"}</g:availability>`,
-        // Adviesprijs als doorgestreepte prijs → sale-annotatie (hogere CTR).
-        `<g:price>${(advies || feedPrice).toFixed(2)} EUR</g:price>`,
-        advies ? `<g:sale_price>${feedPrice.toFixed(2)} EUR</g:sale_price>` : "",
+        `<g:price>${feedPrice.toFixed(2)} EUR</g:price>`,
         brand ? `<g:brand>${xml(brand)}</g:brand>` : "",
         gtin ? `<g:gtin>${xml(gtin)}</g:gtin>` : "",
         // identifier_exists alleen "no" als er écht geen merk/GTIN is.
