@@ -690,6 +690,10 @@ export type Messages = {
   "pdp.reviews.basedOnPost": string;
   "pdp.reviews.verified": string;
   "pdp.reviews.none": string;
+  "pdp.reviews.empty": string;
+  "pdp.reviews.beFirst": string;
+  /** Korte "nog geen reviews"-status naast sterren (cards, lijst, PDP). */
+  "rating.none": string;
   "pdp.processing.title": string;
 
   // ── Prijsblok (price.tsx + buybox) ────────────────────────────────────────
@@ -1383,6 +1387,9 @@ const nl: Messages = {
   "pdp.reviews.basedOnPost": " reviews van geverifieerde klussers.",
   "pdp.reviews.verified": "Geverifieerd",
   "pdp.reviews.none": "Nog geen reviews.",
+  "pdp.reviews.empty": "Nog geen reviews voor dit product.",
+  "pdp.reviews.beFirst": "Wees de eerste die een review schrijft.",
+  "rating.none": "Nog geen reviews",
   "pdp.processing.title": "Advies van onze ex-schilders",
 
   "price.advies": "Adviesprijs",
@@ -2074,6 +2081,9 @@ const en: Messages = {
   "pdp.reviews.basedOnPost": " reviews from verified DIYers.",
   "pdp.reviews.verified": "Verified",
   "pdp.reviews.none": "No reviews yet.",
+  "pdp.reviews.empty": "No reviews for this product yet.",
+  "pdp.reviews.beFirst": "Be the first to write a review.",
+  "rating.none": "No reviews yet",
   "pdp.processing.title": "Advice from our former painters",
 
   "price.advies": "RRP",
@@ -2765,6 +2775,9 @@ const fr: Messages = {
   "pdp.reviews.basedOnPost": " avis de bricoleurs vérifiés.",
   "pdp.reviews.verified": "Vérifié",
   "pdp.reviews.none": "Pas encore d'avis.",
+  "pdp.reviews.empty": "Pas encore d'avis pour ce produit.",
+  "pdp.reviews.beFirst": "Soyez le premier à laisser un avis.",
+  "rating.none": "Pas encore d'avis",
   "pdp.processing.title": "Les conseils de nos anciens peintres",
 
   "price.advies": "Prix conseillé",
@@ -3456,6 +3469,9 @@ const de: Messages = {
   "pdp.reviews.basedOnPost": " Bewertungen von verifizierten Heimwerkern.",
   "pdp.reviews.verified": "Verifiziert",
   "pdp.reviews.none": "Noch keine Bewertungen.",
+  "pdp.reviews.empty": "Noch keine Bewertungen für dieses Produkt.",
+  "pdp.reviews.beFirst": "Sei der Erste, der eine Bewertung schreibt.",
+  "rating.none": "Noch keine Bewertungen",
   "pdp.processing.title": "Beratung von unseren ehemaligen Malern",
 
   "price.advies": "UVP",

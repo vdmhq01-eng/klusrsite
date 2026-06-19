@@ -301,10 +301,20 @@ export function ProductBuybox({
           {product.title}
         </h1>
         <div className="mt-2 flex items-center gap-3">
-          <StarRating rating={product.rating} size="md" showCount={false} />
-          <a href="#reviews" className="text-sm font-medium text-muted-foreground hover:text-primary">
-            {t("pdp.reviewsLink", { rating: product.rating.toFixed(1), count: product.reviewCount })}
-          </a>
+          {product.reviewCount > 0 ? (
+            <>
+              <StarRating rating={product.rating} size="md" showCount={false} />
+              <a href="#reviews" className="text-sm font-medium text-muted-foreground hover:text-primary">
+                {t("pdp.reviewsLink", { rating: product.rating.toFixed(1), count: product.reviewCount })}
+              </a>
+            </>
+          ) : (
+            // Geen reviews → geen rating-getal en geen (lege) #reviews-link, alleen
+            // een nette muted melding.
+            <span className="text-sm font-medium text-muted-foreground">
+              {t("rating.none")}
+            </span>
+          )}
         </div>
       </div>
 

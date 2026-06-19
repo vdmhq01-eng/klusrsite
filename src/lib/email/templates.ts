@@ -823,6 +823,10 @@ function customerServiceBlock(): string {
 
 /** Sterren (★) voor een rating, met (reviewCount). E-mailveilig via glyphs. */
 function starRating(rating: number, reviewCount: number): string {
+  // Geen reviews → geen (nep) sterren, maar een nette muted melding.
+  if (reviewCount <= 0 || rating <= 0) {
+    return `<span style="font-size:12px;color:${C.muted};white-space:nowrap;">Nog geen reviews</span>`;
+  }
   const r = Math.max(0, Math.min(5, Math.round(rating)));
   const full = "&#9733;".repeat(r);
   const empty = "&#9733;".repeat(5 - r);

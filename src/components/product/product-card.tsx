@@ -134,7 +134,11 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
           </span>
         </div>
 
-        <StarRating rating={product.rating} reviewCount={product.reviewCount} />
+        <StarRating
+          rating={product.rating}
+          reviewCount={product.reviewCount}
+          noReviewsLabel={t("rating.none")}
+        />
 
         <div className="mt-auto flex flex-col gap-2 pt-1">
           <Price

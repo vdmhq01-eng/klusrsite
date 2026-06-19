@@ -75,39 +75,47 @@ export function ProductTabs({ product }: { product: Product }) {
       {/* Reviews */}
       <TabsContent value="reviews">
         <div id="reviews" className="max-w-2xl">
-          <div className="mb-5 flex items-center gap-4 rounded-lg border border-border bg-card p-4">
-            <div className="text-center">
-              <p className="text-3xl font-black">{product.rating.toFixed(1)}</p>
-              <StarRating rating={product.rating} showCount={false} />
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("pdp.reviews.basedOnPre")}<strong className="text-foreground">{product.reviewCount}</strong>{t("pdp.reviews.basedOnPost")}
-            </div>
-          </div>
-          <ul className="space-y-4">
-            {reviews.map((r) => (
-              <li key={r.id} className="border-b border-border pb-4 last:border-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <StarRating rating={r.rating} size="sm" showCount={false} />
-                    {r.title && <span className="text-sm font-semibold">{r.title}</span>}
-                  </div>
-                  {r.verified && (
-                    <span className="inline-flex items-center gap-1 text-xs text-klusr-stock">
-                      <Check className="h-3 w-3" strokeWidth={3} /> {t("pdp.reviews.verified")}
-                    </span>
-                  )}
+          {product.reviewCount > 0 && reviews.length > 0 ? (
+            <>
+              <div className="mb-5 flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+                <div className="text-center">
+                  <p className="text-3xl font-black">{product.rating.toFixed(1)}</p>
+                  <StarRating rating={product.rating} showCount={false} />
                 </div>
-                <p className="mt-1.5 text-sm text-muted-foreground">{r.body}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {r.author} · {formatDate(r.date)}
-                </p>
-              </li>
-            ))}
-            {reviews.length === 0 && (
-              <p className="text-sm text-muted-foreground">{t("pdp.reviews.none")}</p>
-            )}
-          </ul>
+                <div className="text-sm text-muted-foreground">
+                  {t("pdp.reviews.basedOnPre")}<strong className="text-foreground">{product.reviewCount}</strong>{t("pdp.reviews.basedOnPost")}
+                </div>
+              </div>
+              <ul className="space-y-4">
+                {reviews.map((r) => (
+                  <li key={r.id} className="border-b border-border pb-4 last:border-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <StarRating rating={r.rating} size="sm" showCount={false} />
+                        {r.title && <span className="text-sm font-semibold">{r.title}</span>}
+                      </div>
+                      {r.verified && (
+                        <span className="inline-flex items-center gap-1 text-xs text-klusr-stock">
+                          <Check className="h-3 w-3" strokeWidth={3} /> {t("pdp.reviews.verified")}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-sm text-muted-foreground">{r.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {r.author} · {formatDate(r.date)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            // Lege staat: nieuw/niche product zonder reviews. Geen verzonnen
+            // reviews of een nep 0,0-gemiddelde — alleen een nette uitnodiging.
+            <div className="rounded-lg border border-dashed border-border bg-secondary/30 p-6 text-center">
+              <p className="text-sm font-semibold text-foreground">{t("pdp.reviews.empty")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("pdp.reviews.beFirst")}</p>
+            </div>
+          )}
         </div>
       </TabsContent>
 

@@ -125,11 +125,17 @@ export default function VergelijkPage() {
               <Row label="Beoordeling">
                 {items.map((p) => (
                   <td key={p.id} className="border-b border-border p-3 align-top">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      {p.rating?.toFixed(1) ?? "—"}{" "}
-                      <span className="text-xs text-muted-foreground">({p.reviewCount ?? 0})</span>
-                    </span>
+                    {p.reviewCount > 0 && p.rating > 0 ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        {p.rating.toFixed(1)}{" "}
+                        <span className="text-xs text-muted-foreground">({p.reviewCount})</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Nog geen reviews
+                      </span>
+                    )}
                   </td>
                 ))}
               </Row>

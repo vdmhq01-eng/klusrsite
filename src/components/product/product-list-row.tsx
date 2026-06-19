@@ -125,7 +125,11 @@ export function ProductListRow({
         >
           {product.title}
         </Link>
-        <StarRating rating={product.rating} reviewCount={product.reviewCount} />
+        <StarRating
+          rating={product.rating}
+          reviewCount={product.reviewCount}
+          noReviewsLabel={t("rating.none")}
+        />
         <p className="line-clamp-2 text-xs text-muted-foreground">
           {specLine(product)}
         </p>
