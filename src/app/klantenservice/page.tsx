@@ -87,7 +87,7 @@ export default function KlantenservicePage() {
       href: "/winkels",
     },
     {
-      icon: Sparkles,
+      icon: MessageCircle,
       title: t("service.contact.ai.title"),
       description: t("service.contact.ai.description"),
       actionLabel: t("service.contact.ai.action"),

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles, Loader2, ShoppingBag } from "lucide-react";
+import { Send, MessageCircle, Loader2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/tracking";
 import { FormattedText } from "@/components/shared/formatted-text";
@@ -188,7 +188,7 @@ export function ChatPanel({
                 onClick={() => send(s)}
                 className="flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left text-sm font-medium transition-colors hover:border-primary/40 hover:bg-secondary"
               >
-                <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
                 {s}
               </button>
             ))}
@@ -218,7 +218,7 @@ export function ChatPanel({
                     onClick={() => send(s)}
                     className="flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left text-sm font-medium transition-colors hover:border-primary/40 hover:bg-secondary"
                   >
-                    <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                    <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
                     {s}
                   </button>
                 ))}

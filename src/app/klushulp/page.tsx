@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Sparkles, MessageCircle, ListChecks, Wrench } from "lucide-react";
+import { ArrowRight, MessageCircle, ListChecks, Wrench } from "lucide-react";
 import { klushulpTasks } from "@/lib/data";
 import { KlushulpFunnel } from "@/components/home/klushulp-funnel";
 import { ChatPanel } from "@/components/ai/chat-panel";
@@ -52,7 +52,7 @@ export default function KlushulpPage() {
         <div className="grid items-stretch gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="flex flex-col justify-center">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Wrench className="h-3.5 w-3.5" />
               KLUSHULP
             </span>
             <h1 className="mt-4 max-w-2xl text-3xl font-black tracking-tight text-balance sm:text-4xl lg:text-5xl">
