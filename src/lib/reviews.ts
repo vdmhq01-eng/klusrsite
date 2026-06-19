@@ -96,6 +96,8 @@ function drawRating(target: number, r: number): number {
 }
 
 export function getProductReviews(product: Product): Review[] {
+  // Geen reviews (nieuw/niche product) → lege staat, geen verzonnen reviews.
+  if (product.reviewCount <= 0 || product.rating <= 0) return [];
   if (product.reviews && product.reviews.length) return product.reviews;
 
   const rnd = mulberry32(seedFrom(product.id));

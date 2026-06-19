@@ -7,6 +7,13 @@ interface StarRatingProps {
   size?: "sm" | "md" | "lg";
   showCount?: boolean;
   className?: string;
+  /**
+   * Tekst voor de "nog geen reviews"-status. Wordt getoond i.p.v. (nep) 0-sterren
+   * wanneer er geen reviews zijn. Default Nederlands — net als de aria-label
+   * hieronder — zodat de component zowel in server- als client-bomen werkt
+   * zonder i18n-hook. Roepers met een locale geven hier de vertaalde tekst door.
+   */
+  noReviewsLabel?: string;
 }
 
 const sizeMap = {
@@ -15,13 +22,37 @@ const sizeMap = {
   lg: "h-5 w-5",
 };
 
+const textSizeMap = {
+  sm: "text-xs",
+  md: "text-xs",
+  lg: "text-sm",
+};
+
 export function StarRating({
   rating,
   reviewCount,
   size = "sm",
   showCount = true,
   className,
+  noReviewsLabel = "Nog geen reviews",
 }: StarRatingProps) {
+  // Nog geen reviews → geen (nep) 0-sterren, maar een nette muted regel. We
+  // beslissen dit op reviewCount (0) of een ontbrekende rating (0).
+  const noReviews = reviewCount === 0 || rating <= 0;
+  if (noReviews) {
+    return (
+      <span
+        className={cn(
+          "font-medium text-muted-foreground",
+          textSizeMap[size],
+          className,
+        )}
+      >
+        {noReviewsLabel}
+      </span>
+    );
+  }
+
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       <div className="flex items-center" aria-label={`${rating} van 5 sterren`}>

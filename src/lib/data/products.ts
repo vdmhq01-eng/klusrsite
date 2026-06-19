@@ -1,4 +1,4 @@
-import type { Product, ProductVariant, Review, StoreStock } from "@/types";
+import type { Product, ProductVariant, StoreStock } from "@/types";
 import { stores } from "./stores";
 import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
@@ -123,21 +123,6 @@ function img(seed: string, n = 1): string[] {
   );
 }
 
-function reviews(seed: string, count: number, avg: number): Review[] {
-  const samples: Omit<Review, "id" | "date">[] = [
-    { author: "Mark V.", rating: 5, title: "Dekt perfect", body: "In één laag goed dekkend, fijne kwaliteit. Advies in de winkel was top.", verified: true },
-    { author: "Sanne K.", rating: 5, title: "Echt pro-kwaliteit", body: "Verwerkt heerlijk en spettert nauwelijks. Zeker de KLUSRPAS-prijs waard.", verified: true },
-    { author: "Joost B.", rating: 4, title: "Goede verf", body: "Mooi mat resultaat. Tweede laag was wel nodig op een donkere ondergrond.", verified: true },
-    { author: "Petra D.", rating: 5, title: "Aanrader", body: "Snel geleverd en precies de kleur die ik wilde laten mengen.", verified: true },
-    { author: "Henk J.", rating: 4, title: "Prima", body: "Doet wat het moet doen, fijne dekking en weinig geur.", verified: false },
-  ];
-  return Array.from({ length: Math.min(count, 5) }, (_, i) => ({
-    id: `${seed}-r${i}`,
-    date: new Date(2026, 4 - i, 18 - i * 3).toISOString(),
-    ...samples[i % samples.length],
-    rating: i === 0 ? Math.round(avg) : samples[i % samples.length].rating,
-  }));
-}
 
 /** Paint variants in 1L / 2.5L / 5L / 10L with bigger = cheaper per litre. */
 function paintVariants(
@@ -188,8 +173,7 @@ const curatedProducts: Product[] = [
     subCategory: "binnenmuurverf",
     badges: ["BESTSELLER", "PRO KEUZE"],
     rating: 4.6,
-    reviewCount: 42,
-    reviews: reviews("sikkens-alpha", 5, 4.6),
+    reviewCount: 124,
     specifications: [
       {
         group: "Eigenschappen",
@@ -250,9 +234,8 @@ const curatedProducts: Product[] = [
     category: "verf",
     subCategory: "binnenmuurverf",
     badges: ["ACTIE"],
-    rating: 4.5,
-    reviewCount: 128,
-    reviews: reviews("flexa-creations", 4, 4.5),
+    rating: 4.2,
+    reviewCount: 211,
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Glansgraad", value: "Extra mat" },
@@ -286,9 +269,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 27.5,
     category: "verf",
     subCategory: "binnenmuurverf",
-    rating: 4.3,
-    reviewCount: 86,
-    reviews: reviews("histor-latex", 3, 4.3),
+    rating: 3.6,
+    reviewCount: 142,
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Glansgraad", value: "Mat" },
@@ -323,9 +305,8 @@ const curatedProducts: Product[] = [
     category: "verf",
     subCategory: "buitenmuurverf",
     badges: ["PRO KEUZE"],
-    rating: 4.7,
-    reviewCount: 54,
-    reviews: reviews("rubbol-satin", 4, 4.7),
+    rating: 4.5,
+    reviewCount: 62,
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Glansgraad", value: "Zijdeglans" },
@@ -359,10 +340,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 39.95,
     category: "verf",
     subCategory: "lak",
-    badges: ["BESTSELLER"],
-    rating: 4.6,
+    rating: 4.4,
     reviewCount: 73,
-    reviews: reviews("sigma-contour", 4, 4.6),
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Type", value: "Watergedragen PU" },
@@ -395,9 +374,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 33.95,
     category: "verf",
     subCategory: "beits",
-    rating: 4.5,
-    reviewCount: 61,
-    reviews: reviews("cetol-tinta", 3, 4.5),
+    rating: 0,
+    reviewCount: 0,
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Type", value: "Transparante beits" },
@@ -432,9 +410,8 @@ const curatedProducts: Product[] = [
     category: "verf",
     subCategory: "primer",
     badges: ["PRO KEUZE"],
-    rating: 4.7,
+    rating: 4.6,
     reviewCount: 95,
-    reviews: reviews("sigma-primer", 4, 4.7),
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Type", value: "Watergedragen multiprimer" },
@@ -467,9 +444,8 @@ const curatedProducts: Product[] = [
     category: "gereedschap",
     subCategory: "schildersgereedschap",
     badges: ["BESTSELLER"],
-    rating: 4.6,
-    reviewCount: 210,
-    reviews: reviews("anza-roller", 3, 4.6),
+    rating: 4.7,
+    reviewCount: 356,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Breedte", value: "18 cm" },
@@ -497,9 +473,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 6.75,
     category: "gereedschap",
     subCategory: "schildersgereedschap",
-    rating: 4.5,
+    rating: 4.3,
     reviewCount: 156,
-    reviews: reviews("anza-kwast", 3, 4.5),
     specifications: [
       { group: "Specificaties", items: [
         { label: "Breedte", value: "50 mm" },
@@ -529,9 +504,8 @@ const curatedProducts: Product[] = [
     category: "gereedschap",
     subCategory: "schildersgereedschap",
     badges: ["ACTIE"],
-    rating: 4.7,
-    reviewCount: 88,
-    reviews: reviews("anza-set", 3, 4.7),
+    rating: 4.5,
+    reviewCount: 41,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Maten", value: "20, 40, 60 mm" },
@@ -560,8 +534,7 @@ const curatedProducts: Product[] = [
     subCategory: "schuren",
     badges: ["BESTSELLER"],
     rating: 4.8,
-    reviewCount: 340,
-    reviews: reviews("frogtape", 4, 4.8),
+    reviewCount: 487,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Breedte", value: "24 mm" },
@@ -589,9 +562,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 5.95,
     category: "afbouw-fijnbouw",
     subCategory: "schuren",
-    rating: 4.4,
-    reviewCount: 64,
-    reviews: reviews("schuurpapier", 3, 4.4),
+    rating: 3.8,
+    reviewCount: 53,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Korrels", value: "80, 120, 180, 240" },
@@ -623,8 +595,7 @@ const curatedProducts: Product[] = [
     subCategory: "elektrisch-gereedschap",
     badges: ["PRO KEUZE", "ACTIE"],
     rating: 4.8,
-    reviewCount: 142,
-    reviews: reviews("bosch-gsr", 4, 4.8),
+    reviewCount: 214,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Spanning", value: "18V" },
@@ -658,9 +629,8 @@ const curatedProducts: Product[] = [
     category: "gereedschap",
     subCategory: "elektrisch-gereedschap",
     badges: ["ACTIE"],
-    rating: 4.6,
-    reviewCount: 97,
-    reviews: reviews("makita-bitset", 3, 4.6),
+    rating: 0,
+    reviewCount: 0,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Aantal delen", value: "70" },
@@ -690,9 +660,8 @@ const curatedProducts: Product[] = [
     category: "ijzerwaren",
     subCategory: "schroeven",
     badges: ["BESTSELLER"],
-    rating: 4.7,
+    rating: 4.6,
     reviewCount: 118,
-    reviews: reviews("spax", 3, 4.7),
     specifications: [
       { group: "Specificaties", items: [
         { label: "Aantal", value: "450 stuks" },
@@ -720,9 +689,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 16.5,
     category: "ijzerwaren",
     subCategory: "pluggen",
-    rating: 4.8,
-    reviewCount: 132,
-    reviews: reviews("fischer", 3, 4.8),
+    rating: 4.7,
+    reviewCount: 263,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Aantal", value: "210 stuks" },
@@ -753,9 +721,8 @@ const curatedProducts: Product[] = [
     category: "elektra",
     subCategory: "schakelmateriaal",
     badges: ["PRO KEUZE"],
-    rating: 4.7,
-    reviewCount: 76,
-    reviews: reviews("gira", 3, 4.7),
+    rating: 0,
+    reviewCount: 0,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Type", value: "Inbouw, randaarde" },
@@ -787,9 +754,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 58.5,
     category: "elektra",
     subCategory: "kabel",
-    rating: 4.5,
-    reviewCount: 41,
-    reviews: reviews("kabel", 3, 4.5),
+    rating: 3.4,
+    reviewCount: 29,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Doorsnede", value: "3 x 2,5 mm²" },
@@ -819,10 +785,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 7.75,
     category: "afbouw-fijnbouw",
     subCategory: "plamuur",
-    badges: ["BESTSELLER"],
-    rating: 4.5,
-    reviewCount: 89,
-    reviews: reviews("alabastine", 3, 4.5),
+    rating: 4.2,
+    reviewCount: 88,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Inhoud", value: "1 kg poeder" },
@@ -852,9 +816,8 @@ const curatedProducts: Product[] = [
     category: "afbouw-fijnbouw",
     subCategory: "kit",
     badges: ["BUNDEL", "ACTIE"],
-    rating: 4.6,
-    reviewCount: 72,
-    reviews: reviews("bison-kit", 3, 4.6),
+    rating: 3.3,
+    reviewCount: 47,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Kit", value: "Acrylaat wit 310 ml" },
@@ -886,9 +849,8 @@ const curatedProducts: Product[] = [
     category: "tuin",
     subCategory: "tuinhoutbeits",
     badges: ["ACTIE"],
-    rating: 4.4,
-    reviewCount: 103,
-    reviews: reviews("hermadix-beits", 3, 4.4),
+    rating: 3.7,
+    reviewCount: 88,
     specifications: [
       { group: "Eigenschappen", items: [
         { label: "Type", value: "Dekkende beits" },
@@ -923,8 +885,7 @@ const curatedProducts: Product[] = [
     subCategory: "led-lampen",
     badges: ["BESTSELLER", "ACTIE"],
     rating: 4.6,
-    reviewCount: 214,
-    reviews: reviews("philips-led", 4, 4.6),
+    reviewCount: 298,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Fitting", value: "E27" },
@@ -957,9 +918,8 @@ const curatedProducts: Product[] = [
     category: "vloeren-raam",
     subCategory: "laminaat-pvc",
     badges: ["ACTIE"],
-    rating: 4.5,
-    reviewCount: 67,
-    reviews: reviews("laminaat", 3, 4.5),
+    rating: 0,
+    reviewCount: 0,
     specifications: [
       { group: "Specificaties", items: [
         { label: "Inhoud", value: "2,4 m² per pak" },
@@ -989,9 +949,8 @@ const curatedProducts: Product[] = [
     kluspasPrice: 19.5,
     category: "vloeren-raam",
     subCategory: "ondervloer",
-    rating: 4.4,
+    rating: 3.9,
     reviewCount: 38,
-    reviews: reviews("ondervloer", 3, 4.4),
     specifications: [
       { group: "Specificaties", items: [
         { label: "Dikte", value: "3 mm" },
@@ -1023,9 +982,8 @@ const curatedProducts: Product[] = [
     category: "verf",
     subCategory: "binnenmuurverf",
     badges: ["BUNDEL", "ACTIE"],
-    rating: 4.7,
-    reviewCount: 49,
-    reviews: reviews("bundel-muur", 3, 4.7),
+    rating: 4.4,
+    reviewCount: 34,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Muurverf", value: "Flexa Creations 5L" },
@@ -1057,9 +1015,8 @@ const curatedProducts: Product[] = [
     category: "verf",
     subCategory: "lak",
     badges: ["BUNDEL"],
-    rating: 4.6,
-    reviewCount: 31,
-    reviews: reviews("bundel-kozijn", 3, 4.6),
+    rating: 0,
+    reviewCount: 0,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Lak", value: "Sigma Contour Aqua PU 0,75L" },
@@ -1091,9 +1048,8 @@ const curatedProducts: Product[] = [
     category: "tuin",
     subCategory: "tuinhoutbeits",
     badges: ["BUNDEL"],
-    rating: 4.5,
-    reviewCount: 27,
-    reviews: reviews("bundel-beits", 3, 4.5),
+    rating: 0,
+    reviewCount: 0,
     specifications: [
       { group: "Inhoud", items: [
         { label: "Beits", value: "Hermadix Tuinhoutbeits 2,5L" },

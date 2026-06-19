@@ -110,18 +110,25 @@ export default async function ProductPage({ params }: { params: { slug: string }
     description: product.description,
     brand: { "@type": "Brand", name: product.brand },
     sku: product.id,
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: product.rating,
-      reviewCount: product.reviewCount,
-    },
-    review: (product.reviews ?? []).slice(0, 3).map((r) => ({
-      "@type": "Review",
-      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
-      author: { "@type": "Person", name: r.author },
-      datePublished: r.date,
-      reviewBody: r.body,
-    })),
+    // Alleen een aggregateRating/review meegeven als er écht reviews zijn —
+    // anders triggert ratingValue:0 / reviewCount:0 een "ongeldige structured
+    // data"-melding in Google. Producten zonder reviews laten deze velden weg.
+    ...(product.reviewCount > 0 && product.rating > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating,
+            reviewCount: product.reviewCount,
+          },
+          review: (product.reviews ?? []).slice(0, 3).map((r) => ({
+            "@type": "Review",
+            reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
+            author: { "@type": "Person", name: r.author },
+            datePublished: r.date,
+            reviewBody: r.body,
+          })),
+        }
+      : {}),
     offers: {
       "@type": multiPrice ? "AggregateOffer" : "Offer",
       url: `${SITE_URL}/product/${product.slug}`,
