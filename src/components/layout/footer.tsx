@@ -58,7 +58,7 @@ export function Footer() {
             <div className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
               <span className="min-w-0">
-                <span className="font-semibold text-white/90">{COMPANY.legalName}</span>
+                <span className="font-semibold text-white/90">{COMPANY.tradeName}</span>
                 <br />
                 {COMPANY.postalAddress.street}
                 <br />
@@ -152,7 +152,6 @@ export function Footer() {
             <p className="text-white/40">
               KvK {COMPANY.kvk} · BTW {COMPANY.btw} · IBAN {COMPANY.iban}
             </p>
-            <p className="text-white/40">{COMPANY.note}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-end">
             <Link href="/voorwaarden" className="hover:text-white">
