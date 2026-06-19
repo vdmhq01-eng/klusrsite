@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ShoppingCart,
@@ -13,9 +13,6 @@ import {
   Sparkles,
   CreditCard,
   Palette,
-  Tag,
-  Gift,
-  PiggyBank,
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,15 +20,6 @@ import type { Product, ProductVariant, SelectedColor } from "@/types";
 import type { GlansVariant } from "@/lib/data/products";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { StarRating } from "./star-rating";
 import { StockStatus } from "./stock-status";
 import { QuantityStepper } from "@/components/cart/quantity-stepper";
@@ -61,22 +49,23 @@ const VAT_SUFFIX_KEY: Record<string, MessageKey> = {
 };
 
 /**
- * GAMMA-stijl kortingsblok: pasprijs prominent + "X% KORTING"-badge + (optioneel)
- * prijs per liter en een uitleg-link. Werkt voor zowel KLUSRPAS als ProfPas.
+ * GAMMA-stijl prijsblok voor INGELOGDE pashouders: de pasprijs is al toegepast,
+ * dus framen we 'm als "Jouw prijs" (geen sales-pitch) + "X% KORTING"-badge +
+ * (optioneel) prijs per liter en een korte bevestiging dat de korting automatisch
+ * is verrekend. Werkt voor zowel KLUSRPAS als ProfPas. Geen "Wat is de KLUSRPAS?"-
+ * uitlegregel: een pashouder kent de pas al.
  */
 function PassDiscountBox({
   amount,
   passName,
   pct,
   perLiter,
-  link,
   t,
 }: {
   amount: number;
   passName: string;
   pct: number;
   perLiter: number | null;
-  link?: ReactNode;
   t: ReturnType<typeof useT>;
 }) {
   return (
@@ -86,7 +75,9 @@ function PassDiscountBox({
           <p className="text-2xl font-black leading-none text-primary">
             {formatPrice(amount)}
           </p>
-          <p className="mt-1 text-sm font-semibold">{t("pdp.withPass", { pass: passName })}</p>
+          <p className="mt-1 text-sm font-semibold">
+            {t("pdp.yourPassPrice", { pass: passName })}
+          </p>
         </div>
         <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
           {t("pdp.discountBadge", { pct })}
@@ -98,10 +89,25 @@ function PassDiscountBox({
         </p>
       )}
       <p className="mt-2 text-xs leading-snug text-muted-foreground">
-        {t("pdp.passExplain", { pct, pass: passName })}
-        {link ? <> {link}</> : null}
+        {t("pdp.passApplied", { pass: passName })}
       </p>
     </div>
+  );
+}
+
+/**
+ * Neutrale skeleton voor het pasblok terwijl de sessiestatus nog niet bekend is
+ * (`!mounted || status === "loading"`). Reserveert ~dezelfde hoogte als de pas-/
+ * teaserbox zodat er geen layout shift optreedt, en voorkomt dat een ingelogde
+ * bezoeker eerst de gast-teaser ("log in voor 5%") ziet flitsen. Rendert op SSR
+ * en de eerste client-paint identiek → hydration-safe.
+ */
+function PassBoxSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="mt-3 h-[92px] animate-pulse rounded-xl border border-primary/20 bg-secondary/40 motion-reduce:animate-none"
+    />
   );
 }
 
@@ -202,8 +208,11 @@ export function ProductBuybox({
 
   // De KLUSRPAS-prijs (5%) is een ingelogd voordeel: alleen ingelogde bezoekers
   // krijgen 'm toegepast. Gasten zien de normale prijs + een teaser (zie onder).
-  const { data: session } = useSession();
-  const member = mounted && Boolean(session);
+  // De sessie is pas betrouwbaar zodra `status` is geresolved; tot die tijd (en
+  // vóór hydratie) is het pasgebied "onbekend" → skeleton i.p.v. de gast-teaser.
+  const { data: session, status } = useSession();
+  const passResolved = mounted && status !== "loading";
+  const member = passResolved && Boolean(session);
 
   const mode = usePricingMode((s) => s.mode);
   const priceInfo = priceView(
@@ -335,77 +344,24 @@ export function ProductBuybox({
             {t("pdp.perLiter", { price: formatPrice(normalPerLiter) })}
           </p>
         )}
-        {showPass &&
-          (isKlusPass ? (
-            <Sheet>
-              <PassDiscountBox
-                amount={priceInfo.amount}
-                passName={passName}
-                pct={priceInfo.savingsPct ?? 0}
-                perLiter={memberPerLiter}
-                t={t}
-                link={
-                  <SheetTrigger asChild>
-                    <button
-                      type="button"
-                      className="font-semibold text-primary underline-offset-2 hover:underline"
-                    >
-                      {t("pdp.kluspas.link")}
-                    </button>
-                  </SheetTrigger>
-                }
-              />
-              <SheetContent side="right" className="flex flex-col gap-0 overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 shrink-0 text-primary" />
-                    {t("pdp.kluspas.link")}
-                  </SheetTitle>
-                  <SheetDescription>{t("pdp.kluspas.drawer.intro")}</SheetDescription>
-                </SheetHeader>
-                <div className="flex-1 px-5 pb-5">
-                  <ul className="grid gap-3">
-                    {[
-                      { icon: Tag, key: "pdp.kluspas.drawer.benefit1" as MessageKey },
-                      { icon: Gift, key: "pdp.kluspas.drawer.benefit2" as MessageKey },
-                      { icon: Palette, key: "pdp.kluspas.drawer.benefit3" as MessageKey },
-                      { icon: PiggyBank, key: "pdp.kluspas.drawer.benefit4" as MessageKey },
-                    ].map(({ icon: Icon, key }) => (
-                      <li key={key} className="flex items-start gap-3 text-sm font-medium">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <span className="pt-1.5">{t(key)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-5 rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground">
-                    {t("pdp.kluspas.drawer.how")}
-                  </p>
-                </div>
-                <SheetFooter>
-                  <Button asChild size="lg">
-                    <Link href="/registreren">
-                      {t("pdp.kluspas.drawer.cta")}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="/kluspas">{t("pdp.kluspas.drawer.more")}</Link>
-                  </Button>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
-          ) : (
-            <PassDiscountBox
-              amount={priceInfo.amount}
-              passName={passName}
-              pct={priceInfo.savingsPct ?? 0}
-              perLiter={memberPerLiter}
-              t={t}
-            />
-          ))}
-        {showTeaser && (
+        {/* Pasgebied: zolang de sessiestatus onbekend is (vóór hydratie / terwijl
+            next-auth "loading" is) tonen we een neutrale skeleton i.p.v. de gast-
+            teaser of het pasblok. Zo flitst een ingelogde bezoeker niet eerst de
+            "log in voor 5%"-versie. De skeleton rendert op SSR/eerste paint
+            identiek → geen hydration-mismatch. Pas ná resolve het juiste blok. */}
+        {!passResolved ? (
+          (showPass || showTeaser) && <PassBoxSkeleton />
+        ) : showPass ? (
+          // Ingelogd: pasprijs toegepast → "Jouw prijs"-blok (KLUSRPAS én ProfPas).
+          <PassDiscountBox
+            amount={priceInfo.amount}
+            passName={passName}
+            pct={priceInfo.savingsPct ?? 0}
+            perLiter={memberPerLiter}
+            t={t}
+          />
+        ) : showTeaser ? (
+          // Gast: pasprijs is een ingelogd voordeel → "log in voor 5%"-teaser.
           <PassTeaserBox
             amount={priceInfo.passAmount!}
             savings={priceInfo.passSavings!}
@@ -413,7 +369,7 @@ export function ProductBuybox({
             redirect={`/product/${product.slug}`}
             t={t}
           />
-        )}
+        ) : null}
         {surcharge > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
             {t("pdp.surcharge", {

@@ -52,13 +52,20 @@ export function Price({
   // De KLUSRPAS-prijs is een ingelogd voordeel. Tot hydratie (en voor gasten)
   // tonen we de normale prijs; ingelogde bezoekers krijgen de pasprijs ook op
   // de kaarten. Bij gasten verschijnt een subtiele "met KLUSRPAS"-hint.
-  const { data: session } = useSession();
-  const member = mounted && Boolean(session);
+  // De sessie is pas betrouwbaar zodra `status` is geresolved; tot die tijd (en
+  // vóór hydratie) is het pasgebied "onbekend" → een dunne skeleton i.p.v. de
+  // gast-hint, zodat een ingelogde bezoeker niet eerst de teaser ziet flitsen.
+  const { data: session, status } = useSession();
+  const passResolved = mounted && status !== "loading";
+  const member = passResolved && Boolean(session);
   const view = priceView(
     { price, kluspasPrice, compareAtPrice },
     mounted ? mode : "particulier",
     member,
   );
+  // Heeft dit product een pasprijs? (Vóór resolve is `view` de gast-vorm, dus de
+  // teaser-velden verraden of er überhaupt een pas-subregel komt.)
+  const hasPassLine = view.passAmount !== undefined || (view.savings !== undefined && view.savings > 0);
 
   const mainSize = {
     sm: "text-base",
@@ -90,19 +97,37 @@ export function Price({
           {t(VAT_SUFFIX_KEY[view.vatSuffix])}
         </span>
       </div>
-      {view.savings !== undefined && view.savings > 0 && (
-        <span className="text-[11px] font-semibold text-klusr-stock">
-          {t("price.save", { amount: formatPrice(view.savings) })}
-          {view.savingsPct ? t("price.savePct", { pct: view.savingsPct }) : ""}
-          {view.savingsVsAdvies ? t("price.vsAdvies") : ""}
-        </span>
-      )}
-      {/* Gast-hint: de pasprijs is een ingelogd voordeel. Subtiel, geen losse
-          knoppen op de kaart — de CTA staat op de PDP/in de winkelwagen. */}
-      {view.passAmount !== undefined && (
-        <span className="text-[11px] font-semibold text-primary">
-          {t("pdp.kluspas.teaserTitle", { price: formatPrice(view.passAmount) })}
-        </span>
+      {/* Pas-subregel: zolang de sessiestatus onbekend is (vóór hydratie /
+          "loading") tonen we een dunne skeleton i.p.v. de gast-hint, zodat een
+          ingelogde bezoeker niet eerst de teaser ziet flitsen. Rendert op SSR/
+          eerste paint identiek → hydration-safe. */}
+      {!passResolved ? (
+        hasPassLine && (
+          <span
+            aria-hidden
+            className="h-[14px] w-24 animate-pulse rounded bg-secondary/60 motion-reduce:animate-none"
+          />
+        )
+      ) : (
+        <>
+          {/* Ingelogd: pasprijs toegepast → subtiele "Jouw prijs"-cue. */}
+          {view.savings !== undefined && view.savings > 0 && (
+            <span className="text-[11px] font-semibold text-klusr-stock">
+              <span className="text-primary">{t("pdp.yourPrice")}</span>
+              {" · "}
+              {t("price.save", { amount: formatPrice(view.savings) })}
+              {view.savingsPct ? t("price.savePct", { pct: view.savingsPct }) : ""}
+              {view.savingsVsAdvies ? t("price.vsAdvies") : ""}
+            </span>
+          )}
+          {/* Gast-hint: de pasprijs is een ingelogd voordeel. Subtiel, geen losse
+              knoppen op de kaart — de CTA staat op de PDP/in de winkelwagen. */}
+          {view.passAmount !== undefined && (
+            <span className="text-[11px] font-semibold text-primary">
+              {t("pdp.kluspas.teaserTitle", { price: formatPrice(view.passAmount) })}
+            </span>
+          )}
+        </>
       )}
     </div>
   );
