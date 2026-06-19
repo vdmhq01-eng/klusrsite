@@ -74,42 +74,73 @@ function synthReviews(seed, count, avg) {
 }
 
 /**
- * Organisch rating/reviewCount-profiel, deterministisch geseed op product-id.
- * Bewust ~60% ZONDER reviews (nieuw/niche), ~40% mét — en de AANTALLEN bewust
- * laag gehouden (een kleine winkel): de meeste producten 2-3 reviews, sterk
- * aflopend, met een maximum van 40 (dus nooit boven de 100).
- *   ~60% geen reviews → 0 reviews (rating 0)
- *   ~6%  toppers      → 4.6–4.9
- *   ~12% lager scoren → 3.1–3.9
- *   ~22% mid          → 4.0–4.6
- * Het aantal reviews staat los van de tier en is voor iedereen 2..40 (skew laag).
+ * Bekende/herkenbare merken (Fitex, Sikkens, Histor, Hammerite, Flexa, Anza, HG,
+ * Pattex, Alabastine, …) houden ALTIJD nette beoordelingen: nooit een 3-sterren
+ * score en nooit "kaal" met 1-2 reviews. De eerlijke uitschieters — een enkele
+ * 3-sterren, een enkel product met pas 1-2 reviews — zitten bewust alléén bij
+ * generieke/huismerk/onbekende merken, en het zijn er weinig.
  */
-export function ratingProfile(id) {
+const KNOWN_BRANDS = new Set([
+  "fitex", "sikkens", "histor", "hammerite", "cetabever", "flexa", "rambo",
+  "dulux", "levis", "trae lyx", "trae-lyx", "traelyx", "koopmans", "hg",
+  "pattex", "rubson", "den braven", "perfax", "alabastine", "anza", "wd-40",
+  "wd40", "bona", "dutch wallcoverings", "rasch", "noordwand", "parador",
+  "fischer", "cando", "sigma", "wijzonol", "sealskin", "blanchon",
+  "rust-oleum", "rustoleum", "frogtape", "loctite", "herbol", "olfa",
+  "talen tools", "talen", "talens", "bison", "griffon", "bostik", "soudal",
+  "tesa", "knauf", "polyfilla",
+]);
+const isKnownBrand = (brand) => KNOWN_BRANDS.has((brand || "").toLowerCase().trim());
+
+/**
+ * Organisch rating/reviewCount-profiel, deterministisch geseed op product-id +
+ * merk. Aantallen blijven laag (meeste 2-3, max 40).
+ *   ~60% van álle producten          → 0 reviews (nieuw/niche).
+ *   Bekende merken (mét reviews)      → 4.0–4.9, minimaal 3 reviews.
+ *   Niet-bekende merken (mét reviews):
+ *     ~12% → 3-sterren (2.8–3.6) met 1-3 reviews  (de eerlijke uitschieters)
+ *     ~10% → prima score, maar pas 1-2 reviews
+ *     rest → 4.0–4.8 met het normale (lage) aantal.
+ */
+export function ratingProfile(id, brand) {
   const tier = seeded(`${id}-tier`);
   const a = seeded(`${id}-ra`);
   const b = seeded(`${id}-rb`);
   // ~60% van de producten heeft (nog) GEEN reviews; de overige ~40% wél.
   if (tier < 0.6) return { rating: 0, reviewCount: 0 };
-  // Aantal reviews: de meeste producten 2-3, sterk aflopend, max 40 (b^3-skew).
-  const reviewCount = Math.min(40, 2 + Math.floor(b * b * b * 39));
-  // Binnen de ~40% mét reviews varieert alleen de SCORE per tier.
-  if (tier < 0.66) return { rating: round2(4.6 + a * 0.3), reviewCount }; // toppers
-  if (tier < 0.78) return { rating: round2(3.1 + a * 0.8), reviewCount }; // lager
-  return { rating: round2(4.0 + a * 0.6), reviewCount };                   // mid
+  // Normaal aantal: meeste 2-3, sterk aflopend, max 40 (b^3-skew).
+  const baseCount = Math.min(40, 2 + Math.floor(b * b * b * 39));
+
+  // Bekende merken: altijd een nette score (4.0-4.9) en minstens 3 reviews.
+  if (isKnownBrand(brand)) {
+    return { rating: round2(4.0 + a * 0.9), reviewCount: Math.max(3, baseCount) };
+  }
+
+  // Niet-bekende merken: een klein deel mag eerlijk laag / kaal zijn.
+  const q = seeded(`${id}-q`);
+  if (q < 0.12) {
+    // 3-sterren met weinig reviews (1-3) — de eerlijke uitschieters.
+    return { rating: round2(2.8 + a * 0.8), reviewCount: 1 + Math.floor(b * 3) };
+  }
+  if (q < 0.22) {
+    // Prima score, maar pas 1-2 reviews.
+    return { rating: round2(4.0 + a * 0.8), reviewCount: 1 + Math.floor(b * 2) };
+  }
+  return { rating: round2(4.0 + a * 0.8), reviewCount: baseCount };
 }
 
 export function reseedReviews(data) {
   const P = data.products || [];
-  const stats = { total: P.length, zero: 0, low: 0, mid: 0, high: 0 };
+  const stats = { total: P.length, zero: 0, low: 0, mid: 0, high: 0, single: 0 };
   for (const p of P) {
-    const { rating, reviewCount } = ratingProfile(p.id);
+    const { rating, reviewCount } = ratingProfile(p.id, p.brand);
     p.rating = rating;
     p.reviewCount = reviewCount;
     p.reviews = synthReviews(p.id, Math.min(4, reviewCount), rating);
-    // BESTSELLER alleen voor echte toppers; strip 'm waar de score 'm niet
-    // (meer) rechtvaardigt. Voeg niet automatisch toe.
+    // BESTSELLER alleen voor echte toppers (hoge score + flink wat reviews op
+    // deze schaal van max 40); strip 'm anders. Voeg niet automatisch toe.
     if (Array.isArray(p.badges) && p.badges.includes("BESTSELLER")) {
-      if (!(rating >= 4.6 && reviewCount >= 170)) {
+      if (!(rating >= 4.6 && reviewCount >= 20)) {
         p.badges = p.badges.filter((b) => b !== "BESTSELLER");
         if (p.badges.length === 0) delete p.badges;
       }
@@ -118,6 +149,7 @@ export function reseedReviews(data) {
     else if (rating < 4.0) stats.low++;
     else if (rating < 4.6) stats.mid++;
     else stats.high++;
+    if (reviewCount > 0 && reviewCount <= 2) stats.single++;
   }
   return stats;
 }
@@ -139,8 +171,8 @@ function main() {
   writeFileSync(FILE, JSON.stringify(data, null, 2) + "\n");
   console.log(
     `→ Review-verdeling toegepast: ${stats.total} producten ` +
-      `(${stats.zero} zonder reviews, ${stats.low} lager beoordeeld <4.0, ` +
-      `${stats.mid} 4.0–4.5, ${stats.high} 4.6+).`,
+      `(${stats.zero} zonder reviews, ${stats.low} 3-sterren <4.0, ` +
+      `${stats.mid} 4.0–4.5, ${stats.high} 4.6+, ${stats.single} met 1-2 reviews).`,
   );
 }
 
