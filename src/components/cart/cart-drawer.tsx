@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { QuantityStepper } from "./quantity-stepper";
 import { FreeShippingBar } from "./free-shipping-bar";
 import { ColorChip } from "./color-chip";
+import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import {
   useCart,
   cartSummary,
@@ -217,12 +218,14 @@ export function CartDrawer() {
                 )}
               </div>
               <Separator className="my-2.5" />
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-semibold">
                   {t("cart.total")}{!summary.vatIncluded && t("cart.exclVat")}
                 </span>
                 <span className="text-lg font-extrabold">{formatPrice(total)}</span>
               </div>
+              {/* Dynamische bezorgklok bij de totalen/CTA. */}
+              <DeliveryCountdown compact className="mb-3 text-xs" />
               <Button
                 asChild
                 size="lg"

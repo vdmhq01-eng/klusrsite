@@ -715,6 +715,13 @@ export type Messages = {
   "chat.teaser.cta": string;
   "chat.teaser.openAria": string;
   "chat.teaser.dismissAria": string;
+
+  // ── Bezorgklok (delivery-countdown.tsx) ──────────────────────────────────
+  "delivery.beforeCutoff": string; // {time} {day}
+  "delivery.afterCutoff": string; // {day}
+  "delivery.tomorrow": string;
+  "delivery.dayAfter": string;
+  "delivery.countdown": string; // {h} {m}
 };
 
 const nl: Messages = {
@@ -1409,6 +1416,12 @@ const nl: Messages = {
   "chat.teaser.cta": "Chat met de Klushulp",
   "chat.teaser.openAria": "Open de chat met de Klushulp",
   "chat.teaser.dismissAria": "Sluit de chatuitnodiging",
+
+  "delivery.beforeCutoff": "Vóór {time} besteld, {day} in huis",
+  "delivery.afterCutoff": "Besteld → {day} in huis",
+  "delivery.tomorrow": "morgen",
+  "delivery.dayAfter": "overmorgen",
+  "delivery.countdown": "nog {h} u {m} m",
 };
 
 const en: Messages = {
@@ -2103,6 +2116,12 @@ const en: Messages = {
   "chat.teaser.cta": "Chat with the Klushulp",
   "chat.teaser.openAria": "Open the chat with the Klushulp",
   "chat.teaser.dismissAria": "Close the chat invitation",
+
+  "delivery.beforeCutoff": "Order before {time}, delivered {day}",
+  "delivery.afterCutoff": "Ordered → delivered {day}",
+  "delivery.tomorrow": "tomorrow",
+  "delivery.dayAfter": "the day after tomorrow",
+  "delivery.countdown": "{h}h {m}m left",
 };
 
 const fr: Messages = {
@@ -2797,6 +2816,12 @@ const fr: Messages = {
   "chat.teaser.cta": "Discuter avec la Klushulp",
   "chat.teaser.openAria": "Ouvrir le chat avec la Klushulp",
   "chat.teaser.dismissAria": "Fermer l'invitation au chat",
+
+  "delivery.beforeCutoff": "Commandé avant {time}, livré {day}",
+  "delivery.afterCutoff": "Commandé → livré {day}",
+  "delivery.tomorrow": "demain",
+  "delivery.dayAfter": "après-demain",
+  "delivery.countdown": "encore {h} h {m} min",
 };
 
 const de: Messages = {
@@ -3491,6 +3516,12 @@ const de: Messages = {
   "chat.teaser.cta": "Mit der Klushulp chatten",
   "chat.teaser.openAria": "Chat mit der Klushulp öffnen",
   "chat.teaser.dismissAria": "Chat-Einladung schließen",
+
+  "delivery.beforeCutoff": "Vor {time} bestellt, {day} geliefert",
+  "delivery.afterCutoff": "Bestellt → {day} geliefert",
+  "delivery.tomorrow": "morgen",
+  "delivery.dayAfter": "übermorgen",
+  "delivery.countdown": "noch {h} Std. {m} Min.",
 };
 
 export const dictionaries: Record<Locale, Messages> = { nl, en, fr, de };
