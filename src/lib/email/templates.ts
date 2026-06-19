@@ -1,6 +1,7 @@
 import type { CartItem, Order, Product } from "@/types";
 import { flagshipStore } from "@/lib/data/stores";
-import { products, getBestsellers } from "@/lib/data/products";
+import { products, getBestsellers, getSubCategory } from "@/lib/data/products";
+import { getCategoryTitle } from "@/lib/data/categories";
 import { COMPANY } from "@/components/shared/legal-page";
 import { testimonialStats } from "@/lib/data/testimonials";
 
@@ -85,6 +86,20 @@ function button(label: string, url: string): string {
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>` +
     `<td align="center" bgcolor="${C.red}" style="border-radius:8px;">` +
     `<a href="${url}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">${esc(label)}</a>` +
+    `</td></tr></table>`
+  );
+}
+
+/**
+ * Compacte, volle-breedte KLUSR-rode knop voor in een producttegel. Gebruikt een
+ * 100%-tabel zodat de knop netjes onderaan de kaart over de volle breedte staat
+ * (e-mailveilig: geen flexbox/width:auto-trucs).
+ */
+function buttonFullSmall(label: string, url: string): string {
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>` +
+    `<td align="center" bgcolor="${C.red}" style="border-radius:7px;">` +
+    `<a href="${url}" style="display:block;padding:10px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:7px;">${esc(label)}</a>` +
     `</td></tr></table>`
   );
 }
@@ -759,18 +774,22 @@ function brandNav(): string {
   );
 }
 
-/** USP-balk (vertrouwen) — compact, 2x2 op mobiel doordat de cellen wrappen. */
+/**
+ * USP-balk (vertrouwen) — compact. Vijf USP's verdeeld over 20%-cellen op
+ * desktop; op mobiel stapelen ze via `.klusr-stack` netjes onder elkaar.
+ */
 function uspBar(): string {
   const usps = [
     "Gratis verzending vanaf € 50",
     "Vóór 19:00 besteld, morgen in huis",
+    "30.000 kleuren op maat gemengd",
     "Advies van ex-schilders",
     "5% met KLUSRPAS",
   ];
   const cells = usps
     .map(
       (u) =>
-        `<td valign="top" align="center" class="klusr-stack" width="25%" style="padding:6px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.4;color:${C.text};">` +
+        `<td valign="top" align="center" class="klusr-stack" width="20%" style="padding:8px 6px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.35;color:${C.text};">` +
         `<span style="color:${C.green};font-weight:bold;">&#10003;</span> ${esc(u)}` +
         `</td>`,
     )
@@ -839,29 +858,146 @@ function starRating(rating: number, reviewCount: number): string {
   );
 }
 
-/** 2–3 specs als "Label: Waarde · …"-regel, met fallback op de omschrijving. */
-function productSpecLine(p: Product): string {
-  const items: { label: string; value: string }[] = [];
+/**
+ * Spec-labels die we in de nieuwsbrief NOOIT tonen — ruis die niets toevoegt
+ * (het merk staat al boven de titel, EAN/conditie zijn voor de PDP). Matcht
+ * case-insensitive als substring op het label.
+ */
+const SPEC_EXCLUDE = [
+  "ean",
+  "gtin",
+  "barcode",
+  "conditie",
+  "artikelnummer",
+  "sku",
+  "merk",
+  "fabrikant",
+  "garantie",
+];
+
+/**
+ * Voorkeursspecs (op aflopende prioriteit). Elke entry is een lijst synoniemen
+ * die we als substring in het label zoeken; we pakken de eerste 2–3 die het
+ * product écht heeft. Zo zie je relevante info (inhoud, maat, glansgraad, kleur)
+ * in plaats van EAN/Conditie/Merk.
+ */
+const SPEC_PREFER: string[][] = [
+  ["inhoud", "volume"],
+  ["afmeting", "maat", "lengte", "breedte", "hoogte"],
+  ["glansgraad"],
+  ["kleur"],
+  ["materiaal"],
+  ["toepassing"],
+  ["rendement"],
+  ["basis"],
+  ["korrel"],
+  ["gewicht"],
+];
+
+const SPEC_MAX = 3;
+
+/** Mag dit spec-label getoond worden? (niet op de uitsluit-lijst). */
+function specAllowed(label: string): boolean {
+  const l = label.toLowerCase();
+  return !SPEC_EXCLUDE.some((bad) => l.includes(bad));
+}
+
+/**
+ * 2–3 RELEVANTE specs als "Label: Waarde · …"-regel. Voorkeur voor inhoud/maat/
+ * glansgraad/kleur/etc.; daarna overige niet-uitgesloten specs; als laatste
+ * redmiddel de ingekorte omschrijving. EAN/Conditie/Merk verschijnen nooit.
+ */
+function pickSpecs(p: Product): { label: string; value: string }[] {
+  const all: { label: string; value: string }[] = [];
   for (const group of p.specifications || []) {
     for (const it of group.items || []) {
-      if (it?.label && it?.value) items.push(it);
-      if (items.length >= 3) break;
+      if (it?.label && it?.value && specAllowed(it.label)) all.push(it);
     }
-    if (items.length >= 3) break;
   }
+  const picked: { label: string; value: string }[] = [];
+  const used = new Set<number>();
+  // 1) Voorkeursspecs in prioriteitsvolgorde.
+  for (const synonyms of SPEC_PREFER) {
+    if (picked.length >= SPEC_MAX) break;
+    const idx = all.findIndex(
+      (it, i) => !used.has(i) && synonyms.some((s) => it.label.toLowerCase().includes(s)),
+    );
+    if (idx >= 0) {
+      used.add(idx);
+      picked.push(all[idx]);
+    }
+  }
+  // 2) Aanvullen met overige toegestane specs (oorspronkelijke volgorde).
+  for (let i = 0; i < all.length && picked.length < SPEC_MAX; i++) {
+    if (!used.has(i)) {
+      used.add(i);
+      picked.push(all[i]);
+    }
+  }
+  return picked;
+}
+
+function specLineText(p: Product): string {
+  const picked = pickSpecs(p);
+  if (picked.length) {
+    return picked.map((it) => `${it.label}: ${clampText(it.value, 28)}`).join(" · ");
+  }
+  return p.description ? clampText(p.description, 90) : "";
+}
+
+function productSpecLine(p: Product): string {
+  const picked = pickSpecs(p);
   let line = "";
-  if (items.length) {
-    line = items
-      .map((it) => `<strong style="color:${C.text};font-weight:bold;">${esc(it.label)}:</strong> ${esc(it.value)}`)
+  if (picked.length) {
+    line = picked
+      .map(
+        (it) =>
+          `<strong style="color:${C.text};font-weight:bold;">${esc(it.label)}:</strong> ${esc(clampText(it.value, 28))}`,
+      )
       .join(` <span style="color:${C.border};">&middot;</span> `);
   } else if (p.description) {
     line = esc(clampText(p.description, 90));
   }
   if (!line) return "";
-  return `<div style="margin-top:6px;font-size:11px;line-height:1.5;color:${C.muted};">${line}</div>`;
+  return `<div style="margin-top:8px;font-size:11px;line-height:1.5;color:${C.muted};min-height:16px;">${line}</div>`;
 }
 
-/** Prijsblok: adviesprijs (doorgestreept) + KLUSRPAS-prijs prominent. NIET de normale prijs. */
+/**
+ * "Bekijk alle <type>"-bestemming voor een product. Het type komt uit de
+ * subcategorie (menselijke titel); de URL volgt de site-routing:
+ *   1. `/categorie/<categorie>/<subcategorie>` als die subcategorie-route bestaat
+ *      (geverifieerd via getSubCategory — die voedt ook generateStaticParams);
+ *   2. anders `/categorie/<categorie>` als de categorie bestaat;
+ *   3. anders een zoek-fallback `/zoeken?q=<titel>`.
+ * Label: "Bekijk alle <type-titel in kleine letters>", bv. "Bekijk alle vliegenramen".
+ */
+function typeLanding(p: Product): { label: string; url: string } {
+  const catSlug = (p.category || "").trim();
+  const subSlug = (p.subCategory || "").trim();
+  const sub = subSlug && catSlug ? getSubCategory(catSlug, subSlug) : undefined;
+  const catTitle = catSlug ? getCategoryTitle(catSlug) : "";
+  // Categorie bestaat als getCategoryTitle een echte titel teruggeeft (!= slug).
+  const catExists = !!catSlug && catTitle !== catSlug;
+
+  const typeTitle = sub?.title || (catExists ? catTitle : "") || "het assortiment";
+  const label = `Bekijk alle ${typeTitle.toLowerCase()}`;
+
+  let url: string;
+  if (sub) {
+    url = `${SITE_URL}/categorie/${encodeURIComponent(catSlug)}/${encodeURIComponent(subSlug)}`;
+  } else if (catExists) {
+    url = `${SITE_URL}/categorie/${encodeURIComponent(catSlug)}`;
+  } else {
+    url = `${SITE_URL}/zoeken?q=${encodeURIComponent(typeTitle)}`;
+  }
+  return { label, url };
+}
+
+/**
+ * Prijsblok: adviesprijs (doorgestreept) + KLUSRPAS-prijs prominent. NIET de
+ * normale prijs. Zit in een eigen, visueel afgescheiden paneeltje (lichte
+ * achtergrond + lijn erboven) zodat de prijs binnen de tegel opvalt.
+ */
 function newsletterPriceBlock(p: Product): string {
   const advies = p.compareAtPrice;
   const pas = p.kluspasPrice || p.price;
@@ -870,32 +1006,48 @@ function newsletterPriceBlock(p: Product): string {
       ? `<span style="font-size:12px;color:${C.muted};text-decoration:line-through;">Adviesprijs ${euro(advies)}</span><br>`
       : "";
   return (
-    `<div style="margin-top:8px;">` +
+    `<div style="margin-top:12px;padding:10px 12px;background:${C.bg};border:1px solid ${C.border};border-radius:8px;">` +
     struck +
     `<span style="display:inline-block;background:${C.red};color:#ffffff;font-size:10px;font-weight:bold;line-height:1;padding:3px 6px;border-radius:4px;vertical-align:middle;">KLUSRPAS</span>` +
-    `<span style="font-size:18px;font-weight:900;color:${C.red};vertical-align:middle;">&nbsp;${euro(pas)}</span>` +
+    `<span style="font-size:19px;font-weight:900;color:${C.red};vertical-align:middle;">&nbsp;${euro(pas)}</span>` +
     `</div>`
   );
 }
 
-/** Rijke producttegel voor de nieuwsbrief: foto, merk, titel, sterren, specs, KLUSRPAS-prijs. */
+/**
+ * Rijke producttegel voor de nieuwsbrief. Verticaal ritme van boven naar onder:
+ * foto → merk → titel → sterren → relevante specs → (afgescheiden) prijs →
+ * volle-breedte "Bekijk product"-knop → subtiele "Bekijk alle <type>"-link.
+ *
+ * De kaart is één bordered tabel (geen alles-omvattende <a>, want dan zouden de
+ * twee CTA's geneste anchors worden — niet e-mailveilig). Foto en titel linken
+ * elk apart naar de PDP.
+ */
 function newsletterProductTile(p: Product): string {
   const url = `${SITE_URL}/product/${esc(p.slug)}`;
+  const { label: allLabel, url: allUrl } = typeLanding(p);
   const first = p.images?.[0];
   const img =
     first && /^https?:\/\//.test(first)
-      ? `<img src="${esc(first)}" width="250" alt="" style="display:block;width:100%;max-width:100%;height:auto;border-radius:8px 8px 0 0;border:0;background:#fff;">`
-      : `<div style="width:100%;height:0;padding-top:66%;border-radius:8px 8px 0 0;background:${C.bg};"></div>`;
+      ? `<a href="${url}" style="display:block;text-decoration:none;"><img src="${esc(first)}" width="280" alt="" style="display:block;width:100%;max-width:100%;height:auto;border-radius:8px 8px 0 0;border:0;background:#fff;"></a>`
+      : `<a href="${url}" style="display:block;text-decoration:none;"><div style="width:100%;height:0;padding-top:66%;border-radius:8px 8px 0 0;background:${C.bg};"></div></a>`;
   return (
-    `<a href="${url}" style="text-decoration:none;color:${C.text};display:block;border:1px solid ${C.border};border-radius:9px;overflow:hidden;background:${C.card};">` +
-    img +
-    `<div style="padding:12px 14px 14px;">` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${C.border};border-radius:9px;background:${C.card};overflow:hidden;">` +
+    `<tr><td style="padding:0;font-family:Arial,Helvetica,sans-serif;">${img}</td></tr>` +
+    `<tr><td style="padding:13px 14px 4px;font-family:Arial,Helvetica,sans-serif;">` +
     `<div style="font-size:10px;letter-spacing:0.04em;color:${C.muted};text-transform:uppercase;font-weight:bold;">${esc(prettyBrand(p.brand))}</div>` +
-    `<div style="margin-top:2px;font-size:14px;line-height:1.35;color:${C.text};font-weight:bold;">${esc(clampText(p.title, 54))}</div>` +
-    `<div style="margin-top:5px;">${starRating(p.rating, p.reviewCount)}</div>` +
+    `<a href="${url}" style="text-decoration:none;color:${C.text};"><div style="margin-top:3px;font-size:14px;line-height:1.35;color:${C.text};font-weight:bold;">${esc(clampText(p.title, 54))}</div></a>` +
+    `<div style="margin-top:6px;">${starRating(p.rating, p.reviewCount)}</div>` +
     productSpecLine(p) +
     newsletterPriceBlock(p) +
-    `</div></a>`
+    `</td></tr>` +
+    `<tr><td style="padding:12px 14px 14px;font-family:Arial,Helvetica,sans-serif;">` +
+    buttonFullSmall("Bekijk product", url) +
+    `<div style="margin-top:9px;text-align:center;font-size:12px;line-height:1.4;">` +
+    `<a href="${allUrl}" style="color:${C.muted};text-decoration:underline;">${esc(allLabel)}</a>` +
+    `</div>` +
+    `</td></tr>` +
+    `</table>`
   );
 }
 
@@ -993,17 +1145,23 @@ export function newsletterEmail({
     (intro || "").trim(),
     "",
     `Winkel-reviews: ${formatAverage(testimonialStats.average)} sterren (${formatCount(testimonialStats.count)} reviews)`,
-    "Gratis verzending vanaf 50 euro | Voor 19:00 besteld, morgen in huis | Advies van ex-schilders | 5% met KLUSRPAS",
+    "Gratis verzending vanaf 50 euro | Voor 19:00 besteld, morgen in huis | 30.000 kleuren op maat gemengd | Advies van ex-schilders | 5% met KLUSRPAS",
     "",
     ...(featured.length
       ? [
           "In de aanbieding (KLUSRPAS-prijs):",
-          ...featured.map((p) => {
+          ...featured.flatMap((p) => {
             const naam = [prettyBrand(p.brand), p.title].filter(Boolean).join(" ");
             const pas = p.kluspasPrice || p.price;
             const advies =
               p.compareAtPrice && p.compareAtPrice > pas ? ` (adviesprijs ${euro(p.compareAtPrice)})` : "";
-            return `  - ${naam}: ${euro(pas)}${advies}`;
+            const specs = specLineText(p);
+            const { label: allLabel, url: allUrl } = typeLanding(p);
+            const lines = [`  - ${naam}: ${euro(pas)}${advies}`];
+            if (specs) lines.push(`    ${specs}`);
+            lines.push(`    Bekijk product: ${SITE_URL}/product/${p.slug}`);
+            lines.push(`    ${allLabel}: ${allUrl}`);
+            return lines;
           }),
           "",
         ]
