@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   Sparkles,
   ShieldCheck,
-  Truck,
   RotateCcw,
   Heart,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import { FreeShippingBar } from "./free-shipping-bar";
 import { ColorChip } from "./color-chip";
 import { ProductCarousel } from "@/components/shared/product-carousel";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import {
   useCart,
   cartSummary,
@@ -291,8 +291,8 @@ export function CartView() {
             </Button>
 
             <ul className="mt-4 space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-primary" /> {t("usp.delivery")}
+              <li>
+                <DeliveryCountdown compact />
               </li>
               <li className="flex items-center gap-2">
                 <RotateCcw className="h-4 w-4 text-primary" /> {t("cart.usp.returns")}

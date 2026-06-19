@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "./star-rating";
 import { StockStatus } from "./stock-status";
+import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import { QuantityStepper } from "@/components/cart/quantity-stepper";
 import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
@@ -394,9 +395,10 @@ export function ProductBuybox({
       <StockStatus
         stockByStore={effectiveStock}
         showScarcity
-        showDelivery
         className="text-sm"
       />
+      {/* Dynamische bezorgklok (vervangt de statische "morgen in huis"-regel). */}
+      <DeliveryCountdown />
       {color?.base && (
         <p className="-mt-2 text-xs text-muted-foreground">
           {t("pdp.stockForBasePre")}<strong>{color.base.label}</strong>{t("pdp.stockForBasePost")}

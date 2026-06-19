@@ -24,6 +24,7 @@ import { ColorChip } from "@/components/cart/color-chip";
 import { PaymentMethods } from "./payment-methods";
 import { MollieCard, type MollieCardHandle } from "./mollie-card";
 import { CheckoutTrust } from "./checkout-trust";
+import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import type { PaymentMethodInfo } from "@/types";
 import {
   useCart,
@@ -705,6 +706,8 @@ export function CheckoutForm({
                     : formatPrice(shippingFor(summary.grossSubtotal))
                 }
               />
+              {/* Dynamische bezorgklok onder de verzendmethode. */}
+              <DeliveryCountdown compact className="px-1 text-xs" />
             </div>
           </Section>
 
