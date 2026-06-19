@@ -47,30 +47,26 @@ export function PaymentIcons({ className }: { className?: string }) {
   );
 }
 
-/** PostNL-verzendbadge: oranje merkwoord op een witte tegel. */
+/** PostNL-verzendbadge: het officiële PostNL-logo op een witte tegel. */
 export function PostNlBadge({ className }: { className?: string }) {
   return (
     <span
       title="PostNL"
       aria-label="Verzending met PostNL"
       className={cn(
-        "inline-flex h-[30px] items-center justify-center rounded-[5px] border border-black/10 bg-white px-2.5 shadow-sm",
+        "inline-flex h-[30px] items-center justify-center rounded-[5px] border border-black/10 bg-white px-2 shadow-sm",
         className,
       )}
     >
-      <svg viewBox="0 0 68 22" className="h-[16px] w-auto" role="img" aria-label="PostNL">
-        <text
-          x="0"
-          y="17"
-          fontFamily="Arial,Helvetica,sans-serif"
-          fontSize="18"
-          fontWeight="800"
-          letterSpacing="-0.5"
-          fill="#ff6900"
-        >
-          PostNL
-        </text>
-      </svg>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/postnl-logo.png"
+        alt="PostNL"
+        width={24}
+        height={24}
+        loading="lazy"
+        className="h-[24px] w-auto"
+      />
     </span>
   );
 }
