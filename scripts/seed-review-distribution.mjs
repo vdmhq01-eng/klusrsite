@@ -75,27 +75,27 @@ function synthReviews(seed, count, avg) {
 
 /**
  * Organisch rating/reviewCount-profiel, deterministisch geseed op product-id.
- * Bewust ~60% ZONDER reviews (nieuw/niche), ~40% mét — zoals gevraagd:
+ * Bewust ~60% ZONDER reviews (nieuw/niche), ~40% mét — en de AANTALLEN bewust
+ * laag gehouden (een kleine winkel): de meeste producten 2-3 reviews, sterk
+ * aflopend, met een maximum van 40 (dus nooit boven de 100).
  *   ~60% geen reviews → 0 reviews (rating 0)
- *   ~6%  toppers      → 4.6–4.9 met 150–430 reviews
- *   ~12% lager scoren → 3.1–3.9 met kleinere/medium aantallen
- *   ~22% mid          → 4.0–4.6 met sterk variërende, niet-ronde aantallen
+ *   ~6%  toppers      → 4.6–4.9
+ *   ~12% lager scoren → 3.1–3.9
+ *   ~22% mid          → 4.0–4.6
+ * Het aantal reviews staat los van de tier en is voor iedereen 2..40 (skew laag).
  */
 export function ratingProfile(id) {
   const tier = seeded(`${id}-tier`);
   const a = seeded(`${id}-ra`);
   const b = seeded(`${id}-rb`);
-  const c = seeded(`${id}-rc`);
   // ~60% van de producten heeft (nog) GEEN reviews; de overige ~40% wél.
   if (tier < 0.6) return { rating: 0, reviewCount: 0 };
-  // Binnen de ~40% mét reviews: een paar toppers, wat lager scorende, rest mid.
-  if (tier < 0.66) {
-    return { rating: round2(4.6 + a * 0.3), reviewCount: 150 + Math.floor(b * 281) };
-  }
-  if (tier < 0.78) {
-    return { rating: round2(3.1 + a * 0.8), reviewCount: 9 + Math.floor(b * b * 131) };
-  }
-  return { rating: round2(4.0 + a * 0.6), reviewCount: 12 + Math.floor(b * c * 218) };
+  // Aantal reviews: de meeste producten 2-3, sterk aflopend, max 40 (b^3-skew).
+  const reviewCount = Math.min(40, 2 + Math.floor(b * b * b * 39));
+  // Binnen de ~40% mét reviews varieert alleen de SCORE per tier.
+  if (tier < 0.66) return { rating: round2(4.6 + a * 0.3), reviewCount }; // toppers
+  if (tier < 0.78) return { rating: round2(3.1 + a * 0.8), reviewCount }; // lager
+  return { rating: round2(4.0 + a * 0.6), reviewCount };                   // mid
 }
 
 export function reseedReviews(data) {
