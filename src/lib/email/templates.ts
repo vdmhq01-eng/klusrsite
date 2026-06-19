@@ -703,3 +703,115 @@ export function welcomeEmail({ firstName }: { firstName?: string }): {
     text,
   };
 }
+
+// --- Promotionele nieuwsbrief (admin-tool) ----------------------------------
+
+/**
+ * Bouw een grid (3 per rij) van producttegels op uit de `productTile`-helper.
+ * Lege cellen vullen we op zodat de laatste rij netjes uitlijnt.
+ */
+function productGrid(items: Product[]): string {
+  if (!items.length) return "";
+  const rows: string[] = [];
+  for (let i = 0; i < items.length; i += 3) {
+    const cells = items.slice(i, i + 3).map(productTile);
+    while (cells.length < 3) {
+      cells.push(`<td width="33%" style="padding:6px;">&nbsp;</td>`);
+    }
+    rows.push(
+      `<tr>${cells.join("")}</tr>`,
+    );
+  }
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
+    rows.join("") +
+    `</table>`
+  );
+}
+
+/**
+ * Promotionele nieuwsbrief naar de "KLUSR Nieuwsbrief"-audience.
+ *
+ * `intro` is platte tekst (AI-gegenereerd): lege regels worden alinea's. De
+ * uitschrijflink in de footer gebruikt de letterlijke Resend-variabele
+ * `{{{RESEND_UNSUBSCRIBE_URL}}}` — die wordt door Resend bij de broadcast per
+ * ontvanger ingevuld (en is bij test/preview onschuldig).
+ */
+export function newsletterEmail({
+  subject,
+  preheader,
+  intro,
+  products: featured,
+  ctaLabel,
+  ctaUrl,
+}: {
+  subject: string;
+  preheader: string;
+  intro: string;
+  products: Product[];
+  ctaLabel?: string;
+  ctaUrl?: string;
+}): { subject: string; html: string; text: string } {
+  const url = ctaUrl || `${SITE_URL}/categorie/acties`;
+  const label = ctaLabel || "Bekijk alle aanbiedingen";
+
+  // Intro → alinea's: lege regel = nieuwe alinea, enkele regelafbreking = <br>.
+  const paragraphs = (intro || "")
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map(
+      (block) =>
+        `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">${nl2br(block)}</p>`,
+    )
+    .join("");
+
+  const grid = productGrid(featured);
+  const gridBlock = grid
+    ? `<h2 style="margin:18px 0 6px;font-size:15px;color:${C.text};">In de aanbieding</h2>${grid}`
+    : "";
+
+  // Uitschrijflink: VERPLICHT voor Resend broadcasts (CAN-SPAM/AVG).
+  const unsubscribe =
+    `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${C.muted};text-decoration:underline;">Uitschrijven</a>`;
+
+  const content =
+    paragraphs +
+    gridBlock +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 6px;"><tr><td align="center">` +
+    button(label, url) +
+    `</td></tr></table>` +
+    `<p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:${C.muted};text-align:center;">` +
+    `Je ontvangt deze nieuwsbrief omdat je je hebt ingeschreven bij KLUSR. ` +
+    `Geen nieuwsbrieven meer ontvangen? ${unsubscribe}.` +
+    `</p>`;
+
+  const textLines = [
+    (intro || "").trim(),
+    "",
+    ...(featured.length
+      ? [
+          "In de aanbieding:",
+          ...featured.map(
+            (p) => `  - ${[prettyBrand(p.brand), p.title].filter(Boolean).join(" ")}`,
+          ),
+          "",
+        ]
+      : []),
+    `${label}: ${url}`,
+    "",
+    "Je ontvangt deze nieuwsbrief omdat je je hebt ingeschreven bij KLUSR.",
+    "Uitschrijven kan via de link onderaan de e-mail: {{{RESEND_UNSUBSCRIBE_URL}}}",
+  ];
+
+  return {
+    subject,
+    html: layout({
+      title: subject,
+      preheader,
+      content,
+      footerNote: "Je ontvangt deze e-mail omdat je je hebt ingeschreven voor de KLUSR-nieuwsbrief.",
+    }),
+    text: textLines.filter((l) => l !== undefined).join("\n"),
+  };
+}

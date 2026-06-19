@@ -22,6 +22,7 @@ import {
   Trash2,
   RotateCcw,
   MapPin,
+  Mail,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ import { TicketsPanel } from "./tickets-panel";
 import { ConversationsPanel } from "./conversations-panel";
 import { CustomersPanel } from "./customers-panel";
 import { AiContentManager } from "./ai-content-manager";
+import { NewsletterPanel } from "./newsletter-panel";
 import { HeroImages } from "./hero-images";
 import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
@@ -44,6 +46,7 @@ type SectionId =
   | "rapportages"
   | "inzichten"
   | "content"
+  | "nieuwsbrief"
   | "channable";
 
 const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
@@ -54,6 +57,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "content", label: "AI-content", icon: Sparkles },
+  { id: "nieuwsbrief", label: "Nieuwsbrief", icon: Mail },
   { id: "channable", label: "Koppelingen", icon: Send },
 ];
 
@@ -113,6 +117,7 @@ export function AdminDashboard() {
             <AiContentManager />
           </div>
         )}
+        {section === "nieuwsbrief" && <NewsletterPanel />}
         {section === "channable" && (
           <div className="space-y-6">
             <MollieTest />
