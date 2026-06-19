@@ -1,6 +1,8 @@
 import type { CartItem, Order, Product } from "@/types";
 import { flagshipStore } from "@/lib/data/stores";
 import { products, getBestsellers } from "@/lib/data/products";
+import { COMPANY } from "@/components/shared/legal-page";
+import { testimonialStats } from "@/lib/data/testimonials";
 
 /**
  * Gebrande KLUSR e-mailtemplates (HTML + platte tekst).
@@ -27,6 +29,14 @@ const C = {
 
 const euroFmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 const euro = (n: number) => euroFmt.format(n);
+
+/** Gemiddelde met NL-decimaalkomma, bv. 4.7 -> "4,7". */
+const ratingFmt = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const formatAverage = (n: number) => ratingFmt.format(n);
+
+/** Aantal met NL-duizendtalscheiding (punt), bv. 2847 -> "2.847". */
+const countFmt = new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 0 });
+const formatCount = (n: number) => countFmt.format(n);
 
 function esc(s: string): string {
   return String(s)
@@ -183,13 +193,20 @@ interface LayoutOpts {
   preheader: string;
   content: string;
   footerNote?: string;
+  /** Subtiele link/regel boven de container (bv. "Bekijk deze e-mail online"). */
+  topLink?: string;
+  /** Volle-breedte blok direct onder de zwarte header (bv. merken-menu). */
+  belowHeader?: string;
+  /** Verberg het generieke klustoppers-promoblok (nieuwsbrief heeft eigen grid). */
+  hidePromo?: boolean;
 }
 
-function layout({ title, preheader, content, footerNote }: LayoutOpts): string {
-  const promo = promoBlock();
+function layout({ title, preheader, content, footerNote, topLink, belowHeader, hidePromo }: LayoutOpts): string {
+  const promo = hidePromo ? "" : promoBlock();
   const promoRow = promo
     ? `<tr><td bgcolor="${C.card}" style="background:${C.card};padding:4px 30px 30px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};">${promo}</td></tr>`
     : "";
+  const belowHeaderRow = belowHeader ? `<tr><td>${belowHeader}</td></tr>` : "";
   return `<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -199,20 +216,34 @@ function layout({ title, preheader, content, footerNote }: LayoutOpts): string {
 <meta name="color-scheme" content="light only">
 <meta name="supported-color-schemes" content="light only">
 <title>${esc(title)}</title>
+<style>
+  /* Mobiel: laat de producttegels naar 1 kolom stapelen en de container vullen.
+     E-mailclients die geen media queries ondersteunen (o.a. oudere Outlook)
+     negeren dit blok en vallen terug op de inline table-styles. */
+  @media only screen and (max-width: 480px) {
+    .klusr-container { width: 100% !important; }
+    .klusr-pad { padding-left: 18px !important; padding-right: 18px !important; }
+    .klusr-stack { display: block !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box; }
+    .klusr-stack img { max-width: 100% !important; }
+    .klusr-center { text-align: center !important; }
+  }
+</style>
 </head>
 <body style="margin:0;padding:0;background:${C.bg};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.bg};">
 <tr><td align="center" style="padding:24px 12px;">
-  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:100%;">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="klusr-container" style="width:600px;max-width:100%;">
+    ${topLink ? `<tr><td style="padding:0 0 6px;">${topLink}</td></tr>` : ""}
     <tr><td align="center" bgcolor="${C.black}" style="background:${C.black};border-radius:12px 12px 0 0;padding:24px;">
       ${wordmark()}
     </td></tr>
-    <tr><td bgcolor="${C.card}" style="background:${C.card};padding:34px 30px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;color:${C.text};">
+    ${belowHeaderRow}
+    <tr><td bgcolor="${C.card}" class="klusr-pad" style="background:${C.card};padding:34px 30px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;color:${C.text};">
       ${content}
     </td></tr>
     ${promoRow}
-    <tr><td bgcolor="${C.card}" style="background:${C.card};border:1px solid ${C.border};border-top:none;border-radius:0 0 12px 12px;padding:22px 30px;">
+    <tr><td bgcolor="${C.card}" class="klusr-pad" style="background:${C.card};border:1px solid ${C.border};border-top:none;border-radius:0 0 12px 12px;padding:22px 30px;">
       ${footer(footerNote)}
     </td></tr>
   </table>
@@ -706,21 +737,183 @@ export function welcomeEmail({ firstName }: { firstName?: string }): {
 
 // --- Promotionele nieuwsbrief (admin-tool) ----------------------------------
 
+/** Merklink: er is geen /merk-route, dus we linken naar de zoekpagina (zoals de site). */
+function brandUrl(brand: string): string {
+  return `${SITE_URL}/zoeken?q=${encodeURIComponent(brand)}`;
+}
+
+/** Vaste merken voor het nieuwsbrief-menu (zoals gevraagd, in deze volgorde). */
+const NEWSLETTER_BRANDS = ["Sikkens", "Drenth", "Histor", "Benson", "Hammerite"];
+
+/** Horizontaal merken-menu onder de header. Wrapt netjes op mobiel. */
+function brandNav(): string {
+  const links = NEWSLETTER_BRANDS.map(
+    (b) =>
+      `<a href="${brandUrl(b)}" style="display:inline-block;padding:4px 2px;margin:0 2px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${C.text};text-decoration:none;white-space:nowrap;">${esc(b)}</a>`,
+  ).join(`<span style="color:${C.border};">&nbsp;|&nbsp;</span>`);
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};">` +
+    `<tr><td align="center" class="klusr-pad" style="background:${C.card};padding:12px 24px;border-left:1px solid ${C.border};border-right:1px solid ${C.border};border-bottom:1px solid ${C.border};line-height:1.9;">` +
+    links +
+    `</td></tr></table>`
+  );
+}
+
+/** USP-balk (vertrouwen) — compact, 2x2 op mobiel doordat de cellen wrappen. */
+function uspBar(): string {
+  const usps = [
+    "Gratis verzending vanaf € 50",
+    "Vóór 19:00 besteld, morgen in huis",
+    "Advies van ex-schilders",
+    "5% met KLUSRPAS",
+  ];
+  const cells = usps
+    .map(
+      (u) =>
+        `<td valign="top" align="center" class="klusr-stack" width="25%" style="padding:6px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.4;color:${C.text};">` +
+        `<span style="color:${C.green};font-weight:bold;">&#10003;</span> ${esc(u)}` +
+        `</td>`,
+    )
+    .join("");
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.bg};border-radius:10px;margin:0 0 18px;">` +
+    `<tr>${cells}</tr></table>`
+  );
+}
+
+/** Winkel-reviews badge met het site-brede rating uit testimonialStats. */
+function storeReviewsBadge(): string {
+  const avg = formatAverage(testimonialStats.average);
+  const count = formatCount(testimonialStats.count);
+  return (
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">` +
+    `<tr><td align="center" style="background:${C.bg};border:1px solid ${C.border};border-radius:999px;padding:7px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${C.text};white-space:nowrap;">` +
+    `<span style="color:#F5A623;font-size:14px;">&#9733;</span> ` +
+    `<strong>${avg}</strong> <span style="color:${C.muted};">&middot; ${count} winkel-reviews</span>` +
+    `</td></tr></table>`
+  );
+}
+
+/** "Bekijk deze e-mail online" — subtiele link bovenaan (geen web-archief, dus → /acties). */
+function viewOnlineLink(): string {
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">` +
+    `<tr><td align="center" style="padding:0 12px 10px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${C.muted};">` +
+    `<a href="${SITE_URL}/acties" style="color:${C.muted};text-decoration:underline;">Bekijk deze e-mail online</a>` +
+    `</td></tr></table>`
+  );
+}
+
+/** Klantenservice-blok — altijd, vlak voor de footer. Hergebruikt COMPANY. */
+function customerServiceBlock(): string {
+  const tel = COMPANY.phone.replace(/[\s-]/g, "");
+  return (
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.bg};border-radius:10px;margin:26px 0 0;">` +
+    `<tr><td align="center" class="klusr-pad" style="padding:18px 22px;font-family:Arial,Helvetica,sans-serif;">` +
+    `<p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:${C.text};">Hulp nodig?</p>` +
+    `<p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:${C.muted};">Onze klantenservice helpt je graag — ook met kleuradvies.</p>` +
+    `<p style="margin:0;font-size:14px;line-height:1.7;color:${C.text};">` +
+    `<a href="tel:${tel}" style="color:${C.red};text-decoration:none;font-weight:bold;">${esc(COMPANY.phone)}</a>` +
+    `<span style="color:${C.muted};">&nbsp;&middot;&nbsp;</span>` +
+    `<a href="mailto:${esc(COMPANY.email)}" style="color:${C.red};text-decoration:none;font-weight:bold;">${esc(COMPANY.email)}</a>` +
+    `</p>` +
+    `</td></tr></table>`
+  );
+}
+
+/** Sterren (★) voor een rating, met (reviewCount). E-mailveilig via glyphs. */
+function starRating(rating: number, reviewCount: number): string {
+  const r = Math.max(0, Math.min(5, Math.round(rating)));
+  const full = "&#9733;".repeat(r);
+  const empty = "&#9733;".repeat(5 - r);
+  return (
+    `<span style="font-size:12px;white-space:nowrap;">` +
+    `<span style="color:#F5A623;letter-spacing:1px;">${full}</span>` +
+    `<span style="color:${C.border};letter-spacing:1px;">${empty}</span>` +
+    (reviewCount > 0 ? `<span style="color:${C.muted};">&nbsp;(${formatCount(reviewCount)})</span>` : "") +
+    `</span>`
+  );
+}
+
+/** 2–3 specs als "Label: Waarde · …"-regel, met fallback op de omschrijving. */
+function productSpecLine(p: Product): string {
+  const items: { label: string; value: string }[] = [];
+  for (const group of p.specifications || []) {
+    for (const it of group.items || []) {
+      if (it?.label && it?.value) items.push(it);
+      if (items.length >= 3) break;
+    }
+    if (items.length >= 3) break;
+  }
+  let line = "";
+  if (items.length) {
+    line = items
+      .map((it) => `<strong style="color:${C.text};font-weight:bold;">${esc(it.label)}:</strong> ${esc(it.value)}`)
+      .join(` <span style="color:${C.border};">&middot;</span> `);
+  } else if (p.description) {
+    line = esc(clampText(p.description, 90));
+  }
+  if (!line) return "";
+  return `<div style="margin-top:6px;font-size:11px;line-height:1.5;color:${C.muted};">${line}</div>`;
+}
+
+/** Prijsblok: adviesprijs (doorgestreept) + KLUSRPAS-prijs prominent. NIET de normale prijs. */
+function newsletterPriceBlock(p: Product): string {
+  const advies = p.compareAtPrice;
+  const pas = p.kluspasPrice || p.price;
+  const struck =
+    advies && advies > pas
+      ? `<span style="font-size:12px;color:${C.muted};text-decoration:line-through;">Adviesprijs ${euro(advies)}</span><br>`
+      : "";
+  return (
+    `<div style="margin-top:8px;">` +
+    struck +
+    `<span style="display:inline-block;background:${C.red};color:#ffffff;font-size:10px;font-weight:bold;line-height:1;padding:3px 6px;border-radius:4px;vertical-align:middle;">KLUSRPAS</span>` +
+    `<span style="font-size:18px;font-weight:900;color:${C.red};vertical-align:middle;">&nbsp;${euro(pas)}</span>` +
+    `</div>`
+  );
+}
+
+/** Rijke producttegel voor de nieuwsbrief: foto, merk, titel, sterren, specs, KLUSRPAS-prijs. */
+function newsletterProductTile(p: Product): string {
+  const url = `${SITE_URL}/product/${esc(p.slug)}`;
+  const first = p.images?.[0];
+  const img =
+    first && /^https?:\/\//.test(first)
+      ? `<img src="${esc(first)}" width="250" alt="" style="display:block;width:100%;max-width:100%;height:auto;border-radius:8px 8px 0 0;border:0;background:#fff;">`
+      : `<div style="width:100%;height:0;padding-top:66%;border-radius:8px 8px 0 0;background:${C.bg};"></div>`;
+  return (
+    `<a href="${url}" style="text-decoration:none;color:${C.text};display:block;border:1px solid ${C.border};border-radius:9px;overflow:hidden;background:${C.card};">` +
+    img +
+    `<div style="padding:12px 14px 14px;">` +
+    `<div style="font-size:10px;letter-spacing:0.04em;color:${C.muted};text-transform:uppercase;font-weight:bold;">${esc(prettyBrand(p.brand))}</div>` +
+    `<div style="margin-top:2px;font-size:14px;line-height:1.35;color:${C.text};font-weight:bold;">${esc(clampText(p.title, 54))}</div>` +
+    `<div style="margin-top:5px;">${starRating(p.rating, p.reviewCount)}</div>` +
+    productSpecLine(p) +
+    newsletterPriceBlock(p) +
+    `</div></a>`
+  );
+}
+
 /**
- * Bouw een grid (3 per rij) van producttegels op uit de `productTile`-helper.
- * Lege cellen vullen we op zodat de laatste rij netjes uitlijnt.
+ * Productgrid voor de nieuwsbrief: 2 tegels per rij op desktop, stapelt naar
+ * 1 kolom op mobiel via de `.klusr-stack`-class (media query in de head).
+ * Elke tegel zit in een `width:50%`-cel die op mobiel `width:100%` wordt.
  */
 function productGrid(items: Product[]): string {
   if (!items.length) return "";
   const rows: string[] = [];
-  for (let i = 0; i < items.length; i += 3) {
-    const cells = items.slice(i, i + 3).map(productTile);
-    while (cells.length < 3) {
-      cells.push(`<td width="33%" style="padding:6px;">&nbsp;</td>`);
+  for (let i = 0; i < items.length; i += 2) {
+    const cells = items
+      .slice(i, i + 2)
+      .map(
+        (p) =>
+          `<td valign="top" width="50%" class="klusr-stack" style="padding:6px;font-family:Arial,Helvetica,sans-serif;">${newsletterProductTile(p)}</td>`,
+      );
+    if (cells.length < 2) {
+      cells.push(`<td width="50%" class="klusr-stack" style="padding:6px;">&nbsp;</td>`);
     }
-    rows.push(
-      `<tr>${cells.join("")}</tr>`,
-    );
+    rows.push(`<tr>${cells.join("")}</tr>`);
   }
   return (
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
@@ -768,7 +961,9 @@ export function newsletterEmail({
 
   const grid = productGrid(featured);
   const gridBlock = grid
-    ? `<h2 style="margin:18px 0 6px;font-size:15px;color:${C.text};">In de aanbieding</h2>${grid}`
+    ? `<h2 style="margin:18px 0 6px;font-size:16px;color:${C.text};">In de aanbieding</h2>` +
+      `<p style="margin:0 0 8px;font-size:12px;color:${C.muted};">Met KLUSRPAS-prijs &mdash; activeer gratis je pas in je account.</p>` +
+      grid
     : "";
 
   // Uitschrijflink: VERPLICHT voor Resend broadcasts (CAN-SPAM/AVG).
@@ -776,29 +971,42 @@ export function newsletterEmail({
     `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${C.muted};text-decoration:underline;">Uitschrijven</a>`;
 
   const content =
+    uspBar() +
+    storeReviewsBadge() +
     paragraphs +
     gridBlock +
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 6px;"><tr><td align="center">` +
     button(label, url) +
     `</td></tr></table>` +
+    customerServiceBlock() +
     `<p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:${C.muted};text-align:center;">` +
     `Je ontvangt deze nieuwsbrief omdat je je hebt ingeschreven bij KLUSR. ` +
     `Geen nieuwsbrieven meer ontvangen? ${unsubscribe}.` +
     `</p>`;
 
+  const tel = COMPANY.phone.replace(/[\s-]/g, "");
   const textLines = [
     (intro || "").trim(),
     "",
+    `Winkel-reviews: ${formatAverage(testimonialStats.average)} sterren (${formatCount(testimonialStats.count)} reviews)`,
+    "Gratis verzending vanaf 50 euro | Voor 19:00 besteld, morgen in huis | Advies van ex-schilders | 5% met KLUSRPAS",
+    "",
     ...(featured.length
       ? [
-          "In de aanbieding:",
-          ...featured.map(
-            (p) => `  - ${[prettyBrand(p.brand), p.title].filter(Boolean).join(" ")}`,
-          ),
+          "In de aanbieding (KLUSRPAS-prijs):",
+          ...featured.map((p) => {
+            const naam = [prettyBrand(p.brand), p.title].filter(Boolean).join(" ");
+            const pas = p.kluspasPrice || p.price;
+            const advies =
+              p.compareAtPrice && p.compareAtPrice > pas ? ` (adviesprijs ${euro(p.compareAtPrice)})` : "";
+            return `  - ${naam}: ${euro(pas)}${advies}`;
+          }),
           "",
         ]
       : []),
     `${label}: ${url}`,
+    "",
+    `Hulp nodig? Onze klantenservice helpt je graag: ${COMPANY.phone} (tel:${tel}) of ${COMPANY.email}`,
     "",
     "Je ontvangt deze nieuwsbrief omdat je je hebt ingeschreven bij KLUSR.",
     "Uitschrijven kan via de link onderaan de e-mail: {{{RESEND_UNSUBSCRIBE_URL}}}",
@@ -810,6 +1018,9 @@ export function newsletterEmail({
       title: subject,
       preheader,
       content,
+      topLink: viewOnlineLink(),
+      belowHeader: brandNav(),
+      hidePromo: true,
       footerNote: "Je ontvangt deze e-mail omdat je je hebt ingeschreven voor de KLUSR-nieuwsbrief.",
     }),
     text: textLines.filter((l) => l !== undefined).join("\n"),
