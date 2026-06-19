@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Facebook, Instagram, Youtube } from "lucide-react";
+import { Facebook, Instagram, Youtube, MapPin, Phone, Mail } from "lucide-react";
 import { Logo } from "./logo";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { navCategories } from "@/lib/data/categories";
 import { PaymentIcons, PostNlBadge } from "@/components/shared/payment-icons";
+import { COMPANY } from "@/components/shared/legal-page";
 import { t } from "@/lib/i18n/server";
 
 export function Footer() {
@@ -15,7 +16,7 @@ export function Footer() {
     { href: "/klantenservice#verzending", label: t("footer.service.shippingReturns") },
     { href: "/retourvoorwaarden", label: t("footer.service.returnPolicy") },
     { href: "/klantenservice#betalen", label: t("footer.service.securePayment") },
-    { href: "/klantenservice#garantie", label: t("footer.service.warranty") },
+    { href: "/garantie", label: t("footer.service.warranty") },
   ];
 
   const aboutLinks = [
@@ -48,9 +49,42 @@ export function Footer() {
 
       {/* Link columns */}
       <div className="container-klusr grid grid-cols-2 gap-8 py-12 md:grid-cols-4 lg:grid-cols-5">
-        <div className="col-span-2 lg:col-span-1">
+        <div className="col-span-2 min-w-0 lg:col-span-1">
           <Logo className="[&_span:first-child]:text-white" />
           <p className="mt-4 text-sm text-white/60">{t("footer.tagline")}</p>
+
+          {/* Bedrijfsgegevens / contact — taalneutraal (icoon + waarde) */}
+          <address className="mt-5 space-y-2 text-sm not-italic text-white/70">
+            <div className="flex items-start gap-2">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="font-semibold text-white/90">{COMPANY.legalName}</span>
+                <br />
+                {COMPANY.postalAddress.street}
+                <br />
+                {COMPANY.postalAddress.postalCode} {COMPANY.postalAddress.city}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
+              <a
+                href={`tel:${COMPANY.phone.replace(/\s+/g, "")}`}
+                className="min-w-0 break-words transition-colors hover:text-white"
+              >
+                {COMPANY.phone}
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
+              <a
+                href={`mailto:${COMPANY.email}`}
+                className="min-w-0 break-words transition-colors hover:text-white"
+              >
+                {COMPANY.email}
+              </a>
+            </div>
+          </address>
+
           <div className="mt-5 flex gap-3">
             {[Facebook, Instagram, Youtube].map((Icon, i) => (
               <a
@@ -112,9 +146,15 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="container-klusr flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/50 sm:flex-row">
-          <p>{t("footer.bottom.copyright", { year: new Date().getFullYear() })}</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="container-klusr flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/50 sm:flex-row sm:items-start">
+          <div className="min-w-0 space-y-1 text-center sm:text-left">
+            <p>{t("footer.bottom.copyright", { year: new Date().getFullYear() })}</p>
+            <p className="text-white/40">
+              KvK {COMPANY.kvk} · BTW {COMPANY.btw} · IBAN {COMPANY.iban}
+            </p>
+            <p className="text-white/40">{COMPANY.note}</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-end">
             <Link href="/voorwaarden" className="hover:text-white">
               {t("footer.bottom.terms")}
             </Link>

@@ -1,15 +1,22 @@
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 
-/** Bedrijfsgegevens — KLUSR B.V. */
+/** Bedrijfsgegevens — KLUSR is een handelsnaam van VDM Online BV. */
 export const COMPANY = {
-  legalName: "KLUSR B.V.",
+  legalName: "VDM Online BV",
   tradeName: "KLUSR",
   email: "klantenservice@klus-r.nl",
   phone: "+31 85 273 8338",
   address: "Van den Bergsweg 3, 7442 CK Nijverdal",
+  postalAddress: {
+    street: "Van den Bergsweg 3",
+    postalCode: "7442 CK",
+    city: "Nijverdal",
+  },
+  country: "Nederland",
   kvk: "70367922",
   btw: "NL855528618B01",
   iban: "NL41INGB0105014877",
+  note: "KLUSR is een handelsnaam van VDM Online BV",
 };
 
 export interface LegalSection {
