@@ -760,7 +760,7 @@ const nl: Messages = {
   "footer.about.mixPaint": "Mengverf",
   "footer.about.colors": "Alle kleuren & collecties",
   "footer.about.advice": "Advies & inspiratie",
-  "footer.about.klushulp": "Klushulp AI",
+  "footer.about.klushulp": "Klushulp",
   "footer.about.careers": "Werken bij KLUSR",
 
   "footer.bottom.copyright": "© {year} KLUSR B.V. — Alle prijzen incl. btw.",
@@ -1036,7 +1036,7 @@ const nl: Messages = {
   "service.contact.store.title": "Bezoek een winkel",
   "service.contact.store.description": "Persoonlijk advies in de winkel",
   "service.contact.store.action": "Bekijk winkels",
-  "service.contact.ai.title": "AI klushulp",
+  "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Direct antwoord, dag en nacht",
   "service.contact.ai.action": "Stel je vraag",
 
@@ -1108,7 +1108,7 @@ const nl: Messages = {
     "We mengen op basis van professionele kleurcodes (o.a. RAL, Gamma en AkzoNobel) voor een exacte match. Twijfel je over een kleur? Vraag in de winkel een proefstaal of bestel eerst een kleurtester voordat je de hele hoeveelheid laat mengen.",
   "service.faq.mengverf.amount.q": "Hoeveel verf heb ik nodig?",
   "service.faq.mengverf.amount.a":
-    "Reken globaal op 1 liter per 8–10 m² per laag. Op de productpagina en via onze AI-klushulp rekenen we het exact voor je uit, zodat je niet te veel of te weinig bestelt.",
+    "Reken globaal op 1 liter per 8–10 m² per laag. Op de productpagina en via onze Klushulp rekenen we het exact voor je uit, zodat je niet te veel of te weinig bestelt.",
   "service.faq.mengverf.instore.q": "Kan ik verf ook in de winkel laten mengen?",
   "service.faq.mengverf.instore.a":
     "Zeker. Onze kleurspecialisten mengen je verf vakkundig terwijl je wacht. Kom langs in een KLUSR-winkel met je kleurkeuze, of kies je kleur alvast online.",
@@ -1143,7 +1143,7 @@ const nl: Messages = {
   "service.contactBlock.text":
     "Stuur ons een bericht. Je ontvangt direct een ticketnummer en een bevestiging per e-mail — we reageren meestal binnen 1 werkdag.",
   "service.contactBlock.preferPre": "Liever meteen antwoord? ",
-  "service.contactBlock.preferLink": "Vraag de AI klushulp",
+  "service.contactBlock.preferLink": "Vraag de Klushulp",
   "service.contactBlock.preferPost": " — 24/7 beschikbaar.",
   "service.contactBlock.viewStorePage": "Bekijk winkelpagina",
 
@@ -1460,7 +1460,7 @@ const en: Messages = {
   "footer.about.mixPaint": "Mixed paint",
   "footer.about.colors": "All colours & collections",
   "footer.about.advice": "Advice & inspiration",
-  "footer.about.klushulp": "Klushulp AI",
+  "footer.about.klushulp": "Klushulp",
   "footer.about.careers": "Careers at KLUSR",
 
   "footer.bottom.copyright": "© {year} KLUSR B.V. — All prices incl. VAT.",
@@ -1736,7 +1736,7 @@ const en: Messages = {
   "service.contact.store.title": "Visit a store",
   "service.contact.store.description": "Personal advice in store",
   "service.contact.store.action": "View stores",
-  "service.contact.ai.title": "AI Klushulp",
+  "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Instant answers, day and night",
   "service.contact.ai.action": "Ask your question",
 
@@ -1808,7 +1808,7 @@ const en: Messages = {
     "We mix based on professional colour codes (including RAL, Gamma and AkzoNobel) for an exact match. Unsure about a colour? Ask for a sample in store or order a colour tester first before having the whole quantity mixed.",
   "service.faq.mengverf.amount.q": "How much paint do I need?",
   "service.faq.mengverf.amount.a":
-    "As a rough guide, count on 1 litre per 8–10 m² per coat. On the product page and via our AI Klushulp we calculate it exactly for you, so you don't order too much or too little.",
+    "As a rough guide, count on 1 litre per 8–10 m² per coat. On the product page and via our Klushulp we calculate it exactly for you, so you don't order too much or too little.",
   "service.faq.mengverf.instore.q": "Can I also have paint mixed in store?",
   "service.faq.mengverf.instore.a":
     "Certainly. Our colour specialists mix your paint expertly while you wait. Drop by a KLUSR store with your colour choice, or choose your colour online in advance.",
@@ -1843,7 +1843,7 @@ const en: Messages = {
   "service.contactBlock.text":
     "Send us a message. You'll immediately receive a ticket number and a confirmation by email — we usually reply within 1 working day.",
   "service.contactBlock.preferPre": "Prefer an instant answer? ",
-  "service.contactBlock.preferLink": "Ask the AI Klushulp",
+  "service.contactBlock.preferLink": "Ask the Klushulp",
   "service.contactBlock.preferPost": " — available 24/7.",
   "service.contactBlock.viewStorePage": "View store page",
 
@@ -2160,7 +2160,7 @@ const fr: Messages = {
   "footer.about.mixPaint": "Peinture sur mesure",
   "footer.about.colors": "Toutes les couleurs & collections",
   "footer.about.advice": "Conseils & inspiration",
-  "footer.about.klushulp": "Klushulp AI",
+  "footer.about.klushulp": "Klushulp",
   "footer.about.careers": "Carrières chez KLUSR",
 
   "footer.bottom.copyright": "© {year} KLUSR B.V. — Tous les prix TTC.",
@@ -2436,7 +2436,7 @@ const fr: Messages = {
   "service.contact.store.title": "Visitez un magasin",
   "service.contact.store.description": "Conseils personnalisés en magasin",
   "service.contact.store.action": "Voir les magasins",
-  "service.contact.ai.title": "Klushulp IA",
+  "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Réponse immédiate, jour et nuit",
   "service.contact.ai.action": "Posez votre question",
 
@@ -2508,7 +2508,7 @@ const fr: Messages = {
     "Nous teintons sur la base de codes couleur professionnels (notamment RAL, Gamma et AkzoNobel) pour une correspondance exacte. Vous hésitez sur une couleur ? Demandez un échantillon en magasin ou commandez d'abord un testeur de couleur avant de faire teinter toute la quantité.",
   "service.faq.mengverf.amount.q": "De combien de peinture ai-je besoin ?",
   "service.faq.mengverf.amount.a":
-    "Comptez en gros 1 litre pour 8–10 m² par couche. Sur la page produit et via notre Klushulp IA, nous le calculons exactement pour vous, afin que vous n'en commandiez ni trop ni trop peu.",
+    "Comptez en gros 1 litre pour 8–10 m² par couche. Sur la page produit et via notre Klushulp, nous le calculons exactement pour vous, afin que vous n'en commandiez ni trop ni trop peu.",
   "service.faq.mengverf.instore.q": "Puis-je aussi faire teinter la peinture en magasin ?",
   "service.faq.mengverf.instore.a":
     "Bien sûr. Nos spécialistes couleur teintent votre peinture avec expertise pendant que vous attendez. Passez dans un magasin KLUSR avec votre choix de couleur, ou choisissez déjà votre couleur en ligne.",
@@ -2543,7 +2543,7 @@ const fr: Messages = {
   "service.contactBlock.text":
     "Envoyez-nous un message. Vous recevez immédiatement un numéro de ticket et une confirmation par e-mail — nous répondons généralement sous 1 jour ouvré.",
   "service.contactBlock.preferPre": "Vous préférez une réponse immédiate ? ",
-  "service.contactBlock.preferLink": "Demandez à la Klushulp IA",
+  "service.contactBlock.preferLink": "Demandez à la Klushulp",
   "service.contactBlock.preferPost": " — disponible 24h/24 et 7j/7.",
   "service.contactBlock.viewStorePage": "Voir la page du magasin",
 
@@ -2860,7 +2860,7 @@ const de: Messages = {
   "footer.about.mixPaint": "Mischfarbe",
   "footer.about.colors": "Alle Farben & Kollektionen",
   "footer.about.advice": "Beratung & Inspiration",
-  "footer.about.klushulp": "Klushulp AI",
+  "footer.about.klushulp": "Klushulp",
   "footer.about.careers": "Karriere bei KLUSR",
 
   "footer.bottom.copyright": "© {year} KLUSR B.V. — Alle Preise inkl. MwSt.",
@@ -3136,7 +3136,7 @@ const de: Messages = {
   "service.contact.store.title": "Besuchen Sie ein Geschäft",
   "service.contact.store.description": "Persönliche Beratung im Geschäft",
   "service.contact.store.action": "Geschäfte ansehen",
-  "service.contact.ai.title": "KI-Klushulp",
+  "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Sofortige Antwort, Tag und Nacht",
   "service.contact.ai.action": "Stellen Sie Ihre Frage",
 
@@ -3208,7 +3208,7 @@ const de: Messages = {
     "Wir mischen auf Basis professioneller Farbcodes (u. a. RAL, Gamma und AkzoNobel) für eine exakte Übereinstimmung. Sind Sie sich bei einer Farbe unsicher? Fragen Sie im Geschäft nach einem Probemuster oder bestellen Sie zuerst einen Farbtester, bevor Sie die gesamte Menge mischen lassen.",
   "service.faq.mengverf.amount.q": "Wie viel Farbe brauche ich?",
   "service.faq.mengverf.amount.a":
-    "Rechnen Sie grob mit 1 Liter pro 8–10 m² pro Schicht. Auf der Produktseite und über unsere KI-Klushulp rechnen wir es genau für Sie aus, damit Sie weder zu viel noch zu wenig bestellen.",
+    "Rechnen Sie grob mit 1 Liter pro 8–10 m² pro Schicht. Auf der Produktseite und über unsere Klushulp rechnen wir es genau für Sie aus, damit Sie weder zu viel noch zu wenig bestellen.",
   "service.faq.mengverf.instore.q": "Kann ich Farbe auch im Geschäft mischen lassen?",
   "service.faq.mengverf.instore.a":
     "Sicher. Unsere Farbspezialisten mischen Ihre Farbe fachkundig, während Sie warten. Kommen Sie mit Ihrer Farbwahl in einem KLUSR-Geschäft vorbei oder wählen Sie Ihre Farbe schon online aus.",
@@ -3243,7 +3243,7 @@ const de: Messages = {
   "service.contactBlock.text":
     "Senden Sie uns eine Nachricht. Sie erhalten sofort eine Ticketnummer und eine Bestätigung per E-Mail — wir antworten meist innerhalb von 1 Werktag.",
   "service.contactBlock.preferPre": "Lieber sofort eine Antwort? ",
-  "service.contactBlock.preferLink": "Fragen Sie die KI-Klushulp",
+  "service.contactBlock.preferLink": "Fragen Sie die Klushulp",
   "service.contactBlock.preferPost": " — rund um die Uhr verfügbar.",
   "service.contactBlock.viewStorePage": "Geschäftsseite ansehen",
 

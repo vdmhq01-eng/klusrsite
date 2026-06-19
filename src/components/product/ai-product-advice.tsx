@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Send, Loader2 } from "lucide-react";
+import { MessageCircle, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormattedText } from "@/components/shared/formatted-text";
 import { trackEvent } from "@/lib/tracking";
@@ -97,7 +97,7 @@ export function AiProductAdvice({
       <div className="p-5">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-white">
-            <Sparkles className="h-5 w-5" />
+            <MessageCircle className="h-5 w-5" />
           </span>
           <div>
             <h3 className="font-bold">{copy.heading}</h3>

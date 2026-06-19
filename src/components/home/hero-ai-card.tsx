@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Wrench } from "lucide-react";
 import { useUI } from "@/lib/store/ui";
 import { useT } from "@/components/i18n/locale-provider";
 import type { MessageKey } from "@/lib/i18n/dictionaries";
@@ -26,7 +26,7 @@ export function HeroAiCard() {
       <div className="klusr-stripes pointer-events-none absolute inset-0 opacity-30" />
       <div className="relative">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">
-          <Sparkles className="h-3.5 w-3.5" />
+          <Wrench className="h-3.5 w-3.5" />
           {t("home.heroAi.chip")}
         </span>
         <h2 className="mt-3 text-2xl font-black leading-tight">{t("home.heroAi.title")}</h2>
