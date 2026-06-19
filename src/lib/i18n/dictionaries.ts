@@ -668,6 +668,10 @@ export type Messages = {
   "pdp.discountBadge": string; // {pct}
   "pdp.withPass": string; // {pass}
   "pdp.passExplain": string; // {pct} {pass}
+  // Ingelogd (pasprijs toegepast): "jouw prijs"-framing i.p.v. de marketingpitch.
+  "pdp.yourPrice": string;
+  "pdp.yourPassPrice": string; // {pass}
+  "pdp.passApplied": string; // {pass}
   "pdp.perLiterCheaper": string;
   "pdp.stockForBasePre": string;
   "pdp.stockForBasePost": string;
@@ -1360,6 +1364,9 @@ const nl: Messages = {
   "pdp.discountBadge": "{pct}% KORTING",
   "pdp.withPass": "met {pass}",
   "pdp.passExplain": "{pct}% korting op de hele collectie met je gratis {pass}.",
+  "pdp.yourPrice": "Jouw prijs",
+  "pdp.yourPassPrice": "Jouw {pass}-prijs",
+  "pdp.passApplied": "Automatisch toegepast met je {pass}.",
   "pdp.perLiterCheaper": "grotere bus is voordeliger per liter",
   "pdp.stockForBasePre": "Voorraad getoond voor ",
   "pdp.stockForBasePost": " — elke basis heeft een eigen voorraad.",
@@ -2048,6 +2055,9 @@ const en: Messages = {
   "pdp.discountBadge": "{pct}% OFF",
   "pdp.withPass": "with {pass}",
   "pdp.passExplain": "{pct}% off the entire range with your free {pass}.",
+  "pdp.yourPrice": "Your price",
+  "pdp.yourPassPrice": "Your {pass} price",
+  "pdp.passApplied": "Automatically applied with your {pass}.",
   "pdp.perLiterCheaper": "larger tin is cheaper per litre",
   "pdp.stockForBasePre": "Stock shown for ",
   "pdp.stockForBasePost": " — each base has its own stock.",
@@ -2736,6 +2746,9 @@ const fr: Messages = {
   "pdp.discountBadge": "-{pct} %",
   "pdp.withPass": "avec {pass}",
   "pdp.passExplain": "{pct} % de réduction sur toute la gamme avec votre {pass} gratuit.",
+  "pdp.yourPrice": "Votre prix",
+  "pdp.yourPassPrice": "Votre prix {pass}",
+  "pdp.passApplied": "Appliqué automatiquement avec votre {pass}.",
   "pdp.perLiterCheaper": "le plus grand pot est plus avantageux au litre",
   "pdp.stockForBasePre": "Stock affiché pour ",
   "pdp.stockForBasePost": " — chaque base a son propre stock.",
@@ -3424,6 +3437,9 @@ const de: Messages = {
   "pdp.discountBadge": "{pct}% RABATT",
   "pdp.withPass": "mit {pass}",
   "pdp.passExplain": "{pct}% Rabatt auf das gesamte Sortiment mit deiner kostenlosen {pass}.",
+  "pdp.yourPrice": "Dein Preis",
+  "pdp.yourPassPrice": "Dein {pass}-Preis",
+  "pdp.passApplied": "Automatisch angewendet mit deiner {pass}.",
   "pdp.perLiterCheaper": "größerer Eimer ist günstiger pro Liter",
   "pdp.stockForBasePre": "Bestand angezeigt für ",
   "pdp.stockForBasePost": " — jede Basis hat einen eigenen Bestand.",
