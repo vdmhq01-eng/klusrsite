@@ -18,6 +18,7 @@ import {
   Radio,
   ShoppingCart,
   ShieldOff,
+  Boxes,
   Plus,
   Trash2,
   RotateCcw,
@@ -31,6 +32,7 @@ import { OrdersPanel } from "./orders-panel";
 import { TicketsPanel } from "./tickets-panel";
 import { ConversationsPanel } from "./conversations-panel";
 import { CustomersPanel } from "./customers-panel";
+import { StockPanel } from "./stock-panel";
 import { AiContentManager } from "./ai-content-manager";
 import { NewsletterPanel } from "./newsletter-panel";
 import { HeroImages } from "./hero-images";
@@ -43,6 +45,7 @@ type SectionId =
   | "tickets"
   | "gesprekken"
   | "klanten"
+  | "voorraad"
   | "rapportages"
   | "inzichten"
   | "content"
@@ -55,6 +58,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "tickets", label: "Tickets", icon: MessageCircle },
   { id: "gesprekken", label: "Gesprekken", icon: MessagesSquare },
   { id: "klanten", label: "Klanten", icon: Users },
+  { id: "voorraad", label: "Voorraad", icon: Boxes },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "content", label: "AI-content", icon: Sparkles },
   { id: "nieuwsbrief", label: "Nieuwsbrief", icon: Mail },
@@ -105,6 +109,7 @@ export function AdminDashboard() {
         {section === "tickets" && <TicketsPanel />}
         {section === "gesprekken" && <ConversationsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
+        {section === "voorraad" && <StockPanel />}
         {(section === "rapportages" || section === "inzichten") && (
           <div className="space-y-8">
             <Insights />
