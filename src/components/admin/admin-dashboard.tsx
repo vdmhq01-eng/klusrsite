@@ -18,6 +18,7 @@ import {
   Radio,
   ShoppingCart,
   ShieldOff,
+  XCircle,
   Boxes,
   Plus,
   Trash2,
@@ -33,6 +34,7 @@ import { TicketsPanel } from "./tickets-panel";
 import { ConversationsPanel } from "./conversations-panel";
 import { CustomersPanel } from "./customers-panel";
 import { StockPanel } from "./stock-panel";
+import { AbandonedPanel } from "./abandoned-panel";
 import { AiContentManager } from "./ai-content-manager";
 import { NewsletterPanel } from "./newsletter-panel";
 import { HeroImages } from "./hero-images";
@@ -42,6 +44,7 @@ import { MollieTest } from "./mollie-test";
 type SectionId =
   | "overzicht"
   | "orders"
+  | "afgebroken"
   | "tickets"
   | "gesprekken"
   | "klanten"
@@ -55,6 +58,7 @@ type SectionId =
 const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: ShoppingBag },
+  { id: "afgebroken", label: "Afgebroken", icon: XCircle },
   { id: "tickets", label: "Tickets", icon: MessageCircle },
   { id: "gesprekken", label: "Gesprekken", icon: MessagesSquare },
   { id: "klanten", label: "Klanten", icon: Users },
@@ -106,6 +110,7 @@ export function AdminDashboard() {
       <div className="min-w-0">
         {section === "overzicht" && <Overview orders={orders} onGo={setSection} />}
         {section === "orders" && <OrdersPanel />}
+        {section === "afgebroken" && <AbandonedPanel />}
         {section === "tickets" && <TicketsPanel />}
         {section === "gesprekken" && <ConversationsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
