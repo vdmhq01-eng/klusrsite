@@ -13,10 +13,12 @@ import {
   Palette,
   PiggyBank,
   RotateCcw,
+  Sparkles,
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CartItem, Order } from "@/types";
+import type { Klus } from "@/lib/store/klus";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -62,6 +64,8 @@ export function AccountDashboard({
 
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [klussen, setKlussen] = useState<Klus[]>([]);
+  const [klussenLoading, setKlussenLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -72,6 +76,21 @@ export function AccountDashboard({
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // De kluspakketten ("Mijn klussen") van deze klant — zelfde patroon als orders.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/klussen", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { klussen?: Klus[] } | null) => {
+        if (active && d?.klussen) setKlussen(d.klussen);
+      })
+      .catch(() => {})
+      .finally(() => active && setKlussenLoading(false));
     return () => {
       active = false;
     };
@@ -100,6 +119,7 @@ export function AccountDashboard({
       <TabsList className="w-full">
         <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
         <TabsTrigger value="bestellingen">Bestellingen</TabsTrigger>
+        <TabsTrigger value="klussen">Mijn klussen</TabsTrigger>
         <TabsTrigger value="gegevens">Gegevens</TabsTrigger>
         <TabsTrigger value="kluspas">KLUSRPAS</TabsTrigger>
       </TabsList>
@@ -273,6 +293,46 @@ export function AccountDashboard({
         </Card>
       </TabsContent>
 
+      {/* ------------------------------------------------------------ Klussen */}
+      <TabsContent value="klussen">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mijn klussen</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {klussenLoading ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Je klussen laden…
+              </div>
+            ) : klussen.length === 0 ? (
+              <EmptyKlussen />
+            ) : (
+              klussen.map((klus) => (
+                <Link
+                  key={klus.id}
+                  href={`/klus/${klus.id}`}
+                  className="group flex flex-col gap-3 rounded-lg border border-border p-4 transition-colors hover:border-primary/40 hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                      <Sparkles className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold">{klus.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Samengesteld op {formatDate(klus.createdAt)} · {klus.items.length}{" "}
+                        {klus.items.length === 1 ? "product" : "producten"}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="hidden h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary sm:block" />
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
       {/* ----------------------------------------------------------- Gegevens */}
       <TabsContent value="gegevens">
         <ProfileForm firstName={firstName} lastName={lastName} email={user.email ?? ""} />
@@ -372,6 +432,27 @@ function EmptyOrders() {
       <Button asChild size="sm" className="mt-1">
         <Link href="/categorie/verf">
           Start met shoppen
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+function EmptyKlussen() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+        <Sparkles className="h-6 w-6" />
+      </span>
+      <p className="text-sm font-semibold">Je hebt nog geen kluspakketten</p>
+      <p className="max-w-xs text-sm text-muted-foreground">
+        Vraag de KLUSR Klushulp om advies en laat een kluspakket samenstellen — dan vind je hier al
+        je klussen terug.
+      </p>
+      <Button asChild size="sm" className="mt-1">
+        <Link href="/klushulp">
+          Naar de Klushulp
           <ArrowRight className="h-4 w-4" />
         </Link>
       </Button>
