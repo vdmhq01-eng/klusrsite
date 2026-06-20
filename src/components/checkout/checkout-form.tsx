@@ -26,6 +26,7 @@ import { MollieCard, type MollieCardHandle } from "./mollie-card";
 import { CheckoutTrust } from "./checkout-trust";
 import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import type { PaymentMethodInfo } from "@/types";
+import type { CustomerProfile } from "@/lib/store/profile";
 import {
   useCart,
   cartSummary,
@@ -174,6 +175,40 @@ export function CheckoutForm({
     }
     setShowLogin(false);
     setCreateAccount(false);
+  }, [session, setValue, getValues]);
+
+  // Vul het opgeslagen bezorgadres voor zodra de klant is ingelogd — zodat een
+  // ingelogde klant z'n gegevens niet bij elke bestelling opnieuw hoeft te typen.
+  // Overschrijft nooit wat de klant al heeft ingevuld (alleen lege velden).
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    let active = true;
+    fetch("/api/account/profile", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { profile?: CustomerProfile } | null) => {
+        if (!active || !d?.profile) return;
+        const p = d.profile;
+        if (p.phone && !getValues("phone")) setValue("phone", p.phone);
+        if (p.company && !getValues("companyName")) setValue("companyName", p.company);
+        if (p.cocNumber && !getValues("cocNumber")) setValue("cocNumber", p.cocNumber);
+        if (p.vatNumber && !getValues("vatNumber")) setValue("vatNumber", p.vatNumber);
+        const a = p.address;
+        if (a) {
+          if (a.firstName && !getValues("firstName")) setValue("firstName", a.firstName);
+          if (a.lastName && !getValues("lastName")) setValue("lastName", a.lastName);
+          if (a.street && !getValues("street")) setValue("street", a.street);
+          if (a.houseNumber && !getValues("houseNumber")) setValue("houseNumber", a.houseNumber);
+          if (a.houseNumberAddition && !getValues("houseNumberAddition"))
+            setValue("houseNumberAddition", a.houseNumberAddition);
+          if (a.postalCode && !getValues("postalCode")) setValue("postalCode", a.postalCode);
+          if (a.city && !getValues("city")) setValue("city", a.city);
+          if (a.country) setValue("country", a.country);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [session, setValue, getValues]);
 
   // Inline inloggen zonder de checkout te verlaten.
@@ -403,6 +438,36 @@ export function CheckoutForm({
           }
         : {}),
     };
+
+    // Adres op het account bewaren voor een ingelogde klant → volgende keer staat
+    // de checkout al ingevuld. Best-effort; mag de bestelling nooit blokkeren.
+    if (session?.user?.email) {
+      void fetch("/api/account/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: [values.firstName, values.lastName].filter(Boolean).join(" ") || undefined,
+          phone: values.phone,
+          ...(mode === "zakelijk"
+            ? {
+                company: values.companyName,
+                cocNumber: values.cocNumber,
+                vatNumber: values.vatNumber,
+              }
+            : {}),
+          address: {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            street: values.street,
+            houseNumber: values.houseNumber,
+            houseNumberAddition: values.houseNumberAddition,
+            postalCode: values.postalCode,
+            city: values.city,
+            country: values.country,
+          },
+        }),
+      }).catch(() => {});
+    }
 
     // Optioneel inschrijven voor de nieuwsbrief (demo-safe, fire-and-forget).
     if (values.newsletter) {
