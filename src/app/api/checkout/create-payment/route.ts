@@ -114,10 +114,12 @@ export async function POST(req: Request) {
     };
 
     // Order-regels voor pay-later (Klarna): moeten exact optellen tot het totaal.
-    // Alleen voor pay-later meesturen, zodat iDEAL/kaart nooit kan breken.
+    // Altijd meesturen zodat pay-later op de gehoste Mollie-pagina beschikbaar is;
+    // de regels worden alleen gebruikt als ze precies tot het totaal optellen,
+    // zodat iDEAL/kaart nooit kan breken.
     const r2 = (n: number) => Math.round(n * 100) / 100;
     let lines: unknown[] | undefined;
-    if (/klarna|riverty|in3|billie|afterpay/i.test(data.method ?? "")) {
+    {
       const sumK = data.items.reduce((s, i) => s + r2(i.kluspasPrice) * i.quantity, 0);
       const sumN = data.items.reduce((s, i) => s + r2(i.price) * i.quantity, 0);
       const useK = Math.abs(r2(sumK) - r2(data.subtotal)) <= Math.abs(r2(sumN) - r2(data.subtotal));
@@ -136,8 +138,7 @@ export async function POST(req: Request) {
         };
       });
       const sumItems = all.reduce((s, l) => s + Number(l.totalAmount.value), 0);
-      const surcharge = r2(data.surcharge || 0);
-      const ship = r2(data.total - sumItems - surcharge);
+      const ship = r2(data.total - sumItems);
       if (ship > 0) {
         all.push({
           type: "shipping_fee",
@@ -149,17 +150,6 @@ export async function POST(req: Request) {
           vatAmount: { currency: "EUR", value: vat(ship).toFixed(2) },
         });
       }
-      if (surcharge > 0) {
-        all.push({
-          type: "surcharge",
-          description: "Betaaltoeslag (Billie)",
-          quantity: 1,
-          unitPrice: { currency: "EUR", value: surcharge.toFixed(2) },
-          totalAmount: { currency: "EUR", value: surcharge.toFixed(2) },
-          vatRate: "0.00",
-          vatAmount: { currency: "EUR", value: "0.00" },
-        });
-      }
       const linesSum = r2(all.reduce((s, l) => s + Number(l.totalAmount.value), 0));
       if (Math.abs(linesSum - r2(data.total)) < 0.005) lines = all;
     }
@@ -168,7 +158,7 @@ export async function POST(req: Request) {
       orderId: order.id,
       reference: order.reference,
       amount: data.total,
-      method: data.method,
+      method: undefined,
       issuer: data.issuer,
       baseUrl: origin,
       cardToken: data.cardToken,

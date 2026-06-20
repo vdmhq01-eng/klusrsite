@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
@@ -21,11 +21,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ColorChip } from "@/components/cart/color-chip";
-import { PaymentMethods } from "./payment-methods";
-import { MollieCard, type MollieCardHandle } from "./mollie-card";
 import { CheckoutTrust } from "./checkout-trust";
 import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
-import type { PaymentMethodInfo } from "@/types";
 import type { CustomerProfile } from "@/lib/store/profile";
 import {
   useCart,
@@ -88,28 +85,7 @@ function makeSchema(t: ReturnType<typeof useT>) {
 
 type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
-const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
-/** Fallback wanneer de methodenroute onbereikbaar is. Landbewust: BE → Bancontact,
- *  anders iDEAL. Apple Pay & Google Pay altijd erbij. */
-function fallbackFor(country: string): PaymentMethodInfo[] {
-  const rest: PaymentMethodInfo[] = [
-    { id: "creditcard", label: "Creditcard", image: `${MOLLIE_ICON}/creditcard.svg` },
-    { id: "applepay", label: "Apple Pay", image: `${MOLLIE_ICON}/applepay.svg` },
-    { id: "googlepay", label: "Google Pay", image: `${MOLLIE_ICON}/googlepay.svg` },
-    { id: "klarna", label: "Achteraf betalen met Klarna", image: `${MOLLIE_ICON}/klarna.svg` },
-  ];
-  return country === "BE"
-    ? [{ id: "bancontact", label: "Bancontact", image: `${MOLLIE_ICON}/bancontact.svg` }, ...rest]
-    : [{ id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` }, ...rest];
-}
-
-export function CheckoutForm({
-  mollieProfile,
-  mollieTest,
-}: {
-  mollieProfile?: string;
-  mollieTest?: boolean;
-}) {
+export function CheckoutForm() {
   const { items, kluspasActive } = useCart();
   const t = useT();
   const mounted = useMounted();
@@ -118,15 +94,9 @@ export function CheckoutForm({
   // 15-min nabestelvenster → geen extra verzendkosten.
   const { active: reorderFree } = useReorderActive();
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
-  // Voorselectie van de gangbaarste methode gebeurt zodra de methodenlijst laadt.
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-  const [issuer, setIssuer] = useState<string | null>(null);
-  const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
-  const [methodsLoading, setMethodsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
-  const cardRef = useRef<MollieCardHandle>(null);
 
   // Account-funnel: inloggen kan inline (geen redirect), of de klant rekent af
   // als gast en kan met één vinkje een account aanmaken bij het bestellen.
@@ -138,16 +108,6 @@ export function CheckoutForm({
   const [loginError, setLoginError] = useState<string | null>(null);
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPw, setAccountPw] = useState("");
-
-  // Billie is alleen zakelijk: deselecteer 'm als de klant naar particulier wisselt.
-  useEffect(() => {
-    if (mode !== "zakelijk" && paymentMethod === "billie") setPaymentMethod(null);
-  }, [mode, paymentMethod]);
-
-  function selectMethod(id: string) {
-    setPaymentMethod(id);
-    setIssuer(null);
-  }
 
   // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
   const schema = useMemo(() => makeSchema(t), [t]);
@@ -263,39 +223,6 @@ export function CheckoutForm({
 
   const country = watch("country") || "NL";
 
-  // Betaalmethoden ophalen — landafhankelijk (Mollie filtert per land, dus de
-  // Belgische methoden verschijnen alleen bij BE) en incl. Apple Pay / Google Pay.
-  // Herlaadt zodra het bedrag of het gekozen land wijzigt.
-  useEffect(() => {
-    let active = true;
-    const total = cartSummary(items, mode, kluspasActive).grossTotal;
-    const params = new URLSearchParams();
-    if (total > 0) params.set("amount", total.toFixed(2));
-    params.set("country", country);
-    setMethodsLoading(true);
-    const apply = (list: PaymentMethodInfo[]) => {
-      if (!active) return;
-      setMethods(list);
-      setMethodsLoading(false);
-      // Voorselecteer de gangbaarste methode (iDEAL/NL, Bancontact/BE) zodat de
-      // "Betaal"-knop meteen actief is → minder afhakers in de checkout.
-      setPaymentMethod((cur) => {
-        if (cur) return cur;
-        const preferred = country === "BE" ? "bancontact" : "ideal";
-        return list.find((m) => m.id === preferred)?.id ?? list[0]?.id ?? null;
-      });
-    };
-    fetch(`/api/checkout/payment-methods?${params.toString()}`)
-      .then((r) => r.json())
-      .then((d: { methods?: PaymentMethodInfo[] }) =>
-        apply(d.methods?.length ? d.methods : fallbackFor(country)),
-      )
-      .catch(() => apply(fallbackFor(country)));
-    return () => {
-      active = false;
-    };
-  }, [items, mode, kluspasActive, country]);
-
   // Postcode + huisnummer → straat + plaats automatisch invullen (PDOK).
   async function lookupAddress() {
     const postcode = (getValues("postalCode") || "").replace(/\s/g, "").toUpperCase();
@@ -349,30 +276,7 @@ export function CheckoutForm({
   const showKluspasNudge =
     summary.vatIncluded && !kluspasActive && potentialKluspasSavings > 0;
 
-  // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
-  const billieSurcharge =
-    paymentMethod === "billie"
-      ? Math.round((0.35 + summary.total * 0.0349) * 100) / 100
-      : 0;
-  const payableTotal = Math.round((summary.total + billieSurcharge) * 100) / 100;
-
-  const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
-  // iDEAL-banklijst (issuers): toon de bankkeuze op onze eigen pagina alléén
-  // wanneer Mollie ze meelevert (klassieke iDEAL). Bij de nieuwe iDEAL is de lijst
-  // leeg en wordt de issuer genegeerd — dan kiest de klant de bank in de
-  // iDEAL-stap zelf en tonen we geen (dode) tussenstap.
-  const selectedMethod = methods.find((m) => m.id === paymentMethod);
-  const issuers = selectedMethod?.issuers ?? [];
-  const needsIssuer = issuers.length > 0;
-  // Betalen kan zodra er een methode is; vereist een bank zodra er een
-  // banklijst beschikbaar is (dan kiest de klant 'm hier, niet op Mollie).
-  const canPay = Boolean(paymentMethod) && (!needsIssuer || Boolean(issuer));
-
   async function onSubmit(values: FormValues) {
-    if (!paymentMethod) {
-      setError(t("checkout.error.choosePayment"));
-      return;
-    }
     setSubmitting(true);
     setError(null);
 
@@ -403,16 +307,6 @@ export function CheckoutForm({
         }
       } catch {
         /* account aanmaken is best-effort */
-      }
-    }
-
-    let cardToken: string | null = null;
-    if (useMollieComponents) {
-      cardToken = (await cardRef.current?.createToken()) ?? null;
-      if (!cardToken) {
-        setError(t("checkout.error.card"));
-        setSubmitting(false);
-        return;
       }
     }
 
@@ -493,7 +387,6 @@ export function CheckoutForm({
     }
 
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
-    trackEvent("add_payment_info", { payment_type: paymentMethod, value: summary.total });
 
     try {
       const res = await fetch("/api/checkout/create-payment", {
@@ -504,12 +397,8 @@ export function CheckoutForm({
           items,
           subtotal: summary.grossSubtotal,
           shipping: summary.grossShipping,
-          total: payableTotal,
-          surcharge: billieSurcharge,
+          total: summary.total,
           kluspasSavings: summary.savings,
-          method: paymentMethod,
-          ...(issuer ? { issuer } : {}),
-          ...(cardToken ? { cardToken } : {}),
         }),
       });
       const data = await res.json();
@@ -785,41 +674,6 @@ export function CheckoutForm({
               <DeliveryCountdown compact className="px-1 text-xs" />
             </div>
           </Section>
-
-          <Section title={t("checkout.section.payment")} step={4}>
-            <PaymentMethods
-              methods={mode === "zakelijk" ? methods : methods.filter((m) => m.id !== "billie")}
-              value={paymentMethod}
-              onChange={selectMethod}
-              loading={methodsLoading}
-            />
-            {/* iDEAL-bankkeuze op onze eigen pagina — alleen als Mollie issuers meelevert. */}
-            {needsIssuer && (
-              <div className="mt-4">
-                <Label className="mb-1.5 block">Kies je bank</Label>
-                <select
-                  value={issuer ?? ""}
-                  onChange={(e) => setIssuer(e.target.value || null)}
-                  className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">Selecteer je bank…</option>
-                  {issuers.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Je gaat na het bevestigen direct naar je eigen bank.
-                </p>
-              </div>
-            )}
-            {useMollieComponents && (
-              <div className="mt-4">
-                <MollieCard ref={cardRef} profileId={mollieProfile!} testmode={Boolean(mollieTest)} />
-              </div>
-            )}
-          </Section>
         </div>
 
         {/* Right: order summary */}
@@ -875,12 +729,6 @@ export function CheckoutForm({
                   <dd>{formatPrice(summary.vat)}</dd>
                 </div>
               )}
-              {billieSurcharge > 0 && (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">{t("checkout.billieSurcharge")}</dt>
-                  <dd>{formatPrice(billieSurcharge)}</dd>
-                </div>
-              )}
             </dl>
             {showKluspasNudge && (
               <button
@@ -895,7 +743,7 @@ export function CheckoutForm({
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">{t("cart.total")}</span>
-              <span className="text-2xl font-black">{formatPrice(payableTotal)}</span>
+              <span className="text-2xl font-black">{formatPrice(summary.total)}</span>
             </div>
             {!summary.vatIncluded && (
               <p className="mt-1 text-xs text-muted-foreground">{t("cart.vatIncluded")}</p>
@@ -932,21 +780,16 @@ export function CheckoutForm({
               </p>
             )}
 
-            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting || !canPay}>
+            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting}>
               {submitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  {t("checkout.pay", { amount: formatPrice(payableTotal) })}
+                  {t("checkout.pay", { amount: formatPrice(summary.total) })}
                 </>
               )}
             </Button>
-            {!canPay && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                {t("checkout.choosePaymentHint")}
-              </p>
-            )}
 
             <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-klusr-stock" />
