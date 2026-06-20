@@ -299,19 +299,18 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
 
   const searching = query.trim().length > 0;
   const q = query.trim().toLowerCase();
-  const BROWSE_CAP = 150;
+  // Bladeren toont een venster van kleuren; "meer laden" + infinite scroll breiden
+  // het uit (desktop kon eerder niet voorbij de eerste 150 van duizenden).
+  const BROWSE_STEP = 150;
+  const [visibleCount, setVisibleCount] = useState(BROWSE_STEP);
   const allColorsList = useMemo(() => collections.flatMap((c) => c.colors), [collections]);
   const pickedCollections = useMemo(
     () => collections.filter((c) => activeCollections.has(c.id)),
     [collections, activeCollections],
   );
 
-  const shownColors = useMemo(() => {
-    if (searching) {
-      return allColorsList
-        .filter((c) => `${c.name} ${c.code} ${c.collection ?? ""}`.toLowerCase().includes(q))
-        .slice(0, 60);
-    }
+  // Volledige, ontdubbelde bladerlijst (alle kleuren uit de gekozen bron).
+  const browseList = useMemo(() => {
     const source = pickedCollections.length ? pickedCollections : collections;
     const seen = new Set<string>();
     const out: SelectedColor[] = [];
@@ -320,15 +319,42 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
       if (seen.has(k)) continue;
       seen.add(k);
       out.push(c);
-      if (out.length >= BROWSE_CAP) break;
     }
     return out;
-  }, [searching, q, allColorsList, pickedCollections, collections]);
-
-  const browseTotal = useMemo(() => {
-    const source = pickedCollections.length ? pickedCollections : collections;
-    return source.reduce((n, c) => n + c.colors.length, 0);
   }, [pickedCollections, collections]);
+
+  const shownColors = useMemo(() => {
+    if (searching) {
+      return allColorsList
+        .filter((c) => `${c.name} ${c.code} ${c.collection ?? ""}`.toLowerCase().includes(q))
+        .slice(0, 60);
+    }
+    return browseList.slice(0, visibleCount);
+  }, [searching, q, allColorsList, browseList, visibleCount]);
+
+  const browseTotal = browseList.length;
+  const hasMoreColors = !searching && shownColors.length < browseTotal;
+
+  // Reset het venster bij een nieuwe selectie/bron of zoekactie.
+  useEffect(() => {
+    setVisibleCount(BROWSE_STEP);
+  }, [pickedCollections, collections, searching]);
+
+  // Infinite scroll: laad het volgende venster zodra de sentinel in beeld komt.
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!hasMoreColors) return;
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setVisibleCount((n) => n + BROWSE_STEP);
+      },
+      { rootMargin: "600px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMoreColors, shownColors.length]);
 
   // Suggesties terwijl je typt: collecties waarvan de naam matcht.
   const collectionSuggestions = useMemo(
@@ -646,6 +672,17 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
               );
             })}
           </div>
+          {hasMoreColors && (
+            <div ref={loadMoreRef} className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((n) => n + BROWSE_STEP)}
+                className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                Meer kleuren laden ({browseTotal - shownColors.length} resterend)
+              </button>
+            </div>
+          )}
           {searching && shownColors.length === 0 && (
             <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-4">
               <p className="text-sm font-semibold">Geen losse kleur gevonden voor &ldquo;{query}&rdquo;</p>
