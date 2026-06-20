@@ -1,6 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="KLUSR">
-  <rect width="64" height="64" rx="14" fill="#C90000"/>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
-        font-family="'Arial Black', Arial, Helvetica, sans-serif" font-weight="900"
-        font-size="46" fill="#FFFFFF">R</text>
+  <rect width="64" height="64" rx="12" fill="#C90000"/>
+  <g fill="#FFFFFF">
+    <rect x="16" y="13" width="10" height="38"/>
+    <rect x="16" y="13" width="28" height="8"/>
+    <rect x="36" y="13" width="8" height="18"/>
+    <rect x="16" y="27" width="26" height="7"/>
+    <polygon points="28,30 36,30 48,51 40,51"/>
+  </g>
 </svg>
