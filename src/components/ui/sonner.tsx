@@ -5,9 +5,11 @@ import { Toaster as SonnerToaster } from "sonner";
 export function Toaster() {
   return (
     <SonnerToaster
-      // Rechtsboven — "onder" het winkelwagen-icoon. Lichtgroen bij succes
-      // ("toegevoegd aan winkelwagen") met een altijd zichtbaar kruisje (X).
-      position="top-right"
+      // Boven-midden i.p.v. rechtsboven: zo valt geen enkele melding meer over
+      // het winkelwagen-icoon (dat rechtsboven staat) en blijft de winkelwagen
+      // altijd klikbaar. De "in winkelwagen"-bevestiging is een eigen bol.com-
+      // stijl kaart (zie cart/added-to-cart-toast.tsx).
+      position="top-center"
       closeButton
       duration={5000}
       toastOptions={{

@@ -4,6 +4,7 @@ import { ProductImage } from "./product-image";
 import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import { showAddedToCartToast } from "@/components/cart/added-to-cart-toast";
 import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./star-rating";
@@ -55,8 +56,16 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
         }),
       ],
     });
-    toast.success(t("pdp.addedToCart"), {
-      description: `${product.brand} ${product.title}`,
+    showAddedToCartToast({
+      title: product.title,
+      brand: product.brand,
+      image: product.images[0],
+      meta: cheapest.label,
+      labels: {
+        added: t("pdp.addedToCart"),
+        toCart: t("cart.toCart"),
+        continue: t("cart.continueShopping"),
+      },
     });
   }
 

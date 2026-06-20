@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { showAddedToCartToast } from "@/components/cart/added-to-cart-toast";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
 import type { GlansVariant } from "@/lib/data/products";
 import { Button } from "@/components/ui/button";
@@ -286,8 +287,16 @@ export function ProductBuybox({
         },
       ],
     });
-    toast.success(t("pdp.addedToCart"), {
-      description: `${product.title} · ${variant.label}${color ? ` · ${color.name}` : ""}`,
+    showAddedToCartToast({
+      title: product.title,
+      brand: product.brand,
+      image: product.images[0],
+      meta: `${variant.label}${color ? ` · ${color.name}` : ""}${quantity > 1 ? ` · ${quantity}×` : ""}`,
+      labels: {
+        added: t("pdp.addedToCart"),
+        toCart: t("cart.toCart"),
+        continue: t("cart.continueShopping"),
+      },
     });
   }
 

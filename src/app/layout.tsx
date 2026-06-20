@@ -61,6 +61,17 @@ const websiteJsonLd = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  // Expliciete, versie-gebuste icon-links. De bestanden (app/favicon.ico,
+  // app/icon.svg, app/apple-icon.png) zijn geldig; de ?v= forceert browsers om
+  // de favicon opnieuw op te halen (favicons cachen extreem hardnekkig).
+  icons: {
+    icon: [
+      { url: "/icon.svg?v=2", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2", sizes: "48x48" },
+    ],
+    shortcut: "/favicon.ico?v=2",
+    apple: "/apple-icon.png?v=2",
+  },
   title: {
     default: "KLUSR — De beste VERF en alles voor jouw klus",
     template: "%s | KLUSR",
