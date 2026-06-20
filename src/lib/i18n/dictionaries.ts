@@ -326,6 +326,28 @@ export type Messages = {
   "checkout.thanks.deliveryAddress": string;
   "checkout.thanks.loadError": string;
   "checkout.thanks.backHome": string;
+  // Bedankpagina — statusafhankelijke koppen (succes / verwerken / mislukt)
+  "checkout.thanks.successBadge": string; // klein label boven de titel bij betaald
+  "checkout.thanks.orderSummary": string; // koptitel boven de orderkaart
+  "checkout.thanks.needHelp.title": string; // trust-blok: hulp nodig?
+  "checkout.thanks.needHelp.text": string;
+  "checkout.thanks.needHelp.cta": string;
+  // ── Bedankpagina — betaling in verwerking (open/pending) ───────────────────
+  "checkout.pending.title": string;
+  "checkout.pending.text": string;
+  "checkout.pending.hint": string;
+  "checkout.pending.refreshNow": string;
+  "checkout.pending.backHome": string;
+  // ── Bedankpagina — betaling niet gelukt (failed/canceled/expired) ──────────
+  "checkout.failed.title": string; // mislukt
+  "checkout.failed.canceledTitle": string; // geannuleerd
+  "checkout.failed.expiredTitle": string; // verlopen
+  "checkout.failed.text": string;
+  "checkout.failed.cartKept": string; // "je winkelwagen is bewaard gebleven"
+  "checkout.failed.retry": string; // CTA → checkout
+  "checkout.failed.toCart": string; // CTA → winkelwagen
+  "checkout.failed.help": string; // link → klantenservice
+  "checkout.failed.orderRef": string; // {ref}
 
   // ── Checkout — validatie (zod-schema, binnen de component) ─────────────────
   "checkout.validation.required": string;
@@ -1010,6 +1032,29 @@ const nl: Messages = {
   "checkout.thanks.loadError":
     "We konden de bestelgegevens niet laden, maar je betaling is in goede orde ontvangen. Je ontvangt een bevestiging per e-mail.",
   "checkout.thanks.backHome": "Terug naar home",
+  "checkout.thanks.successBadge": "Betaling geslaagd",
+  "checkout.thanks.orderSummary": "Je bestelling",
+  "checkout.thanks.needHelp.title": "Vragen over je bestelling?",
+  "checkout.thanks.needHelp.text":
+    "Onze klushulp staat voor je klaar — van levertijd tot productadvies.",
+  "checkout.thanks.needHelp.cta": "Naar de klantenservice",
+  "checkout.pending.title": "We verwerken je betaling…",
+  "checkout.pending.text":
+    "Je betaling wordt nog bevestigd door je bank. Dit duurt meestal maar een paar seconden.",
+  "checkout.pending.hint":
+    "Deze pagina ververst automatisch zodra je betaling rond is. Je hoeft niets te doen.",
+  "checkout.pending.refreshNow": "Status nu verversen",
+  "checkout.pending.backHome": "Terug naar home",
+  "checkout.failed.title": "Je betaling is niet gelukt",
+  "checkout.failed.canceledTitle": "Je betaling is geannuleerd",
+  "checkout.failed.expiredTitle": "Je betaling is verlopen",
+  "checkout.failed.text":
+    "Er is geen bedrag afgeschreven. Je kunt het zonder zorgen opnieuw proberen.",
+  "checkout.failed.cartKept": "Je winkelwagen is bewaard gebleven.",
+  "checkout.failed.retry": "Opnieuw proberen",
+  "checkout.failed.toCart": "Naar winkelwagen",
+  "checkout.failed.help": "Hulp nodig? Neem contact op met de klantenservice",
+  "checkout.failed.orderRef": "Bestelnummer: {ref}",
 
   "checkout.validation.required": "Verplicht",
   "checkout.validation.email": "Vul een geldig e-mailadres in",
@@ -1710,6 +1755,29 @@ const en: Messages = {
   "checkout.thanks.loadError":
     "We couldn't load the order details, but your payment was received in good order. You'll receive a confirmation by email.",
   "checkout.thanks.backHome": "Back to home",
+  "checkout.thanks.successBadge": "Payment successful",
+  "checkout.thanks.orderSummary": "Your order",
+  "checkout.thanks.needHelp.title": "Questions about your order?",
+  "checkout.thanks.needHelp.text":
+    "Our team is happy to help — from delivery times to product advice.",
+  "checkout.thanks.needHelp.cta": "Go to customer service",
+  "checkout.pending.title": "We're processing your payment…",
+  "checkout.pending.text":
+    "Your payment is still being confirmed by your bank. This usually only takes a few seconds.",
+  "checkout.pending.hint":
+    "This page refreshes automatically once your payment is complete. There's nothing you need to do.",
+  "checkout.pending.refreshNow": "Refresh status now",
+  "checkout.pending.backHome": "Back to home",
+  "checkout.failed.title": "Your payment didn't go through",
+  "checkout.failed.canceledTitle": "Your payment was canceled",
+  "checkout.failed.expiredTitle": "Your payment expired",
+  "checkout.failed.text":
+    "No amount was charged. You can safely try again.",
+  "checkout.failed.cartKept": "Your shopping cart has been kept.",
+  "checkout.failed.retry": "Try again",
+  "checkout.failed.toCart": "Go to cart",
+  "checkout.failed.help": "Need help? Contact customer service",
+  "checkout.failed.orderRef": "Order number: {ref}",
 
   "checkout.validation.required": "Required",
   "checkout.validation.email": "Enter a valid email address",
@@ -2410,6 +2478,29 @@ const fr: Messages = {
   "checkout.thanks.loadError":
     "Nous n'avons pas pu charger les détails de la commande, mais votre paiement a bien été reçu. Vous recevrez une confirmation par e-mail.",
   "checkout.thanks.backHome": "Retour à l'accueil",
+  "checkout.thanks.successBadge": "Paiement réussi",
+  "checkout.thanks.orderSummary": "Votre commande",
+  "checkout.thanks.needHelp.title": "Des questions sur votre commande ?",
+  "checkout.thanks.needHelp.text":
+    "Notre équipe est là pour vous aider — des délais de livraison aux conseils produits.",
+  "checkout.thanks.needHelp.cta": "Vers le service client",
+  "checkout.pending.title": "Nous traitons votre paiement…",
+  "checkout.pending.text":
+    "Votre paiement est encore en cours de confirmation par votre banque. Cela ne prend généralement que quelques secondes.",
+  "checkout.pending.hint":
+    "Cette page s'actualise automatiquement dès que votre paiement est confirmé. Vous n'avez rien à faire.",
+  "checkout.pending.refreshNow": "Actualiser le statut",
+  "checkout.pending.backHome": "Retour à l'accueil",
+  "checkout.failed.title": "Votre paiement a échoué",
+  "checkout.failed.canceledTitle": "Votre paiement a été annulé",
+  "checkout.failed.expiredTitle": "Votre paiement a expiré",
+  "checkout.failed.text":
+    "Aucun montant n'a été débité. Vous pouvez réessayer en toute sécurité.",
+  "checkout.failed.cartKept": "Votre panier a été conservé.",
+  "checkout.failed.retry": "Réessayer",
+  "checkout.failed.toCart": "Vers le panier",
+  "checkout.failed.help": "Besoin d'aide ? Contactez le service client",
+  "checkout.failed.orderRef": "Numéro de commande : {ref}",
 
   "checkout.validation.required": "Obligatoire",
   "checkout.validation.email": "Saisissez une adresse e-mail valide",
@@ -3110,6 +3201,29 @@ const de: Messages = {
   "checkout.thanks.loadError":
     "Wir konnten die Bestelldaten nicht laden, aber Ihre Zahlung ist ordnungsgemäß eingegangen. Sie erhalten eine Bestätigung per E-Mail.",
   "checkout.thanks.backHome": "Zurück zur Startseite",
+  "checkout.thanks.successBadge": "Zahlung erfolgreich",
+  "checkout.thanks.orderSummary": "Ihre Bestellung",
+  "checkout.thanks.needHelp.title": "Fragen zu Ihrer Bestellung?",
+  "checkout.thanks.needHelp.text":
+    "Unser Team hilft Ihnen gerne — von Lieferzeiten bis zur Produktberatung.",
+  "checkout.thanks.needHelp.cta": "Zum Kundenservice",
+  "checkout.pending.title": "Wir verarbeiten Ihre Zahlung…",
+  "checkout.pending.text":
+    "Ihre Zahlung wird noch von Ihrer Bank bestätigt. Das dauert in der Regel nur wenige Sekunden.",
+  "checkout.pending.hint":
+    "Diese Seite aktualisiert sich automatisch, sobald Ihre Zahlung abgeschlossen ist. Sie müssen nichts tun.",
+  "checkout.pending.refreshNow": "Status jetzt aktualisieren",
+  "checkout.pending.backHome": "Zurück zur Startseite",
+  "checkout.failed.title": "Ihre Zahlung ist fehlgeschlagen",
+  "checkout.failed.canceledTitle": "Ihre Zahlung wurde abgebrochen",
+  "checkout.failed.expiredTitle": "Ihre Zahlung ist abgelaufen",
+  "checkout.failed.text":
+    "Es wurde kein Betrag abgebucht. Sie können es bedenkenlos erneut versuchen.",
+  "checkout.failed.cartKept": "Ihr Warenkorb wurde gespeichert.",
+  "checkout.failed.retry": "Erneut versuchen",
+  "checkout.failed.toCart": "Zum Warenkorb",
+  "checkout.failed.help": "Brauchen Sie Hilfe? Kontaktieren Sie den Kundenservice",
+  "checkout.failed.orderRef": "Bestellnummer: {ref}",
 
   "checkout.validation.required": "Pflichtfeld",
   "checkout.validation.email": "Geben Sie eine gültige E-Mail-Adresse ein",
