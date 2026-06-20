@@ -8,6 +8,9 @@ export const runtime = "nodejs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** In-memory terugval voor de welkomstmail-dedup wanneer KV uit staat (per instance). */
+const memWelcomed = new Set<string>();
+
 export async function POST(req: Request) {
   try {
     const { email, firstName, lastName, tags, source } = await req.json();
@@ -42,18 +45,27 @@ export async function POST(req: Request) {
       lastName,
     }).catch(() => {});
 
-    // Welkomstmail: alléén de allereerste keer per adres. Het inschrijfformulier
-    // zit op meerdere plekken (footer, exit-intent-popup, checkout-vinkje), dus
-    // zonder deze check kreeg een terugkerend adres bij élke inschrijving opnieuw
-    // een welkomstmail. kvSetNX claimt het adres atomisch (geen race); lukt de
-    // claim niet, dan is de welkomstmail al eens verstuurd. Zonder KV (demo) kan
-    // er niet gededupliceerd worden en valt het terug op het oude gedrag.
-    const welcomeKey = `newsletter:welcomed:${email.trim().toLowerCase()}`;
-    const firstSubscribe = isKvEnabled()
-      ? await kvSetNX(welcomeKey, new Date().toISOString())
-      : true;
+    // Welkomstmail: hooguit één keer per adres. Het inschrijfformulier zit op
+    // meerdere plekken (footer, exit-intent-popup, checkout-vinkje), dus zonder
+    // deze check kreeg een terugkerend adres bij élke inschrijving opnieuw een
+    // welkomstmail. Met KV claimt kvSetNX het adres atomisch (dedup tussen
+    // instances én deploys); zonder KV is er een in-memory terugval per instance.
+    const normEmail = email.trim().toLowerCase();
+    const welcomeKey = `newsletter:welcomed:${normEmail}`;
+    let firstSubscribe: boolean;
+    if (isKvEnabled()) {
+      firstSubscribe = await kvSetNX(welcomeKey, new Date().toISOString());
+    } else {
+      firstSubscribe = !memWelcomed.has(normEmail);
+      if (firstSubscribe) memWelcomed.add(normEmail);
+    }
 
-    if (firstSubscribe) {
+    // Inschrijven vanuit de checkout stuurt géén losse welkomstmail: die klant
+    // krijgt al een bestelbevestiging en is (ingelogd) al "welkom geheten". Zo
+    // krijg je geen welkomstmail meer terwijl je gewoon een bestelling plaatst.
+    const fromCheckout = source === "checkout";
+
+    if (firstSubscribe && !fromCheckout) {
       // Branded welkomstmail (Resend; no-op zonder API-key).
       void sendWelcomeEmail({ email, firstName }).catch(() => {});
     }
