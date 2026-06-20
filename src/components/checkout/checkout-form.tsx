@@ -120,6 +120,7 @@ export function CheckoutForm({
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
   // Voorselectie van de gangbaarste methode gebeurt zodra de methodenlijst laadt.
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [issuer, setIssuer] = useState<string | null>(null);
   const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
   const [methodsLoading, setMethodsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -145,6 +146,7 @@ export function CheckoutForm({
 
   function selectMethod(id: string) {
     setPaymentMethod(id);
+    setIssuer(null);
   }
 
   // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
@@ -355,9 +357,16 @@ export function CheckoutForm({
   const payableTotal = Math.round((summary.total + billieSurcharge) * 100) / 100;
 
   const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
-  // Mollie's nieuwe iDEAL kiest de bank op zijn eigen pagina; we vragen niet meer
-  // vooraf om een bank. De knop is actief zodra er een methode gekozen is.
-  const canPay = Boolean(paymentMethod);
+  // iDEAL-banklijst (issuers): toon de bankkeuze op onze eigen pagina alléén
+  // wanneer Mollie ze meelevert (klassieke iDEAL). Bij de nieuwe iDEAL is de lijst
+  // leeg en wordt de issuer genegeerd — dan kiest de klant de bank in de
+  // iDEAL-stap zelf en tonen we geen (dode) tussenstap.
+  const selectedMethod = methods.find((m) => m.id === paymentMethod);
+  const issuers = selectedMethod?.issuers ?? [];
+  const needsIssuer = issuers.length > 0;
+  // Betalen kan zodra er een methode is; vereist een bank zodra er een
+  // banklijst beschikbaar is (dan kiest de klant 'm hier, niet op Mollie).
+  const canPay = Boolean(paymentMethod) && (!needsIssuer || Boolean(issuer));
 
   async function onSubmit(values: FormValues) {
     if (!paymentMethod) {
@@ -499,6 +508,7 @@ export function CheckoutForm({
           surcharge: billieSurcharge,
           kluspasSavings: summary.savings,
           method: paymentMethod,
+          ...(issuer ? { issuer } : {}),
           ...(cardToken ? { cardToken } : {}),
         }),
       });
@@ -783,6 +793,27 @@ export function CheckoutForm({
               onChange={selectMethod}
               loading={methodsLoading}
             />
+            {/* iDEAL-bankkeuze op onze eigen pagina — alleen als Mollie issuers meelevert. */}
+            {needsIssuer && (
+              <div className="mt-4">
+                <Label className="mb-1.5 block">Kies je bank</Label>
+                <select
+                  value={issuer ?? ""}
+                  onChange={(e) => setIssuer(e.target.value || null)}
+                  className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecteer je bank…</option>
+                  {issuers.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Je gaat na het bevestigen direct naar je eigen bank.
+                </p>
+              </div>
+            )}
             {useMollieComponents && (
               <div className="mt-4">
                 <MollieCard ref={cardRef} profileId={mollieProfile!} testmode={Boolean(mollieTest)} />
