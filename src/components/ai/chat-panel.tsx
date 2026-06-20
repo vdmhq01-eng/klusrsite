@@ -137,7 +137,7 @@ export function ChatPanel({
         {
           role: "assistant",
           content:
-            "Sorry, ik kan even niet antwoorden. Probeer het later opnieuw of vraag advies in de winkel.",
+            "Sorry, ik kan even niet antwoorden. Probeer het later opnieuw of vraag advies via de klantenservice.",
         },
       ]);
     } finally {

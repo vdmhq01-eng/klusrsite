@@ -130,7 +130,7 @@ export const articles: Article[] = [
       "Stap 3 — Deel door het rendement: Deel de vierkante meters door het rendement. 47 m² gedeeld door 10 m² per liter is ongeveer 4,7 liter per laag.",
       "Stap 4 — Reken twee lagen: Voor een egaal, dekkend resultaat reken je vrijwel altijd twee lagen. In dit voorbeeld heb je dus circa 9 à 10 liter nodig.",
       "Houd rekening met de ondergrond. Een ruwe, zuigende of felgekleurde muur vraagt meer verf — soms een extra laag of een primer vooraf. Bij een sterk kleurverschil (bijvoorbeeld wit over donkerblauw) bespaart een grondlaag je verf én moeite.",
-      "Twijfel je nog? Vraag het in de winkel: onze ex-schilders rekenen het zo voor je uit en mengen je kleur direct op maat.",
+      "Twijfel je nog? Vraag het via onze Klushulp: onze ex-schilders rekenen het zo voor je uit en mengen je kleur exact op maat.",
     ],
     relatedLinks: [
       { label: "Bekijk alle muurverf", href: "/categorie/verf/binnenverf" },
@@ -353,14 +353,14 @@ export const articles: Article[] = [
     title: "Mengverf: elke kleur op maat laten mengen",
     slug: "mengverf-elke-kleur-laten-mengen",
     excerpt:
-      "Een kleur uit een tijdschrift, een oude verfbon of die ene RAL-code — bij KLUSR mengen we het op de winkel precies na.",
+      "Een kleur uit een tijdschrift, een oude verfbon of die ene RAL-code — bij KLUSR mengen we het precies na en bezorgen we het klaar voor gebruik.",
     image: "https://picsum.photos/seed/klusr-art-mengen/1200/675",
     category: "Inspiratie",
     readingTime: 4,
     date: "2026-03-12",
     author: "Team KLUSR",
     body: [
-      "Mengverf is verf die de winkel op een mengmachine precies in jouw kleur aanmaakt. Je kiest de kleur, wij bepalen de juiste basis en het pigment en mengen het op de gram nauwkeurig. Zo krijg je vrijwel elke kleur, ook tinten die niet standaard op het schap staan.",
+      "Mengverf is verf die wij op een mengmachine precies in jouw kleur aanmaken. Je kiest de kleur, wij bepalen de juiste basis en het pigment en mengen het op de gram nauwkeurig. Zo krijg je vrijwel elke kleur, ook tinten die niet standaard op het schap staan.",
       "Het werkt met een basisblik en kleurpasta. De ‘basis' (bijvoorbeeld een witte of transparante basis) bepaalt hoeveel pigment erin kan: lichte kleuren komen uit een witte basis, diepe en donkere kleuren uit een transparante. Daar hoef jij niets van te weten — de juiste basis kiezen wij voor je.",
       "Je kunt een kleur op verschillende manieren aanleveren: een RAL- of NCS-code, een kleurstaal of stukje geverfd materiaal, of een kleur uit onze digitale kleurkiezer. We mengen dezelfde kleur later probleemloos bij, zolang je het recept of de bon bewaart.",
       "Het grote voordeel is keuzevrijheid en een exacte match. Bijkleuren na een verhuizing of reparatie? Met het bewaarde recept maken we precies dezelfde kleur opnieuw aan.",

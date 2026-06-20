@@ -28,7 +28,7 @@ export const testimonials: Testimonial[] = [
     location: "Arnhem",
     rating: 5,
     title: "Precies op kleur gemengd",
-    body: "Een oude pot van een ander merk laten bijmengen. Exact dezelfde kleur teruggekregen, geen kleurverschil op de muur te zien. Dit doet niet elke winkel je na.",
+    body: "Een oude pot van een ander merk laten bijmengen. Exact dezelfde kleur teruggekregen, geen kleurverschil op de muur te zien. Dit doet niet elke webshop je na.",
     date: "2026-05-22",
     verified: true,
     featured: true,

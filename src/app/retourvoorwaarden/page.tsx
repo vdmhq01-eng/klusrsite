@@ -5,7 +5,7 @@ import { LegalPage, COMPANY } from "@/components/shared/legal-page";
 export const metadata: Metadata = {
   title: "Retourvoorwaarden | KLUSR",
   description:
-    "Retourvoorwaarden van KLUSR: 14 dagen bedenktijd, gratis retourneren (ook in de winkel), terugbetaling en uitzonderingen zoals op kleur gemengde verf.",
+    "Retourvoorwaarden van KLUSR: 14 dagen bedenktijd, gratis retourneren per post met retourlabel, terugbetaling en uitzonderingen zoals op kleur gemengde verf.",
   alternates: { canonical: "/retourvoorwaarden" },
 };
 
@@ -14,7 +14,7 @@ export default function RetourvoorwaardenPage() {
     <LegalPage
       title="Retourvoorwaarden"
       updated="16 juni 2026"
-      intro="Niet helemaal tevreden of toch verkeerd besteld? Geen probleem. Je hebt 14 dagen bedenktijd en retourneren is gratis — online of in een KLUSR-winkel."
+      intro="Niet helemaal tevreden of toch verkeerd besteld? Geen probleem. Je hebt 14 dagen bedenktijd en retourneren is gratis — eenvoudig per post met een retourlabel."
       sections={[
         {
           heading: "1. 14 dagen bedenktijd",
@@ -31,9 +31,9 @@ export default function RetourvoorwaardenPage() {
           heading: "2. Gratis retourneren",
           body: (
             <p>
-              Retourneren is <strong>gratis</strong>. Je kunt je product terugsturen óf gratis
-              inleveren in een van onze <Link href="/winkels">KLUSR-winkels</Link>. Bewaar je
-              bewijs van verzending tot de terugbetaling rond is.
+              Retourneren is <strong>gratis</strong>. Je stuurt je product eenvoudig per post
+              terug met het retourlabel dat je van ons ontvangt. Bewaar je bewijs van verzending
+              tot de terugbetaling rond is.
             </p>
           ),
         },
@@ -43,7 +43,7 @@ export default function RetourvoorwaardenPage() {
             <p>
               Meld je retour binnen de bedenktijd aan via{" "}
               <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> onder vermelding van je
-              bestelnummer, of kom langs in de winkel. Je ontvangt dan de retourinstructies. Je
+              bestelnummer. Je ontvangt dan het retourlabel en de retourinstructies. Je
               mag hiervoor ook het modelformulier voor herroeping (onderaan) gebruiken.
             </p>
           ),

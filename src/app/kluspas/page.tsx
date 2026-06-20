@@ -35,7 +35,7 @@ const benefits = [
     icon: Tag,
     title: "Altijd de laagste KLUSRPAS-prijs",
     description:
-      "Direct korting op het hele assortiment — online én in de winkel.",
+      "Direct korting op het hele assortiment in de webshop.",
   },
   {
     icon: Gift,
@@ -84,17 +84,17 @@ const faqs = [
   {
     question: "Hoe vraag ik de KLUSRPAS aan?",
     answer:
-      "Vul hierboven je e-mailadres in. Je ontvangt je digitale KLUSRPAS binnen enkele minuten in je mailbox. Aanmelden kan ook aan de kassa in onze winkel.",
+      "Vul hierboven je e-mailadres in. Je ontvangt je digitale KLUSRPAS binnen enkele minuten in je mailbox.",
   },
   {
-    question: "Kan ik de KLUSRPAS online én in de winkel gebruiken?",
+    question: "Hoe gebruik ik de KLUSRPAS in de webshop?",
     answer:
-      "Ja. In de webshop vul je je gegevens in bij het afrekenen en zie je de KLUSRPAS-prijs automatisch. In de winkel laat je de digitale pas scannen of noem je je gegevens aan de kassa.",
+      "Heel eenvoudig: zodra je bent ingelogd of je gegevens invult bij het afrekenen, wordt de KLUSRPAS-prijs automatisch toegepast. Je ziet je voordeel meteen in je winkelwagen verrekend.",
   },
   {
     question: "Hoe werkt het sparen van klustegoed?",
     answer:
-      "Bij iedere aankoop met je KLUSRPAS spaar je automatisch klustegoed. Dat tegoed kun je bij een volgende bestelling of winkelbezoek inzetten als korting.",
+      "Bij iedere aankoop met je KLUSRPAS spaar je automatisch klustegoed. Dat tegoed kun je bij een volgende bestelling inzetten als korting.",
   },
   {
     question: "Wat gebeurt er met mijn gegevens?",

@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const mock = product
       ? `De ${product.title} is een goede keuze voor ${
           product.subCategory ?? product.category
-        }. ${product.highlights[0]?.toLowerCase() ?? "Hoge kwaliteit"} en eenvoudig te verwerken. Combineer met het juiste gereedschap voor het beste resultaat. Twijfel je over de hoeveelheid of kleur? Vraag gerust verder of loop binnen voor advies van onze ex-schilders.`
+        }. ${product.highlights[0]?.toLowerCase() ?? "Hoge kwaliteit"} en eenvoudig te verwerken. Combineer met het juiste gereedschap voor het beste resultaat. Twijfel je over de hoeveelheid of kleur? Vraag gerust verder of neem contact op met de klantenservice voor advies van onze ex-schilders.`
       : "Vertel me wat je precies gaat doen, dan adviseer ik je graag over de juiste verf en benodigdheden.";
 
     const { text, source } = await complete({

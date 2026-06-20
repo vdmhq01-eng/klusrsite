@@ -18,6 +18,15 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  async redirects() {
+    // KLUSR is 100% online — er zijn geen fysieke winkels. De oude
+    // /winkels-pagina's zijn verwijderd; verwijs oude links/SEO permanent
+    // naar de homepage zodat er geen 404's of dode links ontstaan.
+    return [
+      { source: "/winkels", destination: "/", permanent: true },
+      { source: "/winkels/:slug", destination: "/", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -77,7 +77,7 @@ const GENERIC_SUBJECT =
 
 /**
  * Losse, NIET-categorie sfeerbeelden ("site-slots"): de homepage-banner en de
- * advies/winkels-banden. Worden net als de categorie-hero's via de admin-tool
+ * advies-band. Worden net als de categorie-hero's via de admin-tool
  * gegenereerd en onder dezelfde `hero:<slug>`-KV-keys bewaard, zodat consumenten
  * ze met getHeroImage(slug) kunnen ophalen en anders op de gradient terugvallen.
  *
@@ -95,22 +95,18 @@ const SITE_SLOT_SUBJECTS: Record<string, string> = {
   advies:
     "a cosy styled Dutch interior corner with a freshly painted accent wall and green " +
     "plants, styled like an interior magazine spread, warm and inspiring",
-  winkels:
-    "a welcoming modern paint and DIY store interior with neat colour-swatch displays " +
-    "and tidy shelves, bright and friendly, inviting customers in",
 };
 
 /** Menselijke labels voor de site-slots (Nederlandse admin-UI). */
 const SITE_SLOT_LABELS: Record<string, string> = {
   "home-hero": "Homepage-banner",
   advies: "Advies & inspiratie",
-  winkels: "Winkels",
 };
 
 /**
  * Bouw de volledige fal.ai-prompt voor een slug: onderwerp + de gedeelde
  * premium/cinematische stijlinstructie. Werkt voor zowel categorie-slugs als de
- * losse site-slots (home-hero / advies / winkels); valt anders terug op een
+ * losse site-slots (home-hero / advies); valt anders terug op een
  * generiek onderwerp.
  */
 export function heroPrompt(slug: string): string {

@@ -113,8 +113,8 @@ export function KleurkiezerClient({ colorProducts }: KleurkiezerClientProps) {
             <div className="flex items-start gap-2 rounded-xl border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               Kleuren op een beeldscherm kunnen licht afwijken van het echte
-              resultaat. Vraag in de winkel naar een kleurstaal voor 100%
-              zekerheid.
+              resultaat. Bestel een proefpotje of kleurtester voor 100%
+              zekerheid voordat je de hele hoeveelheid laat mengen.
             </div>
           </div>
         </div>

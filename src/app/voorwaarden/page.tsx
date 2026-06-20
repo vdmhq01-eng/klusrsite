@@ -84,9 +84,9 @@ export default function VoorwaardenPage() {
             <p>
               Voor 19:00 uur op werkdagen besteld, is je bestelling de volgende werkdag in huis
               (tenzij anders vermeld). Verzending is gratis vanaf € 50; daaronder rekenen we
-              € 4,95 verzendkosten. Bestellingen kunnen ook gratis in een KLUSR-winkel worden
-              afgehaald. Het risico van beschadiging en/of vermissing van producten gaat over op
-              de klant op het moment van bezorging.
+              € 4,95 verzendkosten. We bezorgen door heel Nederland en België. Het risico van
+              beschadiging en/of vermissing van producten gaat over op de klant op het moment van
+              bezorging.
             </p>
           ),
         },
@@ -130,7 +130,8 @@ export default function VoorwaardenPage() {
           body: (
             <p>
               Wil je gebruikmaken van je herroepingsrecht, meld dit dan binnen de bedenktijd via{" "}
-              <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> of in een KLUSR-winkel.
+              <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>. Je ontvangt dan het
+              retourlabel en de retourinstructies.
               Stuur het product compleet en, indien redelijkerwijs mogelijk, in originele staat
               en verpakking retour. KLUSR betaalt het aankoopbedrag binnen 14 dagen terug,
               eventueel onder inhouding van een waardevermindering bij gebruik dat verder gaat
