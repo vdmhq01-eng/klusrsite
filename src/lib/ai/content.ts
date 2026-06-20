@@ -88,7 +88,7 @@ export function buildContentPrompt(
       return {
         system: CONTENT_SYSTEM_PROMPT,
         prompt: `${context}\n\nSchrijf een wervende productbeschrijving voor de webshop van 2 korte alinea's (samen 60-110 woorden) voor "${label}". Benoem waarvoor het product geschikt is, de belangrijkste voordelen en een praktische verwerkingstip. Geen koppen, geen opsommingstekens, geen prijzen.`,
-        mock: `${label} is een betrouwbare keuze voor klussers die een professioneel resultaat willen. Het product is eenvoudig te verwerken, gaat lang mee en levert een strak, duurzaam eindresultaat — precies wat je van KLUSR mag verwachten.\n\nDankzij de fijne verwerking werk je snel en netjes, ook als je minder ervaring hebt. Twijfel je over de aanpak of het juiste gereedschap? Onze ex-schilders helpen je graag in de winkel of via de klushulp.`,
+        mock: `${label} is een betrouwbare keuze voor klussers die een professioneel resultaat willen. Het product is eenvoudig te verwerken, gaat lang mee en levert een strak, duurzaam eindresultaat — precies wat je van KLUSR mag verwachten.\n\nDankzij de fijne verwerking werk je snel en netjes, ook als je minder ervaring hebt. Twijfel je over de aanpak of het juiste gereedschap? Onze ex-schilders helpen je graag via de klushulp of klantenservice.`,
       };
 
     case "specifications":

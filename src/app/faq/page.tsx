@@ -63,7 +63,7 @@ export default function FaqPage() {
           a: (
             <>
               {t("faq.delivery.pickup.aPre")}
-              <Link href="/winkels">{t("faq.delivery.pickup.aLink")}</Link>
+              <Link href="/klantenservice">{t("faq.delivery.pickup.aLink")}</Link>
               {t("faq.delivery.pickup.aPost")}
             </>
           ),

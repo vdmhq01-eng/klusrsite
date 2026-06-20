@@ -32,7 +32,7 @@ const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
-  "@type": "Store",
+  "@type": "Organization",
   name: "KLUSR",
   url: siteUrl,
   logo: `${siteUrl}/icon.svg`,

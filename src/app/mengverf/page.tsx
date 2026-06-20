@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Palette, Truck, Check, ArrowRight, Droplet, Store } from "lucide-react";
+import { Palette, Truck, Check, ArrowRight, Droplet } from "lucide-react";
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 import { Button } from "@/components/ui/button";
 
@@ -20,7 +20,7 @@ const STEPS = [
   {
     icon: Palette,
     title: "1. Kies je kleur",
-    body: "Zoek in onze kleurkiezer uit duizenden kleuren, of breng een staaltje mee naar de winkel.",
+    body: "Zoek in onze kleurkiezer uit duizenden kleuren, of geef je eigen RAL- of NCS-code door.",
   },
   {
     icon: Droplet,
@@ -30,7 +30,7 @@ const STEPS = [
   {
     icon: Truck,
     title: "3. Klaar voor gebruik",
-    body: "Ophalen in de winkel of thuisbezorgd. Dezelfde kleur later weer nodig? Wij onthouden je recept.",
+    body: "Thuisbezorgd door heel Nederland. Dezelfde kleur later weer nodig? Wij onthouden je recept.",
   },
 ];
 
@@ -118,7 +118,7 @@ export default function MengverfPage() {
           Zo werkt mengverf
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          In drie stappen van kleur naar kwast — met deskundig advies in elke winkel.
+          In drie stappen van kleur naar kwast — met deskundig advies van onze ex-schilders.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {STEPS.map(({ icon: Icon, title, body }) => (
@@ -161,7 +161,7 @@ export default function MengverfPage() {
           <div>
             <h2 className="text-xl font-black sm:text-2xl">Klaar om te mengen?</h2>
             <p className="mt-1 text-sm text-white/90">
-              Kies je kleur online of loop binnen bij een KLUSR-winkel.
+              Kies je kleur online en wij bezorgen je verf klaar voor gebruik.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -177,10 +177,7 @@ export default function MengverfPage() {
               variant="outline"
               className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <Link href="/winkels">
-                <Store className="h-5 w-5" />
-                Vind een winkel
-              </Link>
+              <Link href="/categorie/verf">Bekijk verf</Link>
             </Button>
           </div>
         </div>

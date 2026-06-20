@@ -800,7 +800,7 @@ function uspBar(): string {
   );
 }
 
-/** Winkel-reviews badge met het site-brede rating uit testimonialStats. */
+/** Reviews-badge met het site-brede rating uit testimonialStats. */
 function storeReviewsBadge(): string {
   const avg = formatAverage(testimonialStats.average);
   const count = formatCount(testimonialStats.count);
@@ -808,7 +808,7 @@ function storeReviewsBadge(): string {
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">` +
     `<tr><td align="center" style="background:${C.bg};border:1px solid ${C.border};border-radius:999px;padding:7px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${C.text};white-space:nowrap;">` +
     `<span style="color:#F5A623;font-size:14px;">&#9733;</span> ` +
-    `<strong>${avg}</strong> <span style="color:${C.muted};">&middot; ${count} winkel-reviews</span>` +
+    `<strong>${avg}</strong> <span style="color:${C.muted};">&middot; ${count} klantbeoordelingen</span>` +
     `</td></tr></table>`
   );
 }
@@ -1144,7 +1144,7 @@ export function newsletterEmail({
   const textLines = [
     (intro || "").trim(),
     "",
-    `Winkel-reviews: ${formatAverage(testimonialStats.average)} sterren (${formatCount(testimonialStats.count)} reviews)`,
+    `Klantbeoordelingen: ${formatAverage(testimonialStats.average)} sterren (${formatCount(testimonialStats.count)} reviews)`,
     "Gratis verzending vanaf 50 euro | Voor 19:00 besteld, morgen in huis | 30.000 kleuren op maat gemengd | Advies van ex-schilders | 5% met KLUSRPAS",
     "",
     ...(featured.length

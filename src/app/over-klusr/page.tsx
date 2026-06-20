@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Paintbrush, Sparkles, ShieldCheck, MapPin, ArrowRight } from "lucide-react";
+import { Paintbrush, Sparkles, ShieldCheck, Truck, ArrowRight } from "lucide-react";
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { stores } from "@/lib/data/stores";
 import { t } from "@/lib/i18n/server";
 import type { MessageKey } from "@/lib/i18n/dictionaries";
 
@@ -95,29 +94,45 @@ export default function OverKlusrPage() {
         </div>
       </section>
 
-      {/* Stores */}
+      {/* Online proposition */}
       <section className="container-klusr">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-2xl font-extrabold tracking-tight">{t("about.stores.title")}</h2>
           <Button asChild variant="outline">
-            <Link href="/winkels">
+            <Link href="/categorie/verf">
               {t("about.stores.all")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {stores.map((s) => (
-            <Link
-              key={s.id}
-              href={`/winkels/${s.slug}`}
-              className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card"
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {[
+            {
+              icon: Truck,
+              title: "Bezorgd door heel Nederland en België",
+              body: "Voor 19:00 besteld op werkdagen? Dan ligt je bestelling de volgende dag in huis.",
+            },
+            {
+              icon: Paintbrush,
+              title: "Je kleur exact gemengd",
+              body: "Duizenden kleuren uit alle bekende waaiers, professioneel op maat gemengd en klaar voor gebruik.",
+            },
+            {
+              icon: Sparkles,
+              title: "Persoonlijk advies, online",
+              body: "Onze ex-schilders helpen je via de Klushulp en klantenservice — snel en deskundig.",
+            },
+          ].map(({ icon: Icon, title, body }) => (
+            <div
+              key={title}
+              className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4 shadow-card"
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                <MapPin className="h-5 w-5" />
+                <Icon className="h-5 w-5" />
               </span>
-              <span className="font-semibold">{s.city}</span>
-            </Link>
+              <h3 className="font-bold leading-tight">{title}</h3>
+              <p className="text-sm text-muted-foreground">{body}</p>
+            </div>
           ))}
         </div>
       </section>

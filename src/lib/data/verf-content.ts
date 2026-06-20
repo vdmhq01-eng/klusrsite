@@ -326,7 +326,7 @@ function faqFor(spec: LeafSpec): { q: string; a: string }[] {
   }
   base.push({
     q: "Voor 19:00 besteld, morgen in huis?",
-    a: "Klopt. Bestel je op werkdagen vóór 19:00, dan ligt je bestelling de volgende dag op de mat. Liever afhalen? Dat kan in onze winkel in Nijverdal.",
+    a: "Klopt. Bestel je op werkdagen vóór 19:00, dan ligt je bestelling de volgende dag op de mat. We bezorgen door heel Nederland en België.",
   });
   return [...(spec.faq ?? []), ...base];
 }

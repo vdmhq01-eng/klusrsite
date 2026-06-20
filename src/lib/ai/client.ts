@@ -114,7 +114,7 @@ export async function chat({
 }
 
 const defaultMock =
-  "Op basis van je klus adviseren we te beginnen met een goede voorbereiding en het juiste gereedschap. Vraag in de winkel gerust naar advies van onze ex-schilders.";
+  "Op basis van je klus adviseren we te beginnen met een goede voorbereiding en het juiste gereedschap. Vraag gerust naar advies van onze ex-schilders via de klantenservice.";
 
 /** Lightweight keyword-based fallback so the chat always feels responsive. */
 export function buildHeuristicReply(question: string): string {

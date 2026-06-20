@@ -819,7 +819,7 @@ const nl: Messages = {
   "home.kluspas.cta": "Vraag je KLUSRPAS aan",
   "home.kluspas.benefit1": "Altijd de scherpste KLUSRPAS-prijs",
   "home.kluspas.benefit2": "Exclusieve acties en voorrang bij uitverkoop",
-  "home.kluspas.benefit3": "Gratis kleuradvies in de winkel",
+  "home.kluspas.benefit3": "Gratis kleuradvies via de Klushulp",
   "home.kluspas.benefit4": "Spaar voor klustegoed",
 
   "home.inspiration.title": "Inspiratie & advies",
@@ -874,7 +874,7 @@ const nl: Messages = {
   "cart.continueShopping": "Verder winkelen",
   "cart.toCart": "Naar winkelwagen",
 
-  "cart.usp.returns": "Gratis retouren in de winkel",
+  "cart.usp.returns": "Gratis retourneren",
   "cart.usp.payment": "Veilig betalen via Mollie",
 
   "cart.upsell.title": "Maak je klus compleet",
@@ -1033,9 +1033,9 @@ const nl: Messages = {
   "service.contact.call.description": "Ma t/m vr 09:00 - 18:00",
   "service.contact.mail.title": "Mail ons",
   "service.contact.mail.description": "Reactie binnen 1 werkdag",
-  "service.contact.store.title": "Bezoek een winkel",
-  "service.contact.store.description": "Persoonlijk advies in de winkel",
-  "service.contact.store.action": "Bekijk winkels",
+  "service.contact.store.title": "Kleuradvies",
+  "service.contact.store.description": "Gratis advies van onze ex-schilders",
+  "service.contact.store.action": "Naar de kleurkiezer",
   "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Direct antwoord, dag en nacht",
   "service.contact.ai.action": "Stel je vraag",
@@ -1053,7 +1053,7 @@ const nl: Messages = {
 
   "service.group.shipping.title": "Verzending & retour",
   "service.group.shipping.intro":
-    "Gratis verzending vanaf {free} in NL en BE, voor 19:00 besteld is morgen in huis, en gratis retourneren in de winkel. Naar de rest van de EU vanaf {eu}.",
+    "Gratis verzending vanaf {free} in NL en BE, voor 19:00 besteld is morgen in huis, en gratis retour per post met retourlabel. Naar de rest van de EU vanaf {eu}.",
   "service.group.payment.title": "Veilig betalen",
   "service.group.payment.intro":
     "Betaal eenvoudig en veilig met iDEAL, Bancontact, creditcard of achteraf met Klarna via Mollie.",
@@ -1078,7 +1078,7 @@ const nl: Messages = {
     "We bezorgen in de hele EU. Naar België is verzending gratis vanaf {beFree}; naar de overige EU-landen geldt een vast tarief per land vanaf {eu}, dat je tijdens het afrekenen ziet. Buiten de EU — waaronder Zwitserland en het Verenigd Koninkrijk — verzenden we niet, vanwege de douane.",
   "service.faq.shipping.return.q": "Hoe retourneer ik een product?",
   "service.faq.shipping.return.a":
-    "Retourneren is gratis in al onze winkels — neem je product en je orderbevestiging mee. Liever per post? Meld je retour aan via je account en gebruik het retourlabel. Je hebt 14 dagen bedenktijd.",
+    "Retourneren is gratis per post met een retourlabel. Meld je retour aan via je account of de klantenservice, dan ontvang je het retourlabel en de instructies. Je hebt 14 dagen bedenktijd.",
 
   "service.faq.payment.methods.q": "Welke betaalmethodes accepteren jullie?",
   "service.faq.payment.methods.a":
@@ -1096,22 +1096,22 @@ const nl: Messages = {
   "service.faq.warranty.damaged.q": "Mijn product is beschadigd aangekomen, wat nu?",
   "service.faq.warranty.damaged.a":
     "Vervelend! Neem binnen 48 uur contact op met onze klantenservice en stuur een foto mee. We sturen kosteloos een vervangend product of storten het bedrag terug.",
-  "service.faq.warranty.store.q": "Kan ik in de winkel terecht voor service?",
+  "service.faq.warranty.store.q": "Hoe krijg ik service of advies?",
   "service.faq.warranty.store.a":
-    "Zeker. Onze ex-schilders helpen je graag verder met advies, reparaties of vragen over je aankoop. Loop gerust binnen in een van onze winkels.",
+    "KLUSR is volledig online. Onze ex-schilders helpen je graag verder met advies of vragen over je aankoop via de klantenservice of de Klushulp — je krijgt snel persoonlijk antwoord.",
 
   "service.faq.mengverf.return.q": "Kan ik op kleur gemengde verf retourneren?",
   "service.faq.mengverf.return.a":
     "Op kleur gemengde verf mengen we speciaal voor jou op maat. Daarom is deze — net als andere op maat gemaakte producten — wettelijk uitgesloten van het herroepingsrecht en kunnen we mengverf niet terugnemen. Is er onverhoopt iets mis met de kleur of het product? Neem dan contact op, dan lossen we het samen kosteloos op.",
   "service.faq.mengverf.match.q": "Hoe nauwkeurig is de kleurmatch?",
   "service.faq.mengverf.match.a":
-    "We mengen op basis van professionele kleurcodes (o.a. RAL, Gamma en AkzoNobel) voor een exacte match. Twijfel je over een kleur? Vraag in de winkel een proefstaal of bestel eerst een kleurtester voordat je de hele hoeveelheid laat mengen.",
+    "We mengen op basis van professionele kleurcodes (o.a. RAL, Gamma en AkzoNobel) voor een exacte match. Twijfel je over een kleur? Bestel eerst een kleurtester of proefpotje voordat je de hele hoeveelheid laat mengen — houd er rekening mee dat schermkleuren licht kunnen afwijken.",
   "service.faq.mengverf.amount.q": "Hoeveel verf heb ik nodig?",
   "service.faq.mengverf.amount.a":
     "Reken globaal op 1 liter per 8–10 m² per laag. Op de productpagina en via onze Klushulp rekenen we het exact voor je uit, zodat je niet te veel of te weinig bestelt.",
-  "service.faq.mengverf.instore.q": "Kan ik verf ook in de winkel laten mengen?",
+  "service.faq.mengverf.instore.q": "Hoe laat ik verf op kleur mengen?",
   "service.faq.mengverf.instore.a":
-    "Zeker. Onze kleurspecialisten mengen je verf vakkundig terwijl je wacht. Kom langs in een KLUSR-winkel met je kleurkeuze, of kies je kleur alvast online.",
+    "Kies online je kleur in de kleurkiezer en bestel de bijbehorende verf. Onze kleurspecialisten mengen je verf vakkundig op de exacte kleur en we bezorgen 'm klaar voor gebruik bij je thuis.",
 
   "service.faq.kluspas.what.q": "Wat is de KLUSRPAS en wat kost het?",
   "service.faq.kluspas.what.a":
@@ -1132,11 +1132,11 @@ const nl: Messages = {
     "Nee, je kunt als gast bestellen. Met een account bewaar je wel je gegevens, bestelhistorie en je KLUSRPAS-voordelen op één plek.",
   "service.faq.general.mix.q": "Kan ik verf op kleur laten mengen?",
   "service.faq.general.mix.a":
-    "Ja! Wij mengen elke gewenste kleur op maat. Kies online je kleur of kom langs in de winkel, waar onze kleurspecialisten je verf vakkundig mengen terwijl je wacht.",
+    "Ja! Wij mengen elke gewenste kleur op maat. Kies online je kleur in de kleurkiezer, dan mengen onze kleurspecialisten je verf vakkundig op de exacte kleur en bezorgen we 'm klaar voor gebruik.",
 
   "service.guarantee.title": "Niet goed? Geld terug.",
   "service.guarantee.text":
-    "We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd, gratis retour (ook in de winkel) en wettelijke garantie op alles. Op kleur gemengde verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het altijd kosteloos op.",
+    "We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd, gratis retour per post met retourlabel en wettelijke garantie op alles. Op kleur gemengde verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het altijd kosteloos op.",
   "service.guarantee.cta": "Lees de retourvoorwaarden",
 
   "service.contactBlock.title": "Staat je vraag er niet bij?",
@@ -1145,7 +1145,7 @@ const nl: Messages = {
   "service.contactBlock.preferPre": "Liever meteen antwoord? ",
   "service.contactBlock.preferLink": "Vraag de Klushulp",
   "service.contactBlock.preferPost": " — 24/7 beschikbaar.",
-  "service.contactBlock.viewStorePage": "Bekijk winkelpagina",
+  "service.contactBlock.viewStorePage": "Stel je vraag aan de Klushulp",
 
   "faq.meta.breadcrumb": "Veelgestelde vragen",
   "faq.badge": "Hulp & uitleg",
@@ -1175,11 +1175,11 @@ const nl: Messages = {
   "faq.delivery.when.q": "Wanneer is mijn bestelling in huis?",
   "faq.delivery.when.a":
     "Voor 19:00 uur op werkdagen besteld, morgen in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
-  "faq.delivery.pickup.q": "Kan ik in de winkel afhalen?",
-  "faq.delivery.pickup.aPre": "Ja, afhalen in een KLUSR-winkel is gratis. Bekijk onze ",
-  "faq.delivery.pickup.aLink": "winkels",
-  "faq.delivery.pickup.aPost": ".",
-  "faq.delivery.pickup.text": "Ja, afhalen in een KLUSR-winkel is gratis.",
+  "faq.delivery.pickup.q": "Kan ik mijn bestelling afhalen?",
+  "faq.delivery.pickup.aPre": "KLUSR is volledig online — we bezorgen door heel Nederland en België. Vragen over je bezorging? Onze ",
+  "faq.delivery.pickup.aLink": "klantenservice",
+  "faq.delivery.pickup.aPost": " helpt je graag.",
+  "faq.delivery.pickup.text": "KLUSR is volledig online — we bezorgen door heel Nederland en België. Afhalen is niet mogelijk.",
   "faq.delivery.return.q": "Hoe retourneer ik een product?",
   "faq.delivery.return.aPre": "Je hebt 14 dagen bedenktijd. Meld je retour bij onze ",
   "faq.delivery.return.aLink": "klantenservice",
@@ -1237,12 +1237,12 @@ const nl: Messages = {
 
   "about.story.title": "Ons verhaal",
   "about.story.p1":
-    "Wat begon als één winkel met een mengmachine en een hoop kennis, groeide uit tot een keten van klusspecialisten in Overijssel en daarbuiten. De rode draad bleef hetzelfde: het beste advies en de juiste materialen, voor zowel de doe-het-zelver als de vakman.",
+    "Wat begon met een mengmachine en een hoop kennis, groeide uit tot dé online klusspecialist voor doe-het-zelvers en vakmensen. De rode draad bleef hetzelfde: het beste advies en de juiste materialen, voor zowel de doe-het-zelver als de vakman.",
   "about.story.p2":
-    "Vandaag combineren we die winkelervaring met een complete webshop. Online de scherpste KLUSRPAS-prijs en je kleur exact gemengd, in de winkel het persoonlijke advies. Het beste van twee werelden.",
+    "Vandaag brengen we die kennis samen in een complete webshop. Online de scherpste KLUSRPAS-prijs, je kleur exact gemengd en bezorgd tot aan je voordeur, met persoonlijk advies van onze ex-schilders via de Klushulp en klantenservice.",
 
-  "about.stores.title": "Onze winkels",
-  "about.stores.all": "Alle winkels",
+  "about.stores.title": "Online, door heel Nederland",
+  "about.stores.all": "Bekijk het assortiment",
 
   "about.cta.title": "Aan de slag?",
   "about.cta.text": "Vraag gratis je KLUSRPAS aan en pak meteen voordeel.",
@@ -1519,7 +1519,7 @@ const en: Messages = {
   "home.kluspas.cta": "Apply for your KLUSRPAS",
   "home.kluspas.benefit1": "Always the sharpest KLUSRPAS price",
   "home.kluspas.benefit2": "Exclusive deals and priority during sales",
-  "home.kluspas.benefit3": "Free colour advice in store",
+  "home.kluspas.benefit3": "Free colour advice via the Klushulp",
   "home.kluspas.benefit4": "Save up for project credit",
 
   "home.inspiration.title": "Inspiration & advice",
@@ -1574,7 +1574,7 @@ const en: Messages = {
   "cart.continueShopping": "Continue shopping",
   "cart.toCart": "Go to cart",
 
-  "cart.usp.returns": "Free returns in store",
+  "cart.usp.returns": "Free returns",
   "cart.usp.payment": "Secure payment via Mollie",
 
   "cart.upsell.title": "Complete your project",
@@ -1733,9 +1733,9 @@ const en: Messages = {
   "service.contact.call.description": "Mon–Fri 09:00 - 18:00",
   "service.contact.mail.title": "Email us",
   "service.contact.mail.description": "Reply within 1 working day",
-  "service.contact.store.title": "Visit a store",
-  "service.contact.store.description": "Personal advice in store",
-  "service.contact.store.action": "View stores",
+  "service.contact.store.title": "Colour advice",
+  "service.contact.store.description": "Free advice from our former painters",
+  "service.contact.store.action": "Go to the colour picker",
   "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Instant answers, day and night",
   "service.contact.ai.action": "Ask your question",
@@ -1753,7 +1753,7 @@ const en: Messages = {
 
   "service.group.shipping.title": "Shipping & returns",
   "service.group.shipping.intro":
-    "Free shipping from {free} in NL and BE, ordered before 19:00 means delivery tomorrow, and free returns in store. To the rest of the EU from {eu}.",
+    "Free shipping from {free} in NL and BE, ordered before 19:00 means delivery tomorrow, and free returns by post with a return label. To the rest of the EU from {eu}.",
   "service.group.payment.title": "Secure payment",
   "service.group.payment.intro":
     "Pay easily and securely with iDEAL, Bancontact, credit card or pay later with Klarna via Mollie.",
@@ -1778,7 +1778,7 @@ const en: Messages = {
     "We deliver throughout the EU. Shipping to Belgium is free from {beFree}; for the other EU countries a fixed rate per country applies from {eu}, which you'll see during checkout. We don't ship outside the EU — including Switzerland and the United Kingdom — due to customs.",
   "service.faq.shipping.return.q": "How do I return a product?",
   "service.faq.shipping.return.a":
-    "Returns are free in all our stores — bring your product and your order confirmation. Prefer to return by post? Register your return via your account and use the return label. You have 14 days to change your mind.",
+    "Returns are free by post with a return label. Register your return via your account or customer service and you'll receive the return label and instructions. You have 14 days to change your mind.",
 
   "service.faq.payment.methods.q": "Which payment methods do you accept?",
   "service.faq.payment.methods.a":
@@ -1796,22 +1796,22 @@ const en: Messages = {
   "service.faq.warranty.damaged.q": "My product arrived damaged, what now?",
   "service.faq.warranty.damaged.a":
     "How annoying! Contact our customer service within 48 hours and include a photo. We'll send a replacement product free of charge or refund the amount.",
-  "service.faq.warranty.store.q": "Can I go to the store for service?",
+  "service.faq.warranty.store.q": "How do I get service or advice?",
   "service.faq.warranty.store.a":
-    "Certainly. Our former painters are happy to help you with advice, repairs or questions about your purchase. Feel free to drop by one of our stores.",
+    "KLUSR is fully online. Our former painters are happy to help you with advice or questions about your purchase via customer service or the Klushulp — you'll get a quick, personal answer.",
 
   "service.faq.mengverf.return.q": "Can I return colour-mixed paint?",
   "service.faq.mengverf.return.a":
     "We mix colour-mixed paint to measure especially for you. That's why it's — like other made-to-measure products — legally excluded from the right of withdrawal and we can't take mixed paint back. Is something unexpectedly wrong with the colour or the product? Then get in touch and we'll sort it out together free of charge.",
   "service.faq.mengverf.match.q": "How accurate is the colour match?",
   "service.faq.mengverf.match.a":
-    "We mix based on professional colour codes (including RAL, Gamma and AkzoNobel) for an exact match. Unsure about a colour? Ask for a sample in store or order a colour tester first before having the whole quantity mixed.",
+    "We mix based on professional colour codes (including RAL, Gamma and AkzoNobel) for an exact match. Unsure about a colour? Order a colour tester or sample pot first before having the whole quantity mixed — keep in mind that on-screen colours may differ slightly.",
   "service.faq.mengverf.amount.q": "How much paint do I need?",
   "service.faq.mengverf.amount.a":
     "As a rough guide, count on 1 litre per 8–10 m² per coat. On the product page and via our Klushulp we calculate it exactly for you, so you don't order too much or too little.",
-  "service.faq.mengverf.instore.q": "Can I also have paint mixed in store?",
+  "service.faq.mengverf.instore.q": "How do I have paint mixed to colour?",
   "service.faq.mengverf.instore.a":
-    "Certainly. Our colour specialists mix your paint expertly while you wait. Drop by a KLUSR store with your colour choice, or choose your colour online in advance.",
+    "Choose your colour online in the colour picker and order the matching paint. Our colour specialists mix your paint expertly to the exact colour and we deliver it to your door, ready to use.",
 
   "service.faq.kluspas.what.q": "What is the KLUSRPAS and how much does it cost?",
   "service.faq.kluspas.what.a":
@@ -1832,11 +1832,11 @@ const en: Messages = {
     "No, you can order as a guest. With an account you do keep your details, order history and your KLUSRPAS benefits in one place.",
   "service.faq.general.mix.q": "Can I have paint mixed to colour?",
   "service.faq.general.mix.a":
-    "Yes! We mix any desired colour to measure. Choose your colour online or drop by the store, where our colour specialists mix your paint expertly while you wait.",
+    "Yes! We mix any desired colour to measure. Choose your colour online in the colour picker and our colour specialists mix your paint expertly to the exact colour, then deliver it ready to use.",
 
   "service.guarantee.title": "Not happy? Money back.",
   "service.guarantee.text":
-    "We want you to start your project with peace of mind. That's why: 14 days to change your mind, free returns (also in store) and a statutory warranty on everything. Colour-mixed paint is made to order and therefore excluded from returns — but in the event of a defect we'll always sort it out free of charge.",
+    "We want you to start your project with peace of mind. That's why: 14 days to change your mind, free returns by post with a return label and a statutory warranty on everything. Colour-mixed paint is made to order and therefore excluded from returns — but in the event of a defect we'll always sort it out free of charge.",
   "service.guarantee.cta": "Read the return policy",
 
   "service.contactBlock.title": "Can't find your question?",
@@ -1845,7 +1845,7 @@ const en: Messages = {
   "service.contactBlock.preferPre": "Prefer an instant answer? ",
   "service.contactBlock.preferLink": "Ask the Klushulp",
   "service.contactBlock.preferPost": " — available 24/7.",
-  "service.contactBlock.viewStorePage": "View store page",
+  "service.contactBlock.viewStorePage": "Ask the Klushulp",
 
   "faq.meta.breadcrumb": "Frequently asked questions",
   "faq.badge": "Help & info",
@@ -1875,11 +1875,11 @@ const en: Messages = {
   "faq.delivery.when.q": "When will my order arrive?",
   "faq.delivery.when.a":
     "Ordered before 19:00 on working days, delivered tomorrow. Shipping is free from € 50, below that we charge € 4,95.",
-  "faq.delivery.pickup.q": "Can I pick up in store?",
-  "faq.delivery.pickup.aPre": "Yes, pickup at a KLUSR store is free. View our ",
-  "faq.delivery.pickup.aLink": "stores",
-  "faq.delivery.pickup.aPost": ".",
-  "faq.delivery.pickup.text": "Yes, pickup at a KLUSR store is free.",
+  "faq.delivery.pickup.q": "Can I collect my order?",
+  "faq.delivery.pickup.aPre": "KLUSR is fully online — we deliver throughout the Netherlands and Belgium. Questions about your delivery? Our ",
+  "faq.delivery.pickup.aLink": "customer service",
+  "faq.delivery.pickup.aPost": " is happy to help.",
+  "faq.delivery.pickup.text": "KLUSR is fully online — we deliver throughout the Netherlands and Belgium. Collection is not available.",
   "faq.delivery.return.q": "How do I return a product?",
   "faq.delivery.return.aPre": "You have 14 days to change your mind. Report your return to our ",
   "faq.delivery.return.aLink": "customer service",
@@ -1937,12 +1937,12 @@ const en: Messages = {
 
   "about.story.title": "Our story",
   "about.story.p1":
-    "What began as a single store with a mixing machine and a lot of knowledge grew into a chain of DIY specialists in Overijssel and beyond. The common thread stayed the same: the best advice and the right materials, for both the do-it-yourselfer and the professional.",
+    "What began with a mixing machine and a lot of knowledge grew into the online DIY specialist for do-it-yourselfers and professionals. The common thread stayed the same: the best advice and the right materials, for both the do-it-yourselfer and the professional.",
   "about.story.p2":
-    "Today we combine that in-store experience with a complete webshop. Online the sharpest KLUSRPAS price and your colour mixed exactly, in store the personal advice. The best of both worlds.",
+    "Today we bring that knowledge together in a complete webshop. Online the sharpest KLUSRPAS price, your colour mixed exactly and delivered to your door, with personal advice from our former painters via the Klushulp and customer service.",
 
-  "about.stores.title": "Our stores",
-  "about.stores.all": "All stores",
+  "about.stores.title": "Online, across the country",
+  "about.stores.all": "View the range",
 
   "about.cta.title": "Ready to get started?",
   "about.cta.text": "Request your KLUSRPAS for free and grab the savings right away.",
@@ -2219,7 +2219,7 @@ const fr: Messages = {
   "home.kluspas.cta": "Demandez votre KLUSRPAS",
   "home.kluspas.benefit1": "Toujours le meilleur prix KLUSRPAS",
   "home.kluspas.benefit2": "Promotions exclusives et priorité lors des soldes",
-  "home.kluspas.benefit3": "Conseils couleur gratuits en magasin",
+  "home.kluspas.benefit3": "Conseils couleur gratuits via la Klushulp",
   "home.kluspas.benefit4": "Cumulez un avoir travaux",
 
   "home.inspiration.title": "Inspiration & conseils",
@@ -2274,7 +2274,7 @@ const fr: Messages = {
   "cart.continueShopping": "Continuer mes achats",
   "cart.toCart": "Voir le panier",
 
-  "cart.usp.returns": "Retours gratuits en magasin",
+  "cart.usp.returns": "Retours gratuits",
   "cart.usp.payment": "Paiement sécurisé via Mollie",
 
   "cart.upsell.title": "Complétez vos travaux",
@@ -2433,9 +2433,9 @@ const fr: Messages = {
   "service.contact.call.description": "Du lun. au ven. 09h00 - 18h00",
   "service.contact.mail.title": "Écrivez-nous",
   "service.contact.mail.description": "Réponse sous 1 jour ouvré",
-  "service.contact.store.title": "Visitez un magasin",
-  "service.contact.store.description": "Conseils personnalisés en magasin",
-  "service.contact.store.action": "Voir les magasins",
+  "service.contact.store.title": "Conseils couleur",
+  "service.contact.store.description": "Conseils gratuits de nos anciens peintres",
+  "service.contact.store.action": "Vers le sélecteur de couleurs",
   "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Réponse immédiate, jour et nuit",
   "service.contact.ai.action": "Posez votre question",
@@ -2453,7 +2453,7 @@ const fr: Messages = {
 
   "service.group.shipping.title": "Livraison & retours",
   "service.group.shipping.intro":
-    "Livraison gratuite à partir de {free} aux NL et en BE, commandé avant 19h c'est livré demain, et retours gratuits en magasin. Vers le reste de l'UE à partir de {eu}.",
+    "Livraison gratuite à partir de {free} aux NL et en BE, commandé avant 19h c'est livré demain, et retours gratuits par la poste avec étiquette de retour. Vers le reste de l'UE à partir de {eu}.",
   "service.group.payment.title": "Paiement sécurisé",
   "service.group.payment.intro":
     "Payez facilement et en toute sécurité avec iDEAL, Bancontact, carte de crédit ou en différé avec Klarna via Mollie.",
@@ -2478,7 +2478,7 @@ const fr: Messages = {
     "Nous livrons dans toute l'UE. Vers la Belgique, la livraison est gratuite à partir de {beFree} ; pour les autres pays de l'UE, un tarif fixe par pays s'applique à partir de {eu}, que vous voyez au moment du paiement. En dehors de l'UE — y compris la Suisse et le Royaume-Uni — nous ne livrons pas, en raison de la douane.",
   "service.faq.shipping.return.q": "Comment retourner un produit ?",
   "service.faq.shipping.return.a":
-    "Les retours sont gratuits dans tous nos magasins — apportez votre produit et votre confirmation de commande. Vous préférez par la poste ? Déclarez votre retour via votre compte et utilisez l'étiquette de retour. Vous disposez de 14 jours de réflexion.",
+    "Les retours sont gratuits par la poste avec une étiquette de retour. Déclarez votre retour via votre compte ou le service client et vous recevrez l'étiquette de retour et les instructions. Vous disposez de 14 jours de réflexion.",
 
   "service.faq.payment.methods.q": "Quels moyens de paiement acceptez-vous ?",
   "service.faq.payment.methods.a":
@@ -2496,22 +2496,22 @@ const fr: Messages = {
   "service.faq.warranty.damaged.q": "Mon produit est arrivé endommagé, que faire ?",
   "service.faq.warranty.damaged.a":
     "Quel dommage ! Contactez notre service client dans les 48 heures et joignez une photo. Nous envoyons gratuitement un produit de remplacement ou remboursons le montant.",
-  "service.faq.warranty.store.q": "Puis-je m'adresser au magasin pour le service ?",
+  "service.faq.warranty.store.q": "Comment obtenir un service ou des conseils ?",
   "service.faq.warranty.store.a":
-    "Bien sûr. Nos anciens peintres se feront un plaisir de vous aider avec des conseils, des réparations ou des questions sur votre achat. N'hésitez pas à passer dans l'un de nos magasins.",
+    "KLUSR est entièrement en ligne. Nos anciens peintres se feront un plaisir de vous aider avec des conseils ou des questions sur votre achat via le service client ou la Klushulp — vous obtenez une réponse personnelle rapidement.",
 
   "service.faq.mengverf.return.q": "Puis-je retourner de la peinture teintée sur mesure ?",
   "service.faq.mengverf.return.a":
     "Nous teintons la peinture sur mesure spécialement pour vous. C'est pourquoi elle est — comme les autres produits personnalisés — légalement exclue du droit de rétractation et nous ne pouvons pas reprendre la peinture sur mesure. Un problème inattendu avec la couleur ou le produit ? Contactez-nous alors et nous le résoudrons ensemble gratuitement.",
   "service.faq.mengverf.match.q": "Quelle est la précision de la correspondance des couleurs ?",
   "service.faq.mengverf.match.a":
-    "Nous teintons sur la base de codes couleur professionnels (notamment RAL, Gamma et AkzoNobel) pour une correspondance exacte. Vous hésitez sur une couleur ? Demandez un échantillon en magasin ou commandez d'abord un testeur de couleur avant de faire teinter toute la quantité.",
+    "Nous teintons sur la base de codes couleur professionnels (notamment RAL, Gamma et AkzoNobel) pour une correspondance exacte. Vous hésitez sur une couleur ? Commandez d'abord un testeur de couleur ou un pot d'essai avant de faire teinter toute la quantité — gardez à l'esprit que les couleurs à l'écran peuvent légèrement différer.",
   "service.faq.mengverf.amount.q": "De combien de peinture ai-je besoin ?",
   "service.faq.mengverf.amount.a":
     "Comptez en gros 1 litre pour 8–10 m² par couche. Sur la page produit et via notre Klushulp, nous le calculons exactement pour vous, afin que vous n'en commandiez ni trop ni trop peu.",
-  "service.faq.mengverf.instore.q": "Puis-je aussi faire teinter la peinture en magasin ?",
+  "service.faq.mengverf.instore.q": "Comment faire teinter la peinture sur mesure ?",
   "service.faq.mengverf.instore.a":
-    "Bien sûr. Nos spécialistes couleur teintent votre peinture avec expertise pendant que vous attendez. Passez dans un magasin KLUSR avec votre choix de couleur, ou choisissez déjà votre couleur en ligne.",
+    "Choisissez votre couleur en ligne dans le sélecteur de couleurs et commandez la peinture correspondante. Nos spécialistes couleur teintent votre peinture avec expertise à la couleur exacte et nous la livrons chez vous, prête à l'emploi.",
 
   "service.faq.kluspas.what.q": "Qu'est-ce que la KLUSRPAS et combien coûte-t-elle ?",
   "service.faq.kluspas.what.a":
@@ -2532,11 +2532,11 @@ const fr: Messages = {
     "Non, vous pouvez commander en tant qu'invité. Avec un compte, vous conservez toutefois vos coordonnées, votre historique de commandes et vos avantages KLUSRPAS au même endroit.",
   "service.faq.general.mix.q": "Puis-je faire teinter la peinture sur mesure ?",
   "service.faq.general.mix.a":
-    "Oui ! Nous teintons sur mesure toute couleur souhaitée. Choisissez votre couleur en ligne ou passez en magasin, où nos spécialistes couleur teintent votre peinture avec expertise pendant que vous attendez.",
+    "Oui ! Nous teintons sur mesure toute couleur souhaitée. Choisissez votre couleur en ligne dans le sélecteur de couleurs et nos spécialistes couleur teintent votre peinture avec expertise à la couleur exacte, puis nous la livrons prête à l'emploi.",
 
   "service.guarantee.title": "Pas satisfait ? Remboursé.",
   "service.guarantee.text":
-    "Nous voulons que vous abordiez vos travaux l'esprit tranquille. C'est pourquoi : 14 jours de réflexion, retours gratuits (y compris en magasin) et garantie légale sur tout. La peinture teintée sur mesure est un produit personnalisé et donc exclue des retours — mais en cas de défaut, nous le résolvons toujours gratuitement.",
+    "Nous voulons que vous abordiez vos travaux l'esprit tranquille. C'est pourquoi : 14 jours de réflexion, retours gratuits par la poste avec étiquette de retour et garantie légale sur tout. La peinture teintée sur mesure est un produit personnalisé et donc exclue des retours — mais en cas de défaut, nous le résolvons toujours gratuitement.",
   "service.guarantee.cta": "Lisez les conditions de retour",
 
   "service.contactBlock.title": "Votre question n'y figure pas ?",
@@ -2545,7 +2545,7 @@ const fr: Messages = {
   "service.contactBlock.preferPre": "Vous préférez une réponse immédiate ? ",
   "service.contactBlock.preferLink": "Demandez à la Klushulp",
   "service.contactBlock.preferPost": " — disponible 24h/24 et 7j/7.",
-  "service.contactBlock.viewStorePage": "Voir la page du magasin",
+  "service.contactBlock.viewStorePage": "Demandez à la Klushulp",
 
   "faq.meta.breadcrumb": "Questions fréquentes",
   "faq.badge": "Aide & explications",
@@ -2575,11 +2575,11 @@ const fr: Messages = {
   "faq.delivery.when.q": "Quand ma commande sera-t-elle chez moi ?",
   "faq.delivery.when.a":
     "Commandé avant 19h les jours ouvrés, livré demain. La livraison est gratuite à partir de € 50, en dessous nous facturons € 4,95.",
-  "faq.delivery.pickup.q": "Puis-je retirer en magasin ?",
-  "faq.delivery.pickup.aPre": "Oui, le retrait dans un magasin KLUSR est gratuit. Découvrez nos ",
-  "faq.delivery.pickup.aLink": "magasins",
-  "faq.delivery.pickup.aPost": ".",
-  "faq.delivery.pickup.text": "Oui, le retrait dans un magasin KLUSR est gratuit.",
+  "faq.delivery.pickup.q": "Puis-je retirer ma commande ?",
+  "faq.delivery.pickup.aPre": "KLUSR est entièrement en ligne — nous livrons partout aux Pays-Bas et en Belgique. Des questions sur votre livraison ? Notre ",
+  "faq.delivery.pickup.aLink": "service client",
+  "faq.delivery.pickup.aPost": " se fera un plaisir de vous aider.",
+  "faq.delivery.pickup.text": "KLUSR est entièrement en ligne — nous livrons partout aux Pays-Bas et en Belgique. Le retrait n'est pas possible.",
   "faq.delivery.return.q": "Comment retourner un produit ?",
   "faq.delivery.return.aPre": "Vous disposez de 14 jours de réflexion. Déclarez votre retour auprès de notre ",
   "faq.delivery.return.aLink": "service client",
@@ -2637,12 +2637,12 @@ const fr: Messages = {
 
   "about.story.title": "Notre histoire",
   "about.story.p1":
-    "Ce qui a commencé comme un seul magasin avec une machine à teinter et beaucoup de savoir-faire est devenu une chaîne de spécialistes du bricolage en Overijssel et au-delà. Le fil conducteur est resté le même : les meilleurs conseils et les bons matériaux, aussi bien pour le bricoleur que pour le professionnel.",
+    "Ce qui a commencé avec une machine à teinter et beaucoup de savoir-faire est devenu le spécialiste du bricolage en ligne pour les bricoleurs et les professionnels. Le fil conducteur est resté le même : les meilleurs conseils et les bons matériaux, aussi bien pour le bricoleur que pour le professionnel.",
   "about.story.p2":
-    "Aujourd'hui, nous combinons cette expérience en magasin avec une boutique en ligne complète. En ligne, le meilleur prix KLUSRPAS et votre couleur teintée avec précision ; en magasin, le conseil personnalisé. Le meilleur des deux mondes.",
+    "Aujourd'hui, nous réunissons ce savoir-faire dans une boutique en ligne complète. En ligne, le meilleur prix KLUSRPAS, votre couleur teintée avec précision et livrée à votre porte, avec des conseils personnalisés de nos anciens peintres via la Klushulp et le service client.",
 
-  "about.stores.title": "Nos magasins",
-  "about.stores.all": "Tous les magasins",
+  "about.stores.title": "En ligne, partout au pays",
+  "about.stores.all": "Voir l'assortiment",
 
   "about.cta.title": "Prêt à vous lancer ?",
   "about.cta.text": "Demandez votre KLUSRPAS gratuitement et profitez tout de suite des avantages.",
@@ -2919,7 +2919,7 @@ const de: Messages = {
   "home.kluspas.cta": "KLUSRPAS beantragen",
   "home.kluspas.benefit1": "Immer der beste KLUSRPAS-Preis",
   "home.kluspas.benefit2": "Exklusive Aktionen und Vorrang im Ausverkauf",
-  "home.kluspas.benefit3": "Kostenlose Farbberatung im Geschäft",
+  "home.kluspas.benefit3": "Kostenlose Farbberatung über die Klushulp",
   "home.kluspas.benefit4": "Sammeln Sie Projekt-Guthaben",
 
   "home.inspiration.title": "Inspiration & Beratung",
@@ -2974,7 +2974,7 @@ const de: Messages = {
   "cart.continueShopping": "Weiter einkaufen",
   "cart.toCart": "Zum Warenkorb",
 
-  "cart.usp.returns": "Kostenlose Rückgabe im Geschäft",
+  "cart.usp.returns": "Kostenlose Rückgabe",
   "cart.usp.payment": "Sicher bezahlen über Mollie",
 
   "cart.upsell.title": "Vervollständigen Sie Ihr Projekt",
@@ -3133,9 +3133,9 @@ const de: Messages = {
   "service.contact.call.description": "Mo. bis Fr. 09:00 - 18:00 Uhr",
   "service.contact.mail.title": "Schreiben Sie uns",
   "service.contact.mail.description": "Antwort innerhalb von 1 Werktag",
-  "service.contact.store.title": "Besuchen Sie ein Geschäft",
-  "service.contact.store.description": "Persönliche Beratung im Geschäft",
-  "service.contact.store.action": "Geschäfte ansehen",
+  "service.contact.store.title": "Farbberatung",
+  "service.contact.store.description": "Kostenlose Beratung von unseren ehemaligen Malern",
+  "service.contact.store.action": "Zum Farbwähler",
   "service.contact.ai.title": "Klushulp",
   "service.contact.ai.description": "Sofortige Antwort, Tag und Nacht",
   "service.contact.ai.action": "Stellen Sie Ihre Frage",
@@ -3153,7 +3153,7 @@ const de: Messages = {
 
   "service.group.shipping.title": "Versand & Rückgabe",
   "service.group.shipping.intro":
-    "Kostenloser Versand ab {free} in NL und BE, vor 19:00 Uhr bestellt ist morgen geliefert, und kostenlose Rückgabe im Geschäft. In den Rest der EU ab {eu}.",
+    "Kostenloser Versand ab {free} in NL und BE, vor 19:00 Uhr bestellt ist morgen geliefert, und kostenlose Rückgabe per Post mit Rücksendeetikett. In den Rest der EU ab {eu}.",
   "service.group.payment.title": "Sicher bezahlen",
   "service.group.payment.intro":
     "Bezahlen Sie einfach und sicher mit iDEAL, Bancontact, Kreditkarte oder später mit Klarna über Mollie.",
@@ -3178,7 +3178,7 @@ const de: Messages = {
     "Wir liefern in die gesamte EU. Nach Belgien ist der Versand ab {beFree} kostenlos; für die übrigen EU-Länder gilt ein fester Tarif pro Land ab {eu}, den Sie während des Bezahlvorgangs sehen. Außerhalb der EU — einschließlich der Schweiz und des Vereinigten Königreichs — versenden wir aufgrund des Zolls nicht.",
   "service.faq.shipping.return.q": "Wie gebe ich ein Produkt zurück?",
   "service.faq.shipping.return.a":
-    "Die Rückgabe ist in all unseren Geschäften kostenlos — bringen Sie Ihr Produkt und Ihre Bestellbestätigung mit. Lieber per Post? Melden Sie Ihre Rückgabe über Ihr Konto an und verwenden Sie das Rücksendeetikett. Sie haben 14 Tage Bedenkzeit.",
+    "Die Rückgabe ist per Post mit einem Rücksendeetikett kostenlos. Melden Sie Ihre Rückgabe über Ihr Konto oder den Kundenservice an, dann erhalten Sie das Rücksendeetikett und die Anweisungen. Sie haben 14 Tage Bedenkzeit.",
 
   "service.faq.payment.methods.q": "Welche Zahlungsmethoden akzeptieren Sie?",
   "service.faq.payment.methods.a":
@@ -3196,22 +3196,22 @@ const de: Messages = {
   "service.faq.warranty.damaged.q": "Mein Produkt ist beschädigt angekommen, was nun?",
   "service.faq.warranty.damaged.a":
     "Wie ärgerlich! Kontaktieren Sie innerhalb von 48 Stunden unseren Kundenservice und fügen Sie ein Foto bei. Wir senden kostenlos ein Ersatzprodukt oder erstatten den Betrag.",
-  "service.faq.warranty.store.q": "Kann ich für den Service ins Geschäft kommen?",
+  "service.faq.warranty.store.q": "Wie erhalte ich Service oder Beratung?",
   "service.faq.warranty.store.a":
-    "Sicher. Unsere ehemaligen Maler helfen Ihnen gerne mit Beratung, Reparaturen oder Fragen zu Ihrem Einkauf weiter. Schauen Sie gerne in einem unserer Geschäfte vorbei.",
+    "KLUSR ist vollständig online. Unsere ehemaligen Maler helfen Ihnen gerne mit Beratung oder Fragen zu Ihrem Einkauf über den Kundenservice oder die Klushulp weiter — Sie erhalten schnell eine persönliche Antwort.",
 
   "service.faq.mengverf.return.q": "Kann ich nach Farbton gemischte Farbe zurückgeben?",
   "service.faq.mengverf.return.a":
     "Nach Farbton gemischte Farbe mischen wir speziell für Sie nach Maß. Daher ist sie — wie andere maßgefertigte Produkte — gesetzlich vom Widerrufsrecht ausgeschlossen und wir können Mischfarbe nicht zurücknehmen. Stimmt unerwartet etwas mit der Farbe oder dem Produkt nicht? Dann nehmen Sie Kontakt auf, und wir lösen es gemeinsam kostenlos.",
   "service.faq.mengverf.match.q": "Wie genau ist die Farbübereinstimmung?",
   "service.faq.mengverf.match.a":
-    "Wir mischen auf Basis professioneller Farbcodes (u. a. RAL, Gamma und AkzoNobel) für eine exakte Übereinstimmung. Sind Sie sich bei einer Farbe unsicher? Fragen Sie im Geschäft nach einem Probemuster oder bestellen Sie zuerst einen Farbtester, bevor Sie die gesamte Menge mischen lassen.",
+    "Wir mischen auf Basis professioneller Farbcodes (u. a. RAL, Gamma und AkzoNobel) für eine exakte Übereinstimmung. Sind Sie sich bei einer Farbe unsicher? Bestellen Sie zuerst einen Farbtester oder einen Probetopf, bevor Sie die gesamte Menge mischen lassen — beachten Sie, dass Bildschirmfarben leicht abweichen können.",
   "service.faq.mengverf.amount.q": "Wie viel Farbe brauche ich?",
   "service.faq.mengverf.amount.a":
     "Rechnen Sie grob mit 1 Liter pro 8–10 m² pro Schicht. Auf der Produktseite und über unsere Klushulp rechnen wir es genau für Sie aus, damit Sie weder zu viel noch zu wenig bestellen.",
-  "service.faq.mengverf.instore.q": "Kann ich Farbe auch im Geschäft mischen lassen?",
+  "service.faq.mengverf.instore.q": "Wie lasse ich Farbe nach Farbton mischen?",
   "service.faq.mengverf.instore.a":
-    "Sicher. Unsere Farbspezialisten mischen Ihre Farbe fachkundig, während Sie warten. Kommen Sie mit Ihrer Farbwahl in einem KLUSR-Geschäft vorbei oder wählen Sie Ihre Farbe schon online aus.",
+    "Wählen Sie Ihre Farbe online im Farbwähler und bestellen Sie die passende Farbe. Unsere Farbspezialisten mischen Ihre Farbe fachkundig auf den exakten Farbton und wir liefern sie gebrauchsfertig zu Ihnen nach Hause.",
 
   "service.faq.kluspas.what.q": "Was ist die KLUSRPAS und was kostet sie?",
   "service.faq.kluspas.what.a":
@@ -3232,11 +3232,11 @@ const de: Messages = {
     "Nein, Sie können als Gast bestellen. Mit einem Konto bewahren Sie jedoch Ihre Daten, Ihre Bestellhistorie und Ihre KLUSRPAS-Vorteile an einem Ort auf.",
   "service.faq.general.mix.q": "Kann ich Farbe nach Farbton mischen lassen?",
   "service.faq.general.mix.a":
-    "Ja! Wir mischen jede gewünschte Farbe nach Maß. Wählen Sie Ihre Farbe online oder kommen Sie im Geschäft vorbei, wo unsere Farbspezialisten Ihre Farbe fachkundig mischen, während Sie warten.",
+    "Ja! Wir mischen jede gewünschte Farbe nach Maß. Wählen Sie Ihre Farbe online im Farbwähler und unsere Farbspezialisten mischen Ihre Farbe fachkundig auf den exakten Farbton und liefern sie gebrauchsfertig.",
 
   "service.guarantee.title": "Nicht zufrieden? Geld zurück.",
   "service.guarantee.text":
-    "Wir möchten, dass Sie Ihr Projekt mit gutem Gefühl angehen. Deshalb: 14 Tage Bedenkzeit, kostenlose Rückgabe (auch im Geschäft) und gesetzliche Garantie auf alles. Nach Farbton gemischte Farbe ist Maßarbeit und daher von der Rückgabe ausgenommen — aber bei einem Mangel lösen wir es immer kostenlos.",
+    "Wir möchten, dass Sie Ihr Projekt mit gutem Gefühl angehen. Deshalb: 14 Tage Bedenkzeit, kostenlose Rückgabe per Post mit Rücksendeetikett und gesetzliche Garantie auf alles. Nach Farbton gemischte Farbe ist Maßarbeit und daher von der Rückgabe ausgenommen — aber bei einem Mangel lösen wir es immer kostenlos.",
   "service.guarantee.cta": "Lesen Sie die Rückgabebedingungen",
 
   "service.contactBlock.title": "Ist Ihre Frage nicht dabei?",
@@ -3245,7 +3245,7 @@ const de: Messages = {
   "service.contactBlock.preferPre": "Lieber sofort eine Antwort? ",
   "service.contactBlock.preferLink": "Fragen Sie die Klushulp",
   "service.contactBlock.preferPost": " — rund um die Uhr verfügbar.",
-  "service.contactBlock.viewStorePage": "Geschäftsseite ansehen",
+  "service.contactBlock.viewStorePage": "Fragen Sie die Klushulp",
 
   "faq.meta.breadcrumb": "Häufig gestellte Fragen",
   "faq.badge": "Hilfe & Erklärung",
@@ -3275,11 +3275,11 @@ const de: Messages = {
   "faq.delivery.when.q": "Wann ist meine Bestellung bei mir?",
   "faq.delivery.when.a":
     "An Werktagen vor 19:00 Uhr bestellt, morgen geliefert. Der Versand ist ab € 50 kostenlos, darunter berechnen wir € 4,95.",
-  "faq.delivery.pickup.q": "Kann ich im Geschäft abholen?",
-  "faq.delivery.pickup.aPre": "Ja, die Abholung in einem KLUSR-Geschäft ist kostenlos. Sehen Sie sich unsere ",
-  "faq.delivery.pickup.aLink": "Geschäfte",
-  "faq.delivery.pickup.aPost": " an.",
-  "faq.delivery.pickup.text": "Ja, die Abholung in einem KLUSR-Geschäft ist kostenlos.",
+  "faq.delivery.pickup.q": "Kann ich meine Bestellung abholen?",
+  "faq.delivery.pickup.aPre": "KLUSR ist vollständig online — wir liefern in die ganzen Niederlande und nach Belgien. Fragen zu Ihrer Lieferung? Unser ",
+  "faq.delivery.pickup.aLink": "Kundenservice",
+  "faq.delivery.pickup.aPost": " hilft Ihnen gerne weiter.",
+  "faq.delivery.pickup.text": "KLUSR ist vollständig online — wir liefern in die ganzen Niederlande und nach Belgien. Eine Abholung ist nicht möglich.",
   "faq.delivery.return.q": "Wie gebe ich ein Produkt zurück?",
   "faq.delivery.return.aPre": "Sie haben 14 Tage Bedenkzeit. Melden Sie Ihre Rückgabe bei unserem ",
   "faq.delivery.return.aLink": "Kundenservice",
@@ -3337,12 +3337,12 @@ const de: Messages = {
 
   "about.story.title": "Unsere Geschichte",
   "about.story.p1":
-    "Was als ein einziges Geschäft mit einer Mischmaschine und einer Menge Wissen begann, wuchs zu einer Kette von Heimwerker-Spezialisten in Overijssel und darüber hinaus. Der rote Faden blieb derselbe: die beste Beratung und die richtigen Materialien, sowohl für Heimwerker als auch für Profis.",
+    "Was mit einer Mischmaschine und einer Menge Wissen begann, wuchs zum Online-Heimwerker-Spezialisten für Heimwerker und Profis. Der rote Faden blieb derselbe: die beste Beratung und die richtigen Materialien, sowohl für Heimwerker als auch für Profis.",
   "about.story.p2":
-    "Heute verbinden wir diese Geschäftserfahrung mit einem kompletten Webshop. Online der günstigste KLUSRPAS-Preis und Ihre Farbe exakt gemischt, im Geschäft die persönliche Beratung. Das Beste aus beiden Welten.",
+    "Heute bündeln wir dieses Wissen in einem kompletten Webshop. Online der günstigste KLUSRPAS-Preis, Ihre Farbe exakt gemischt und bis vor die Haustür geliefert, mit persönlicher Beratung von unseren ehemaligen Malern über die Klushulp und den Kundenservice.",
 
-  "about.stores.title": "Unsere Geschäfte",
-  "about.stores.all": "Alle Geschäfte",
+  "about.stores.title": "Online, landesweit",
+  "about.stores.all": "Sortiment ansehen",
 
   "about.cta.title": "Bereit loszulegen?",
   "about.cta.text": "Beantragen Sie Ihre KLUSRPAS kostenlos und sichern Sie sich gleich den Vorteil.",

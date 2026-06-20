@@ -14,7 +14,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  Store,
   Truck,
 } from "lucide-react";
 import { flagshipStore } from "@/lib/data";
@@ -80,11 +79,11 @@ export default function KlantenservicePage() {
       href: "mailto:klantenservice@klus-r.nl",
     },
     {
-      icon: Store,
+      icon: Palette,
       title: t("service.contact.store.title"),
       description: t("service.contact.store.description"),
       actionLabel: t("service.contact.store.action"),
-      href: "/winkels",
+      href: "/kleurkiezer",
     },
     {
       icon: MessageCircle,
@@ -461,7 +460,7 @@ export default function KlantenservicePage() {
           <div className="rounded-xl bg-secondary p-6">
             <h3 className="inline-flex items-center gap-2 font-bold">
               <MapPin className="h-5 w-5 text-primary" />
-              {flagshipStore.name}
+              KLUSR klantenservice
             </h3>
             <address className="mt-3 flex flex-col gap-2 not-italic text-sm text-muted-foreground">
               <span>
@@ -485,7 +484,7 @@ export default function KlantenservicePage() {
               </a>
             </address>
             <Link
-              href="/winkels/nijverdal"
+              href="/klushulp"
               className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
             >
               {t("service.contactBlock.viewStorePage")}
