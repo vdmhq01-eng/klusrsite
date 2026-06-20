@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -22,10 +22,12 @@ import {
   ShoppingCart,
   Heart,
   CreditCard,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
 import { colorCollections, popularColors2026, isLightColor } from "@/lib/data/colors";
+import type { ColorCollection } from "@/lib/data/colors";
 import { fetchPortalColors } from "@/lib/portal-colors";
 import { withBase } from "@/lib/paint-bases";
 import { useCart } from "@/lib/store/cart";
@@ -82,6 +84,172 @@ const STEPS = [
   { n: 4, label: "Erbij" },
   { n: 5, label: "Overzicht" },
 ] as const;
+
+/**
+ * Doorzoekbare multi-select dropdown met *alle* collecties.
+ * Werkt volledig op de bestaande selectie-state van de funnel (geen eigen
+ * selectie-state): `selected` is dezelfde `activeCollections`-Set, en
+ * aan/uitvinken roept dezelfde `onToggle` (= toggleCollection) aan. Zo blijven
+ * de chip-rij en deze lijst altijd gesynchroniseerd.
+ */
+function CollectiesDropdown({
+  collections,
+  selected,
+  onToggle,
+  onClear,
+}: {
+  collections: ColorCollection[];
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const count = selected.size;
+
+  const shown = useMemo(() => {
+    const f = filter.trim().toLowerCase();
+    if (!f) return collections;
+    return collections.filter((c) => c.name.toLowerCase().includes(f));
+  }, [filter, collections]);
+
+  // Sluit bij klik buiten de dropdown.
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  // Focus het zoekveld zodra de lijst opent.
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+    else setFilter("");
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative w-full sm:w-auto">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className={cn(
+          "inline-flex w-full items-center justify-between gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors sm:w-auto",
+          open || count > 0
+            ? "border-primary/40 bg-primary/5 text-foreground"
+            : "border-border bg-card text-foreground hover:border-primary/40",
+        )}
+      >
+        <span className="inline-flex items-center gap-2">
+          <Layers className="h-4 w-4 text-primary" />
+          Alle collecties
+          {count > 0 && (
+            <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-bold leading-5 text-white">
+              {count}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card-hover sm:right-auto sm:w-80"
+          role="dialog"
+          aria-label="Collecties kiezen"
+        >
+          {/* Zoekveld */}
+          <div className="shrink-0 border-b border-border p-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                ref={searchRef}
+                type="search"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    if (filter) setFilter("");
+                    else setOpen(false);
+                  }
+                }}
+                placeholder="Zoek collectie…"
+                aria-label="Zoek collectie"
+                className="h-10 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm outline-none transition focus:border-primary focus:ring-1 focus:ring-primary [&::-webkit-search-cancel-button]:hidden"
+              />
+            </div>
+          </div>
+
+          {/* Lijst met alle collecties (checkboxes, multi-select) */}
+          <ul role="listbox" aria-multiselectable className="min-h-0 flex-1 overflow-y-auto p-1">
+            {shown.map((c) => {
+              const on = selected.has(c.id);
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={on}
+                    onClick={() => onToggle(c.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary",
+                      on ? "bg-primary/5" : "hover:bg-secondary/60",
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "grid h-5 w-5 shrink-0 place-items-center rounded border-2 transition-colors",
+                        on ? "border-primary bg-primary text-white" : "border-input text-transparent",
+                      )}
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
+                    <span className="shrink-0 rounded-full bg-secondary px-1.5 text-[10px] font-bold leading-4 text-muted-foreground">
+                      {c.colors.length}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            {shown.length === 0 && (
+              <li className="px-3 py-6 text-center text-sm text-muted-foreground">
+                Geen collectie gevonden voor &ldquo;{filter}&rdquo;.
+              </li>
+            )}
+          </ul>
+
+          {/* Voettekst: tellertje + wis-actie */}
+          <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-secondary/30 px-3 py-2 text-xs">
+            <span className="text-muted-foreground">
+              {count} van {collections.length} geselecteerd
+            </span>
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={count === 0}
+              className="font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+            >
+              Wis selectie
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) {
   const router = useRouter();
@@ -175,6 +343,10 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
       else next.add(id);
       return next;
     });
+  }
+
+  function clearCollections() {
+    setActiveCollections(new Set());
   }
 
   function pickColor(c: SelectedColor) {
@@ -382,8 +554,16 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
 
           {!searching && (
             <>
-              <div className="no-scrollbar mb-2 flex gap-2 overflow-x-auto pb-1">
-                {collections.map((c) => {
+              {/* Volledige, doorzoekbare collectie-keuze — gesynchroniseerd met de chip-rij */}
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <CollectiesDropdown
+                  collections={collections}
+                  selected={activeCollections}
+                  onToggle={toggleCollection}
+                  onClear={clearCollections}
+                />
+                <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-1 sm:px-0 sm:pb-0">
+                  {collections.map((c) => {
                   const on = activeCollections.has(c.id);
                   return (
                     <button
@@ -405,7 +585,8 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                       </span>
                     </button>
                   );
-                })}
+                  })}
+                </div>
               </div>
               <p className="mb-3 text-xs text-muted-foreground">
                 Tik meerdere collecties aan om ze samen te bekijken
