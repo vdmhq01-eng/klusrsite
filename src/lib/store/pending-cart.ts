@@ -7,7 +7,16 @@
  * KV wanneer geconfigureerd; anders in-memory (demo). Gooit nooit.
  */
 
-import { isKvEnabled, kvGetJSON, kvSetJSON, kvSAdd, kvSMembers, kvDel } from "./kv";
+import {
+  isKvEnabled,
+  kvGetJSON,
+  kvSetJSON,
+  kvSAdd,
+  kvSMembers,
+  kvSRem,
+  kvDel,
+  kvExpire,
+} from "./kv";
 
 export interface PendingCartItem {
   title: string;
@@ -33,6 +42,11 @@ const KEY = {
   index: "cart:pending:index",
 };
 
+/** Bewaartermijn van een winkelwagen-snapshot in KV: 30 dagen (in seconden). */
+const CART_TTL_SECONDS = 30 * 24 * 60 * 60;
+/** Maximaal aantal bewaarde winkelwagens — voorkomt onbegrensde KV-groei. */
+const MAX_PENDING_CARTS = 1000;
+
 export async function rememberCart(input: {
   email: string;
   name?: string;
@@ -55,7 +69,39 @@ export async function rememberCart(input: {
   mem.set(email, cart);
   if (isKvEnabled()) {
     await kvSetJSON(KEY.cart(email), cart);
+    // TTL zodat oude (achtergelaten) mandjes vanzelf opruimen na 30 dagen.
+    await kvExpire(KEY.cart(email), CART_TTL_SECONDS);
     await kvSAdd(KEY.index, email);
+    // Best-effort: houd het totaal aantal begrensd. Gooit nooit.
+    await pruneIfNeeded();
+  }
+}
+
+/**
+ * Houd het aantal bewaarde winkelwagens onder MAX_PENDING_CARTS. Alleen actief
+ * boven de cap (de meeste calls doen dus niets). De oudste mandjes (op
+ * updatedAt) vallen af; verlopen/lege keys (TTL) worden uit de index gehaald.
+ * Volledig best-effort en non-throwing — mag de checkout-flow nooit raken.
+ */
+async function pruneIfNeeded(): Promise<void> {
+  if (!isKvEnabled()) return;
+  const emails = await kvSMembers(KEY.index);
+  if (emails.length <= MAX_PENDING_CARTS) return;
+  const loaded = await Promise.all(
+    emails.map(async (e) => ({ email: e, cart: await loadCart(e) })),
+  );
+  // Verlopen keys (geen cart meer) eerst uit de index halen.
+  const stale = loaded.filter((l) => !l.cart).map((l) => l.email);
+  const live = loaded.filter(
+    (l): l is { email: string; cart: PendingCart } => Boolean(l.cart),
+  );
+  // Oudste mandjes boven de cap verwijderen (nieuwste blijven bewaard).
+  live.sort((a, b) => (a.cart.updatedAt < b.cart.updatedAt ? 1 : -1));
+  const overflow = live.slice(MAX_PENDING_CARTS).map((l) => l.email);
+  for (const e of [...stale, ...overflow]) {
+    mem.delete(norm(e));
+    await kvDel(KEY.cart(e));
+    await kvSRem(KEY.index, e);
   }
 }
 
