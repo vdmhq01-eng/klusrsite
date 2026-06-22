@@ -144,12 +144,41 @@ export async function getPaymentStatus(
   mode?: string;
   amount?: number;
   amountRefunded?: number;
+  /** Naam/adres dat de wallet/Mollie teruggaf (PayPal e.d.) — voor express-backfill. */
+  contact?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    street?: string;
+    postalCode?: string;
+    city?: string;
+    country?: string;
+  };
 } | null> {
   const mollie = getClient();
   if (!mollie) return null;
   const payment = await mollie.payments.get(paymentId);
   const toNum = (m: { value?: string } | null | undefined) =>
     m?.value != null ? Number(m.value) : undefined;
+
+  // Bezorg-/factuuradres uit de method-details halen (bv. PayPal levert dit terug).
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
+  const details = (payment as { details?: Record<string, unknown> }).details ?? {};
+  const ship = (details.shippingAddress ?? {}) as Record<string, unknown>;
+  const fullName = str(details.consumerName);
+  const [firstName, ...rest] = (fullName ?? "").split(" ");
+  const account = str(details.consumerAccount);
+  const contact = {
+    firstName: fullName ? firstName : undefined,
+    lastName: rest.length ? rest.join(" ") : undefined,
+    email: account && account.includes("@") ? account : undefined,
+    street: str(ship.streetAndNumber),
+    postalCode: str(ship.postalCode),
+    city: str(ship.city),
+    country: str(ship.country),
+  };
+  const hasContact = Object.values(contact).some(Boolean);
+
   return {
     status: payment.status,
     orderId: (payment.metadata as { orderId?: string } | null)?.orderId,
@@ -158,6 +187,7 @@ export async function getPaymentStatus(
     amountRefunded: toNum(
       (payment as { amountRefunded?: { value?: string } }).amountRefunded,
     ),
+    ...(hasContact ? { contact } : {}),
   };
 }
 

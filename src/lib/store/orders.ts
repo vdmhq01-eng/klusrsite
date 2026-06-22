@@ -151,6 +151,34 @@ export async function updateOrderStatus(
 }
 
 /**
+ * Vul ONTBREKENDE klantgegevens aan (bv. naam/bezorgadres dat pas ná de betaling
+ * uit een wallet/Mollie binnenkomt bij express-checkout). Bestaande, niet-lege
+ * velden blijven staan zodat een normale checkout nooit wordt overschreven.
+ */
+export async function updateOrderContact(
+  orderId: string,
+  partial: Partial<OrderCustomer>,
+): Promise<void> {
+  const order = await loadById(orderId);
+  if (!order) return;
+  const c = order.customer;
+  const keep = (cur: string | undefined, next: string | undefined): string =>
+    cur && cur.trim() ? cur : (next?.trim() || cur || "");
+  order.customer = {
+    ...c,
+    email: c.email?.trim() ? c.email : (partial.email?.trim() || c.email),
+    firstName: keep(c.firstName, partial.firstName),
+    lastName: keep(c.lastName, partial.lastName),
+    street: keep(c.street, partial.street),
+    postalCode: keep(c.postalCode, partial.postalCode),
+    city: keep(c.city, partial.city),
+    country: c.country?.trim() ? c.country : (partial.country?.trim() || c.country),
+    phone: c.phone?.trim() ? c.phone : (partial.phone?.trim() || c.phone),
+  };
+  await persist(order);
+}
+
+/**
  * Claim het versturen van de bestelbevestiging — exact één keer per order. Met
  * KV is dit een atomic SET NX (veilig over instances heen); zonder KV een
  * synchrone check-and-set in-memory. Onbekende orders leveren `false`.

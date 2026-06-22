@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPaymentStatus, mapMollieStatus } from "@/lib/payments";
-import { getOrder, getOrderByMollieId, updateOrderStatus } from "@/lib/store/orders";
+import { getOrder, getOrderByMollieId, updateOrderStatus, updateOrderContact } from "@/lib/store/orders";
 import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
 import { sendPushToAdmins } from "@/lib/push";
 import { sendGa4Purchase } from "@/lib/ga4-mp";
@@ -41,6 +41,16 @@ export async function POST(req: Request) {
       (status.orderId ? await getOrder(status.orderId) : undefined) ??
       (await getOrderByMollieId(paymentId));
     if (order) {
+      // Express-checkout (wallet zonder formulier): vul een ontbrekend bezorgadres
+      // aan met wat de wallet/Mollie teruggaf, vóór we fulfilen en mailen.
+      let current = order;
+      if (
+        status.contact &&
+        (!order.customer.street?.trim() || !order.customer.city?.trim())
+      ) {
+        await updateOrderContact(order.id, status.contact);
+        current = (await getOrder(order.id)) ?? order;
+      }
       const mapped = mapMollieStatus(status.status);
       // Terugbetaling herkennen: een (deels) gerefunde betaling.
       const refunded = (status.amountRefunded ?? 0) > 0;
@@ -57,7 +67,7 @@ export async function POST(req: Request) {
       });
       // Alleen bij een échte, niet-terugbetaalde, niet-test betaling: fulfilen + mailen.
       if (!refunded && !isTest && (mapped === "paid" || mapped === "authorized")) {
-        const paidOrder = { ...order, paymentStatus: mapped };
+        const paidOrder = { ...current, paymentStatus: mapped };
         await fulfillPaidOrder(paidOrder);
         // Send the branded confirmation once (claim guards against retries).
         await sendOrderConfirmationEmail(paidOrder);
