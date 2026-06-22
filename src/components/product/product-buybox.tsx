@@ -227,27 +227,15 @@ export function ProductBuybox({
     if (found) setColor(withBase(found));
   }, [product.colorMatchable]);
 
-  // Detecteer Apple Pay: zet de express-knop alléén aan wanneer de feature-flag
-  // (NEXT_PUBLIC_CHECKOUT_EXPRESS) aanstaat ÉN ApplePaySession beschikbaar is en
-  // betalingen kan doen. Staat de flag uit, dan gebeurt er hier niets → geen knop,
-  // geen neveneffecten. Client-only zodat de PDP statisch/ISR blijft.
+  // Apple Pay-detectie: toon de "Betaal met Apple Pay"-knop op élk toestel dat
+  // Apple Pay ondersteunt (Safari op iOS/macOS). Werkt alleen écht op het in
+  // Mollie geverifieerde domein (www.klus-r.nl). Client-only zodat de PDP
+  // statisch/ISR blijft; faalt de detectie, dan blijft de knop gewoon weg.
   useEffect(() => {
-    const flag =
-      process.env.NEXT_PUBLIC_CHECKOUT_EXPRESS === "1" ||
-      process.env.NEXT_PUBLIC_CHECKOUT_EXPRESS === "true";
-    // Test-ingang: forceer de knop met ?applepay=1 in de URL — zo test je op het
-    // echte, in Mollie geverifieerde domein (www.klus-r.nl) zonder env-var/rebuild
-    // en zonder de knop meteen voor álle klanten aan te zetten.
-    let forced = false;
-    try {
-      forced = new URLSearchParams(window.location.search).get("applepay") === "1";
-    } catch {
-      // Geen window/URL beschikbaar → niet forceren.
-    }
     try {
       const AP = (window as unknown as { ApplePaySession?: { canMakePayments(): boolean } })
         .ApplePaySession;
-      if ((flag || forced) && AP && AP.canMakePayments()) setApplePayAvailable(true);
+      if (AP && AP.canMakePayments()) setApplePayAvailable(true);
     } catch {
       // Apple Pay niet beschikbaar → knop blijft verborgen.
     }

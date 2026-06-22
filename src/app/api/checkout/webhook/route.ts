@@ -72,9 +72,10 @@ export async function POST(req: Request) {
           // garandeert dat de purchase écht wordt verstuurd.
           await sendGa4Purchase(paidOrder);
         }
-        // Beheerders een push sturen over de nieuwe bestelling. Best-effort en
-        // afgeschermd (gooit nooit) zodat het de webhook-respons niet raakt.
-        void sendPushToAdmins({
+        // Beheerders een push sturen over de nieuwe bestelling. Awaiten (parallel +
+        // in tijd gebonden, gooit nooit) zodat de melding écht verstuurd wordt vóór
+        // de serverless functie kan bevriezen; de outer try/catch garandeert 200.
+        await sendPushToAdmins({
           title: "Nieuwe bestelling",
           body: `${order.reference} · ${formatPrice(order.total)}`,
           url: "/admin",
