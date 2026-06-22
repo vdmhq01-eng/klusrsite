@@ -13,10 +13,12 @@ export function TopicImagePhoto({
   src,
   fallbackSrc,
   className,
+  alt,
 }: {
   src?: string;
   fallbackSrc?: string;
   className?: string;
+  alt?: string;
 }) {
   // Begin bij de primaire bron en val bij een laadfout terug op `fallbackSrc`.
   const [current, setCurrent] = useState(src ?? fallbackSrc);
@@ -33,7 +35,7 @@ export function TopicImagePhoto({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={current}
-      alt=""
+      alt={alt ?? ""}
       loading="lazy"
       onError={handleError}
       className={cn(

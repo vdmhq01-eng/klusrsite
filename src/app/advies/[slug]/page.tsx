@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { TopicImage } from "@/components/shared/topic-image";
-import { articleKeywords } from "@/lib/topic-images";
+import { articleHeroKeywords, topicImageUrl } from "@/lib/topic-images";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ChevronRight, Clock, User } from "lucide-react";
 import { articles, getArticle, getRelatedArticles } from "@/lib/data";
+import { getProductsByCategory } from "@/lib/data/products";
 import { ArticleCard } from "@/components/content/article-card";
+import { ProductCard } from "@/components/product/product-card";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -13,6 +16,17 @@ import { formatDate } from "@/lib/utils";
 interface ArticlePageProps {
   params: { slug: string };
 }
+
+/** Artikel-categorie → productcategorie-slug voor de "Aanbevolen producten"-sectie. */
+const PRODUCT_CATEGORY_BY_ARTICLE: Record<string, string> = {
+  Verven: "verf",
+  Gereedschap: "gereedschap",
+  Inspiratie: "verf",
+  Tuin: "verf",
+  Buiten: "verf",
+  Elektra: "elektra",
+  Vloeren: "vloeren-raam",
+};
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -23,18 +37,103 @@ export function generateMetadata({ params }: ArticlePageProps): Metadata {
   if (!article) {
     return { title: "Artikel niet gevonden" };
   }
+  const heroUrl = topicImageUrl(
+    articleHeroKeywords(article.slug, article.category),
+    article.slug,
+  );
   return {
     title: article.title,
     description: article.excerpt,
+    alternates: { canonical: `/advies/${article.slug}` },
     openGraph: {
       type: "article",
       title: article.title,
       description: article.excerpt,
       publishedTime: article.date,
       authors: [article.author],
-      images: [{ url: article.image }],
+      images: [{ url: heroUrl }],
     },
   };
+}
+
+/**
+ * Zet de platte body-array om in een rijke, SEO-vriendelijke opbouw:
+ *  - "## "  → H2-kop, "### " → H3-kop (koppenhiërarchie voor SEO)
+ *  - "- "   → opsommingstekens (opeenvolgende regels worden één lijst)
+ *  - "Stap N — …" → vetgedrukte stap-lead
+ *  - overige regels → gewone alinea
+ */
+function renderArticleBody(body: string[]): ReactNode[] {
+  const blocks: ReactNode[] = [];
+  let list: string[] = [];
+
+  const flushList = (key: string) => {
+    if (list.length === 0) return;
+    const items = [...list];
+    list = [];
+    blocks.push(
+      <ul
+        key={key}
+        className="mt-4 list-disc space-y-1.5 pl-5 text-base leading-relaxed text-muted-foreground"
+      >
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>,
+    );
+  };
+
+  body.forEach((raw, index) => {
+    const line = raw.trim();
+
+    if (line.startsWith("- ")) {
+      list.push(line.slice(2).trim());
+      return;
+    }
+    flushList(`list-${index}`);
+
+    if (line.startsWith("### ")) {
+      blocks.push(
+        <h3 key={index} className="mt-8 text-lg font-extrabold tracking-tight text-foreground">
+          {line.slice(4).trim()}
+        </h3>,
+      );
+      return;
+    }
+    if (line.startsWith("## ")) {
+      blocks.push(
+        <h2
+          key={index}
+          className="mt-10 text-xl font-extrabold tracking-tight text-foreground sm:text-2xl"
+        >
+          {line.slice(3).trim()}
+        </h2>,
+      );
+      return;
+    }
+    if (line.startsWith("Stap")) {
+      const [lead, ...remainder] = line.split(":");
+      const restText = remainder.join(":").trim();
+      blocks.push(
+        <p key={index} className="mt-6 text-base leading-relaxed text-foreground first:mt-0">
+          <strong className="font-bold text-foreground">
+            {lead.trim()}
+            {restText && ":"}
+          </strong>{" "}
+          {restText}
+        </p>,
+      );
+      return;
+    }
+    blocks.push(
+      <p key={index} className="mt-6 text-base leading-relaxed text-muted-foreground first:mt-0">
+        {line}
+      </p>,
+    );
+  });
+
+  flushList("list-end");
+  return blocks;
 }
 
 export default function ArticlePage({ params }: ArticlePageProps) {
@@ -44,6 +143,12 @@ export default function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const related = getRelatedArticles(article, 3);
+  const heroKeywords = articleHeroKeywords(article.slug, article.category);
+  const heroUrl = topicImageUrl(heroKeywords, article.slug);
+  const productCategory = PRODUCT_CATEGORY_BY_ARTICLE[article.category];
+  const featuredProducts = productCategory
+    ? getProductsByCategory(productCategory).slice(0, 3)
+    : [];
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
   const jsonLd = {
@@ -51,7 +156,7 @@ export default function ArticlePage({ params }: ArticlePageProps) {
     "@type": "Article",
     headline: article.title,
     description: article.excerpt,
-    image: article.image,
+    image: heroUrl,
     datePublished: article.date,
     dateModified: article.date,
     articleSection: article.category,
@@ -132,41 +237,13 @@ export default function ArticlePage({ params }: ArticlePageProps) {
           </div>
         </header>
 
-        {/* Hero image */}
-        <div className="relative mx-auto mt-8 aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl">
-          <TopicImage seed={article.slug} keywords={articleKeywords(article.category)} />
+        {/* Hero image — unieke, onderwerp-relevante foto per artikel (+ alt voor SEO) */}
+        <div className="group relative mx-auto mt-8 aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl">
+          <TopicImage seed={article.slug} keywords={heroKeywords} alt={article.title} />
         </div>
 
         {/* Body */}
-        <div className="mx-auto mt-10 max-w-2xl">
-          {article.body.map((paragraph, index) => {
-            const isStep = paragraph.startsWith("Stap");
-            if (isStep) {
-              const [lead, ...remainder] = paragraph.split(":");
-              const restText = remainder.join(":").trim();
-              return (
-                <p
-                  key={index}
-                  className="mt-6 text-base leading-relaxed text-foreground first:mt-0"
-                >
-                  <strong className="font-bold text-foreground">
-                    {lead.trim()}
-                    {restText && ":"}
-                  </strong>{" "}
-                  {restText}
-                </p>
-              );
-            }
-            return (
-              <p
-                key={index}
-                className="mt-6 text-base leading-relaxed text-muted-foreground first:mt-0"
-              >
-                {paragraph}
-              </p>
-            );
-          })}
-        </div>
+        <div className="mx-auto mt-10 max-w-2xl">{renderArticleBody(article.body)}</div>
 
         {/* Interne links — direct naar de juiste producten/categorieën */}
         {article.relatedLinks && article.relatedLinks.length > 0 && (
@@ -189,6 +266,23 @@ export default function ArticlePage({ params }: ArticlePageProps) {
               ))}
             </ul>
           </aside>
+        )}
+
+        {/* Aanbevolen producten — echte productkaarten (conversie + interne SEO-links) */}
+        {featuredProducts.length > 0 && (
+          <section className="mx-auto mt-12 max-w-4xl">
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+              Aanbevolen producten voor deze klus
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Direct het juiste materiaal in huis — met KLUSRPAS-voordeel.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-3">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} listName="Advies-artikel" />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Veelgestelde vragen — rendert + FAQPage structured data */}
