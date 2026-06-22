@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Send, MessageCircle, Loader2, ShoppingBag } from "lucide-react";
+import { Send, MessageCircle, Loader2, ShoppingBag, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/tracking";
 import { FormattedText } from "@/components/shared/formatted-text";
@@ -51,10 +52,12 @@ export function ChatPanel({
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [building, setBuilding] = useState(false);
   const [started, setStarted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
   const cidRef = useRef<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -145,6 +148,32 @@ export function ChatPanel({
     }
   }
 
+  /**
+   * Stel op basis van het gesprek een kluspakket samen (echte producten +
+   * aantallen) en navigeer naar de deelbare /klus/<id>-pagina.
+   */
+  async function buildKluspakket() {
+    if (building || loading) return;
+    setBuilding(true);
+    try {
+      const res = await fetch("/api/klus/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messages.filter((m) => m.role === "user" || m.role === "assistant"),
+        }),
+      });
+      const data = await res.json();
+      if (typeof data.url === "string") {
+        router.push(data.url);
+      } else {
+        setBuilding(false);
+      }
+    } catch {
+      setBuilding(false);
+    }
+  }
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       <div
@@ -203,10 +232,23 @@ export function ChatPanel({
             const last = messages[messages.length - 1];
             return (
               <div className="space-y-2 pt-1">
+                {/* Stel een kluspakket samen uit het gesprek (echte producten + aantallen). */}
+                <button
+                  onClick={buildKluspakket}
+                  disabled={building}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-70"
+                >
+                  {building ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {building ? "Kluspakket samenstellen…" : "Stel mijn kluspakket samen"}
+                </button>
                 {last.productHref && (
                   <Link
                     href={last.productHref}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-secondary"
                   >
                     <ShoppingBag className="h-4 w-4" />
                     {last.productLabel ?? "Bekijk producten"}

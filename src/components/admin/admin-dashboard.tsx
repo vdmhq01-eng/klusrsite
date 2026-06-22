@@ -40,6 +40,7 @@ import { NewsletterPanel } from "./newsletter-panel";
 import { HeroImages } from "./hero-images";
 import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
+import { SeoRankPanel } from "./seo-rank-panel";
 
 type SectionId =
   | "overzicht"
@@ -51,6 +52,7 @@ type SectionId =
   | "voorraad"
   | "rapportages"
   | "inzichten"
+  | "seo"
   | "content"
   | "nieuwsbrief"
   | "channable";
@@ -64,6 +66,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "voorraad", label: "Voorraad", icon: Boxes },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
+  { id: "seo", label: "SEO-ranking", icon: TrendingUp },
   { id: "content", label: "AI-content", icon: Sparkles },
   { id: "nieuwsbrief", label: "Nieuwsbrief", icon: Mail },
   { id: "channable", label: "Koppelingen", icon: Send },
@@ -127,6 +130,7 @@ export function AdminDashboard() {
             <AiContentManager />
           </div>
         )}
+        {section === "seo" && <SeoRankPanel />}
         {section === "nieuwsbrief" && <NewsletterPanel />}
         {section === "channable" && (
           <div className="space-y-6">

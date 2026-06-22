@@ -13,13 +13,17 @@ import {
   Palette,
   PiggyBank,
   RotateCcw,
+  Sparkles,
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CartItem, Order } from "@/types";
+import type { Klus } from "@/lib/store/klus";
+import type { CustomerProfile } from "@/lib/store/profile";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { formatDate, formatPrice } from "@/lib/utils";
+import { SHIPPING_COUNTRIES } from "@/lib/shipping";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +66,8 @@ export function AccountDashboard({
 
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [klussen, setKlussen] = useState<Klus[]>([]);
+  const [klussenLoading, setKlussenLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -72,6 +78,21 @@ export function AccountDashboard({
       })
       .catch(() => {})
       .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // De kluspakketten ("Mijn klussen") van deze klant — zelfde patroon als orders.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/klussen", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { klussen?: Klus[] } | null) => {
+        if (active && d?.klussen) setKlussen(d.klussen);
+      })
+      .catch(() => {})
+      .finally(() => active && setKlussenLoading(false));
     return () => {
       active = false;
     };
@@ -100,6 +121,7 @@ export function AccountDashboard({
       <TabsList className="w-full">
         <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
         <TabsTrigger value="bestellingen">Bestellingen</TabsTrigger>
+        <TabsTrigger value="klussen">Mijn klussen</TabsTrigger>
         <TabsTrigger value="gegevens">Gegevens</TabsTrigger>
         <TabsTrigger value="kluspas">KLUSRPAS</TabsTrigger>
       </TabsList>
@@ -273,6 +295,46 @@ export function AccountDashboard({
         </Card>
       </TabsContent>
 
+      {/* ------------------------------------------------------------ Klussen */}
+      <TabsContent value="klussen">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mijn klussen</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {klussenLoading ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Je klussen laden…
+              </div>
+            ) : klussen.length === 0 ? (
+              <EmptyKlussen />
+            ) : (
+              klussen.map((klus) => (
+                <Link
+                  key={klus.id}
+                  href={`/klus/${klus.id}`}
+                  className="group flex flex-col gap-3 rounded-lg border border-border p-4 transition-colors hover:border-primary/40 hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                      <Sparkles className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold">{klus.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Samengesteld op {formatDate(klus.createdAt)} · {klus.items.length}{" "}
+                        {klus.items.length === 1 ? "product" : "producten"}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="hidden h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary sm:block" />
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
       {/* ----------------------------------------------------------- Gegevens */}
       <TabsContent value="gegevens">
         <ProfileForm firstName={firstName} lastName={lastName} email={user.email ?? ""} />
@@ -379,6 +441,27 @@ function EmptyOrders() {
   );
 }
 
+function EmptyKlussen() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+        <Sparkles className="h-6 w-6" />
+      </span>
+      <p className="text-sm font-semibold">Je hebt nog geen kluspakketten</p>
+      <p className="max-w-xs text-sm text-muted-foreground">
+        Vraag de KLUSR Klushulp om advies en laat een kluspakket samenstellen — dan vind je hier al
+        je klussen terug.
+      </p>
+      <Button asChild size="sm" className="mt-1">
+        <Link href="/klushulp">
+          Naar de Klushulp
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
 /* ----------------------------------------------------------------- gegevens */
 
 function ProfileForm({
@@ -393,23 +476,95 @@ function ProfileForm({
   const [profile, setProfile] = useState({
     firstName,
     lastName,
-    email,
-    phone: DEMO.phone,
-    street: DEMO.street,
-    postalCode: DEMO.postalCode,
-    city: DEMO.city,
+    phone: "",
+    street: "",
+    houseNumber: "",
+    houseNumberAddition: "",
+    postalCode: "",
+    city: "",
+    country: "NL",
+    company: "",
+    cocNumber: "",
+    vatNumber: "",
   });
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Bestaand profiel inladen (bezorgadres + telefoon + zakelijke gegevens).
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/profile", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { profile?: CustomerProfile } | null) => {
+        if (!active || !d?.profile) return;
+        const p = d.profile;
+        const a = p.address ?? {};
+        setProfile((prev) => ({
+          firstName: a.firstName || prev.firstName,
+          lastName: a.lastName || prev.lastName,
+          phone: p.phone || "",
+          street: a.street || "",
+          houseNumber: a.houseNumber || "",
+          houseNumberAddition: a.houseNumberAddition || "",
+          postalCode: a.postalCode || "",
+          city: a.city || "",
+          country: a.country || "NL",
+          company: p.company || "",
+          cocNumber: p.cocNumber || "",
+          vatNumber: p.vatNumber || "",
+        }));
+      })
+      .catch(() => {})
+      .finally(() => active && setLoaded(true));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function update(key: keyof typeof profile) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setProfile((p) => ({ ...p, [key]: e.target.value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    toast.success("Opgeslagen", {
-      description: "Je gegevens zijn bijgewerkt (demo).",
-    });
+    setSaving(true);
+    try {
+      const res = await fetch("/api/account/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: [profile.firstName, profile.lastName].filter(Boolean).join(" ") || undefined,
+          phone: profile.phone,
+          company: profile.company,
+          cocNumber: profile.cocNumber,
+          vatNumber: profile.vatNumber,
+          address: {
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            street: profile.street,
+            houseNumber: profile.houseNumber,
+            houseNumberAddition: profile.houseNumberAddition,
+            postalCode: profile.postalCode,
+            city: profile.city,
+            country: profile.country,
+          },
+        }),
+      });
+      if (res.ok) {
+        toast.success("Opgeslagen", {
+          description: "Je gegevens en bezorgadres zijn bijgewerkt.",
+        });
+      } else {
+        toast.error("Opslaan mislukt", { description: "Probeer het zo nog eens." });
+      }
+    } catch {
+      toast.error("Opslaan mislukt", {
+        description: "Controleer je verbinding en probeer het opnieuw.",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -421,7 +576,12 @@ function ProfileForm({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field id="firstName" label="Voornaam" value={profile.firstName} onChange={update("firstName")} />
           <Field id="lastName" label="Achternaam" value={profile.lastName} onChange={update("lastName")} />
-          <Field id="email" label="E-mailadres" type="email" value={profile.email} onChange={update("email")} />
+          <div>
+            <Label htmlFor="email" className="mb-1.5 block">
+              E-mailadres
+            </Label>
+            <Input id="email" type="email" value={email} disabled className="opacity-70" />
+          </div>
           <Field id="phone" label="Telefoonnummer" type="tel" value={profile.phone} onChange={update("phone")} />
         </CardContent>
       </Card>
@@ -430,23 +590,89 @@ function ProfileForm({
         <CardHeader>
           <CardTitle>Bezorgadres</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+        <CardContent className="grid gap-4 sm:grid-cols-6">
           <Field
             id="street"
-            label="Straat en huisnummer"
+            label="Straat"
             value={profile.street}
             onChange={update("street")}
+            className="sm:col-span-4"
+          />
+          <Field
+            id="houseNumber"
+            label="Huisnr."
+            value={profile.houseNumber}
+            onChange={update("houseNumber")}
+            className="sm:col-span-1"
+          />
+          <Field
+            id="houseNumberAddition"
+            label="Toev."
+            value={profile.houseNumberAddition}
+            onChange={update("houseNumberAddition")}
+            className="sm:col-span-1"
+          />
+          <Field
+            id="postalCode"
+            label="Postcode"
+            value={profile.postalCode}
+            onChange={update("postalCode")}
             className="sm:col-span-2"
           />
-          <Field id="postalCode" label="Postcode" value={profile.postalCode} onChange={update("postalCode")} />
-          <Field id="city" label="Plaats" value={profile.city} onChange={update("city")} />
+          <Field
+            id="city"
+            label="Plaats"
+            value={profile.city}
+            onChange={update("city")}
+            className="sm:col-span-2"
+          />
+          <div className="sm:col-span-2">
+            <Label htmlFor="country" className="mb-1.5 block">
+              Land
+            </Label>
+            <select
+              id="country"
+              value={profile.country}
+              onChange={(e) => setProfile((p) => ({ ...p, country: e.target.value }))}
+              className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {SHIPPING_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Zakelijke gegevens{" "}
+            <span className="text-sm font-normal text-muted-foreground">(optioneel)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field
+            id="company"
+            label="Bedrijfsnaam"
+            value={profile.company}
+            onChange={update("company")}
+            className="sm:col-span-2"
+          />
+          <Field id="cocNumber" label="KvK-nummer" value={profile.cocNumber} onChange={update("cocNumber")} />
+          <Field id="vatNumber" label="Btw-nummer" value={profile.vatNumber} onChange={update("vatNumber")} />
         </CardContent>
       </Card>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit">Bewerken opslaan</Button>
+        <Button type="submit" disabled={saving || !loaded}>
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          Wijzigingen opslaan
+        </Button>
         <span className="text-xs text-muted-foreground">
-          Demo — wijzigingen worden niet echt opgeslagen.
+          Je bezorgadres wordt bij je volgende bestelling automatisch ingevuld.
         </span>
       </div>
     </form>

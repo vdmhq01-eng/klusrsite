@@ -26,6 +26,7 @@ import { MollieCard, type MollieCardHandle } from "./mollie-card";
 import { CheckoutTrust } from "./checkout-trust";
 import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import type { PaymentMethodInfo } from "@/types";
+import type { CustomerProfile } from "@/lib/store/profile";
 import {
   useCart,
   cartSummary,
@@ -87,6 +88,10 @@ function makeSchema(t: ReturnType<typeof useT>) {
 
 type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
+// Wallet-/express-methoden: deze krijgen in de interne checkout een eigen,
+// prominente knop bovenaan; de overige methoden staan in de gewone keuzelijst.
+const walletIds = ["applepay", "googlepay", "paypal"];
+
 const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
 /** Fallback wanneer de methodenroute onbereikbaar is. Landbewust: BE → Bancontact,
  *  anders iDEAL. Apple Pay & Google Pay altijd erbij. */
@@ -102,10 +107,72 @@ function fallbackFor(country: string): PaymentMethodInfo[] {
     : [{ id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` }, ...rest];
 }
 
+// GA4 measurement-id (zonder "G-") voor de naam van het GA4-sessiecookie. Moet
+// gelijk zijn aan de stream in GTM/GA4 (G-M854M83RJW).
+const GA4_MEASUREMENT_ID = "M854M83RJW";
+
+/**
+ * Leest de GA4-/Ads-attributie uit `document.cookie` + de bewaarde consent. Wordt
+ * meegestuurd naar create-payment zodat de webhook server-side een `purchase` kan
+ * vuren (Measurement Protocol). Volledig best-effort: gooit nooit en geeft alleen
+ * de aanwezige velden terug — mag het afrekenen nooit breken.
+ */
+function readGaAttribution(): {
+  clientId?: string;
+  sessionId?: string;
+  gclid?: string;
+  consent?: boolean;
+} {
+  const ga: { clientId?: string; sessionId?: string; gclid?: string; consent?: boolean } = {};
+  try {
+    const cookies = new Map<string, string>();
+    for (const part of document.cookie.split(";")) {
+      const eq = part.indexOf("=");
+      if (eq === -1) continue;
+      cookies.set(part.slice(0, eq).trim(), part.slice(eq + 1).trim());
+    }
+
+    // _ga = "GA1.1.<A>.<B>" → client-id = de laatste twee dot-segmenten ("A.B").
+    const gaCookie = cookies.get("_ga");
+    if (gaCookie) {
+      const clientId = gaCookie.split(".").slice(-2).join(".");
+      if (clientId) ga.clientId = clientId;
+    }
+
+    // _ga_<meet-id> = "GS1.1.<sid>.<...>" → sessie-id = het 3e dot-segment.
+    const sessionCookie = cookies.get(`_ga_${GA4_MEASUREMENT_ID}`);
+    if (sessionCookie) {
+      const sessionId = sessionCookie.split(".")[2];
+      if (sessionId) ga.sessionId = sessionId;
+    }
+
+    // _gcl_aw = "GCL.<ts>.<gclid>" → gclid = alles vanaf het 3e segment.
+    const gclCookie = cookies.get("_gcl_aw");
+    if (gclCookie) {
+      const gclid = gclCookie.split(".").slice(2).join(".");
+      if (gclid) ga.gclid = gclid;
+    }
+
+    // Analytics-toestemming uit de bewaarde cookiekeuze (klusr-consent).
+    const consent = JSON.parse(localStorage.getItem("klusr-consent") || "null") as {
+      analytics?: boolean;
+    } | null;
+    if (consent) ga.consent = Boolean(consent.analytics);
+  } catch {
+    /* best-effort: nooit het afrekenen breken */
+  }
+  return ga;
+}
+
 export function CheckoutForm({
+  expressMode,
   mollieProfile,
   mollieTest,
 }: {
+  // Feature-flag: alleen wanneer `true` rendert de interne checkout (express-
+  // knoppen + methodekeuze + ingebedde kaart). Staat-ie uit (default), dan blijft
+  // de huidige Mollie hosted-checkout exact zoals nu.
+  expressMode?: boolean;
   mollieProfile?: string;
   mollieTest?: boolean;
 }) {
@@ -117,14 +184,22 @@ export function CheckoutForm({
   // 15-min nabestelvenster → geen extra verzendkosten.
   const { active: reorderFree } = useReorderActive();
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
-  // Voorselectie van de gangbaarste methode gebeurt zodra de methodenlijst laadt.
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-  const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
-  const [methodsLoading, setMethodsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
+
+  // --- Interne checkout (alleen actief bij expressMode) ----------------------
+  // Deze state heeft alleen betekenis wanneer de feature-flag aanstaat; in de
+  // hosted-modus blijft 'ie ongebruikt en verandert er niets aan het gedrag.
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [methods, setMethods] = useState<PaymentMethodInfo[]>([]);
+  const [methodsLoading, setMethodsLoading] = useState(false);
   const cardRef = useRef<MollieCardHandle>(null);
+  // Form-element + "vastgehouden" express-keuze: een express-knop kiest een
+  // methode én verstuurt meteen. setState is asynchroon, dus we leggen de keuze
+  // ook in een ref vast zodat onSubmit 'm gegarandeerd ziet in dezelfde tick.
+  const formRef = useRef<HTMLFormElement>(null);
+  const expressMethodRef = useRef<string | null>(null);
 
   // Account-funnel: inloggen kan inline (geen redirect), of de klant rekent af
   // als gast en kan met één vinkje een account aanmaken bij het bestellen.
@@ -136,15 +211,6 @@ export function CheckoutForm({
   const [loginError, setLoginError] = useState<string | null>(null);
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPw, setAccountPw] = useState("");
-
-  // Billie is alleen zakelijk: deselecteer 'm als de klant naar particulier wisselt.
-  useEffect(() => {
-    if (mode !== "zakelijk" && paymentMethod === "billie") setPaymentMethod(null);
-  }, [mode, paymentMethod]);
-
-  function selectMethod(id: string) {
-    setPaymentMethod(id);
-  }
 
   // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
   const schema = useMemo(() => makeSchema(t), [t]);
@@ -174,6 +240,40 @@ export function CheckoutForm({
     }
     setShowLogin(false);
     setCreateAccount(false);
+  }, [session, setValue, getValues]);
+
+  // Vul het opgeslagen bezorgadres voor zodra de klant is ingelogd — zodat een
+  // ingelogde klant z'n gegevens niet bij elke bestelling opnieuw hoeft te typen.
+  // Overschrijft nooit wat de klant al heeft ingevuld (alleen lege velden).
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    let active = true;
+    fetch("/api/account/profile", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { profile?: CustomerProfile } | null) => {
+        if (!active || !d?.profile) return;
+        const p = d.profile;
+        if (p.phone && !getValues("phone")) setValue("phone", p.phone);
+        if (p.company && !getValues("companyName")) setValue("companyName", p.company);
+        if (p.cocNumber && !getValues("cocNumber")) setValue("cocNumber", p.cocNumber);
+        if (p.vatNumber && !getValues("vatNumber")) setValue("vatNumber", p.vatNumber);
+        const a = p.address;
+        if (a) {
+          if (a.firstName && !getValues("firstName")) setValue("firstName", a.firstName);
+          if (a.lastName && !getValues("lastName")) setValue("lastName", a.lastName);
+          if (a.street && !getValues("street")) setValue("street", a.street);
+          if (a.houseNumber && !getValues("houseNumber")) setValue("houseNumber", a.houseNumber);
+          if (a.houseNumberAddition && !getValues("houseNumberAddition"))
+            setValue("houseNumberAddition", a.houseNumberAddition);
+          if (a.postalCode && !getValues("postalCode")) setValue("postalCode", a.postalCode);
+          if (a.city && !getValues("city")) setValue("city", a.city);
+          if (a.country) setValue("country", a.country);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [session, setValue, getValues]);
 
   // Inline inloggen zonder de checkout te verlaten.
@@ -226,10 +326,12 @@ export function CheckoutForm({
 
   const country = watch("country") || "NL";
 
-  // Betaalmethoden ophalen — landafhankelijk (Mollie filtert per land, dus de
-  // Belgische methoden verschijnen alleen bij BE) en incl. Apple Pay / Google Pay.
-  // Herlaadt zodra het bedrag of het gekozen land wijzigt.
+  // Betaalmethoden ophalen — ALLEEN in de interne checkout (expressMode). In de
+  // hosted-modus halen we niets op en blijft de pagina ongewijzigd. Landbewust
+  // (Mollie filtert per land) en incl. Apple Pay / Google Pay; herlaadt zodra het
+  // bedrag of het gekozen land wijzigt.
   useEffect(() => {
+    if (!expressMode) return;
     let active = true;
     const total = cartSummary(items, mode, kluspasActive).grossTotal;
     const params = new URLSearchParams();
@@ -245,7 +347,7 @@ export function CheckoutForm({
       setPaymentMethod((cur) => {
         if (cur) return cur;
         const preferred = country === "BE" ? "bancontact" : "ideal";
-        return list.find((m) => m.id === preferred)?.id ?? list[0]?.id ?? null;
+        return list.find((m) => m.id === preferred)?.id ?? null;
       });
     };
     fetch(`/api/checkout/payment-methods?${params.toString()}`)
@@ -257,7 +359,7 @@ export function CheckoutForm({
     return () => {
       active = false;
     };
-  }, [items, mode, kluspasActive, country]);
+  }, [expressMode, items, mode, kluspasActive, country]);
 
   // Postcode + huisnummer → straat + plaats automatisch invullen (PDOK).
   async function lookupAddress() {
@@ -312,25 +414,45 @@ export function CheckoutForm({
   const showKluspasNudge =
     summary.vatIncluded && !kluspasActive && potentialKluspasSavings > 0;
 
-  // Billie-toeslag (zakelijk): Mollie-tarief doorbelasten — €0,35 + 3,49%.
-  const billieSurcharge =
-    paymentMethod === "billie"
-      ? Math.round((0.35 + summary.total * 0.0349) * 100) / 100
-      : 0;
-  const payableTotal = Math.round((summary.total + billieSurcharge) * 100) / 100;
+  // Splits de methoden voor de interne checkout: wallets (express-knoppen) en de
+  // gewone keuzelijst. Billie blijft zakelijk-only. Leeg/ongebruikt in hosted-modus.
+  const expressMethods = methods.filter((m) => walletIds.includes(m.id));
+  const pickMethods = methods.filter(
+    (m) => !walletIds.includes(m.id) && (mode === "zakelijk" || m.id !== "billie"),
+  );
 
-  const useMollieComponents = paymentMethod === "creditcard" && Boolean(mollieProfile);
-  // Mollie's nieuwe iDEAL kiest de bank op zijn eigen pagina; we vragen niet meer
-  // vooraf om een bank. De knop is actief zodra er een methode gekozen is.
-  const canPay = Boolean(paymentMethod);
+  // Een express-knop: leg de gekozen wallet vast (state + ref) en verstuur meteen.
+  function payWith(id: string) {
+    expressMethodRef.current = id;
+    setPaymentMethod(id);
+    formRef.current?.requestSubmit();
+  }
 
   async function onSubmit(values: FormValues) {
-    if (!paymentMethod) {
+    // Interne checkout: bepaal de gekozen methode. Een express-knop legt 'm in een
+    // ref vast (state is asynchroon); daarna heeft de gewone keuze voorrang. Blijft
+    // null in de hosted-modus → het request-body verandert dan niets.
+    const method = expressMode ? expressMethodRef.current ?? paymentMethod : null;
+    expressMethodRef.current = null;
+    if (expressMode && !method) {
       setError(t("checkout.error.choosePayment"));
       return;
     }
+
     setSubmitting(true);
     setError(null);
+
+    // Ingebedde creditcard: maak vooraf een card-token aan; mislukt dat, dan
+    // afbreken met een duidelijke melding (alleen relevant bij expressMode).
+    let cardToken: string | null = null;
+    if (expressMode && method === "creditcard" && mollieProfile) {
+      cardToken = (await cardRef.current?.createToken()) ?? null;
+      if (!cardToken) {
+        setError(t("checkout.error.card"));
+        setSubmitting(false);
+        return;
+      }
+    }
 
     // Optioneel: account aanmaken vanuit de checkout (blijft volledig in de funnel).
     if (createAccount && !session) {
@@ -359,16 +481,6 @@ export function CheckoutForm({
         }
       } catch {
         /* account aanmaken is best-effort */
-      }
-    }
-
-    let cardToken: string | null = null;
-    if (useMollieComponents) {
-      cardToken = (await cardRef.current?.createToken()) ?? null;
-      if (!cardToken) {
-        setError(t("checkout.error.card"));
-        setSubmitting(false);
-        return;
       }
     }
 
@@ -404,6 +516,36 @@ export function CheckoutForm({
         : {}),
     };
 
+    // Adres op het account bewaren voor een ingelogde klant → volgende keer staat
+    // de checkout al ingevuld. Best-effort; mag de bestelling nooit blokkeren.
+    if (session?.user?.email) {
+      void fetch("/api/account/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: [values.firstName, values.lastName].filter(Boolean).join(" ") || undefined,
+          phone: values.phone,
+          ...(mode === "zakelijk"
+            ? {
+                company: values.companyName,
+                cocNumber: values.cocNumber,
+                vatNumber: values.vatNumber,
+              }
+            : {}),
+          address: {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            street: values.street,
+            houseNumber: values.houseNumber,
+            houseNumberAddition: values.houseNumberAddition,
+            postalCode: values.postalCode,
+            city: values.city,
+            country: values.country,
+          },
+        }),
+      }).catch(() => {});
+    }
+
     // Optioneel inschrijven voor de nieuwsbrief (demo-safe, fire-and-forget).
     if (values.newsletter) {
       void fetch("/api/newsletter", {
@@ -419,7 +561,12 @@ export function CheckoutForm({
     }
 
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
-    trackEvent("add_payment_info", { payment_type: paymentMethod, value: summary.total });
+
+    // GA4-/Ads-attributie uit de cookies lezen (best-effort) zodat de webhook
+    // server-side een `purchase` kan vuren — los van of de klant terugkeert naar
+    // /bedankt of cookies accepteert. Alleen meesturen als er iets gevonden is.
+    const ga = readGaAttribution();
+    const hasGa = Object.keys(ga).length > 0;
 
     try {
       const res = await fetch("/api/checkout/create-payment", {
@@ -430,11 +577,13 @@ export function CheckoutForm({
           items,
           subtotal: summary.grossSubtotal,
           shipping: summary.grossShipping,
-          total: payableTotal,
-          surcharge: billieSurcharge,
+          total: summary.total,
           kluspasSavings: summary.savings,
-          method: paymentMethod,
-          ...(cardToken ? { cardToken } : {}),
+          // Interne checkout: stuur de gekozen methode (+ evt. card-token) mee. In
+          // de hosted-modus blijft dit weg → het body is identiek aan voorheen.
+          ...(expressMode && method ? { method } : {}),
+          ...(expressMode && cardToken ? { cardToken } : {}),
+          ...(hasGa ? { ga } : {}),
         }),
       });
       const data = await res.json();
@@ -456,7 +605,7 @@ export function CheckoutForm({
       </Link>
       <h1 className="mb-6 text-2xl font-extrabold sm:text-3xl">{t("checkout.title")}</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
+      <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Left: details. min-w-0 zodat de kolom nooit breder wordt dan de
             viewport (grid-items hebben standaard min-width:auto → anders kan
             inhoud de hele pagina op mobiel naar rechts duwen). */}
@@ -710,20 +859,6 @@ export function CheckoutForm({
               <DeliveryCountdown compact className="px-1 text-xs" />
             </div>
           </Section>
-
-          <Section title={t("checkout.section.payment")} step={4}>
-            <PaymentMethods
-              methods={mode === "zakelijk" ? methods : methods.filter((m) => m.id !== "billie")}
-              value={paymentMethod}
-              onChange={selectMethod}
-              loading={methodsLoading}
-            />
-            {useMollieComponents && (
-              <div className="mt-4">
-                <MollieCard ref={cardRef} profileId={mollieProfile!} testmode={Boolean(mollieTest)} />
-              </div>
-            )}
-          </Section>
         </div>
 
         {/* Right: order summary */}
@@ -779,12 +914,6 @@ export function CheckoutForm({
                   <dd>{formatPrice(summary.vat)}</dd>
                 </div>
               )}
-              {billieSurcharge > 0 && (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">{t("checkout.billieSurcharge")}</dt>
-                  <dd>{formatPrice(billieSurcharge)}</dd>
-                </div>
-              )}
             </dl>
             {showKluspasNudge && (
               <button
@@ -799,7 +928,7 @@ export function CheckoutForm({
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-bold">{t("cart.total")}</span>
-              <span className="text-2xl font-black">{formatPrice(payableTotal)}</span>
+              <span className="text-2xl font-black">{formatPrice(summary.total)}</span>
             </div>
             {!summary.vatIncluded && (
               <p className="mt-1 text-xs text-muted-foreground">{t("cart.vatIncluded")}</p>
@@ -836,21 +965,62 @@ export function CheckoutForm({
               </p>
             )}
 
-            <Button type="submit" size="xl" className="mt-4 w-full" disabled={submitting || !canPay}>
+            {/* Interne checkout: express-knoppen + methodekeuze + ingebedde kaart.
+                Rendert ALLEEN bij expressMode; staat-ie uit, dan is dit blok er niet
+                en blijft de pagina exact zoals de huidige hosted-checkout. */}
+            {expressMode && (
+              <div className="mt-4 space-y-3">
+                {expressMethods.length > 0 && (
+                  <div className="space-y-2">
+                    {expressMethods.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => payWith(m.id)}
+                        disabled={submitting}
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-klusr-black bg-klusr-black text-sm font-semibold text-white transition-colors hover:bg-klusr-black/90 disabled:opacity-50"
+                      >
+                        {m.image && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.image} alt="" className="h-5 w-auto" />
+                        )}
+                        {m.label}
+                      </button>
+                    ))}
+                    <p className="text-center text-xs text-muted-foreground">
+                      of kies zelf je betaalmethode
+                    </p>
+                  </div>
+                )}
+
+                <PaymentMethods
+                  methods={pickMethods}
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                  loading={methodsLoading}
+                />
+
+                {paymentMethod === "creditcard" && mollieProfile && (
+                  <MollieCard ref={cardRef} profileId={mollieProfile} testmode={Boolean(mollieTest)} />
+                )}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              size="xl"
+              className="mt-4 w-full"
+              disabled={expressMode ? submitting || !paymentMethod : submitting}
+            >
               {submitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  {t("checkout.pay", { amount: formatPrice(payableTotal) })}
+                  {t("checkout.pay", { amount: formatPrice(summary.total) })}
                 </>
               )}
             </Button>
-            {!canPay && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                {t("checkout.choosePaymentHint")}
-              </p>
-            )}
 
             <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-klusr-stock" />

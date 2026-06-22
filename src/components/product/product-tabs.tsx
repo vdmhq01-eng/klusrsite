@@ -17,17 +17,29 @@ import { formatDate } from "@/lib/utils";
 import { getProductReviews } from "@/lib/reviews";
 import { t } from "@/lib/i18n/server";
 
-export function ProductTabs({ product }: { product: Product }) {
+export function ProductTabs({
+  product,
+  publishedFaq,
+}: {
+  product: Product;
+  publishedFaq?: string;
+}) {
   const reviews = getProductReviews(product);
+  // FAQ-bron: de catalogus-FAQ, of anders de gepubliceerde (AI-)FAQ uit KV.
+  const faqItems: { question: string; answer: string }[] =
+    product.faqs && product.faqs.length > 0
+      ? product.faqs.map((f) => ({ question: f.question, answer: f.answer }))
+      : publishedFaq
+        ? parsePublishedFaqs(publishedFaq)
+        : [];
+  const hasFaq = faqItems.length > 0;
   return (
     <Tabs defaultValue="omschrijving" className="w-full">
       <TabsList className="w-full">
         <TabsTrigger value="omschrijving">{t("pdp.tab.description")}</TabsTrigger>
         <TabsTrigger value="specificaties">{t("pdp.tab.specs")}</TabsTrigger>
+        {hasFaq && <TabsTrigger value="faq">{t("faq.title")}</TabsTrigger>}
         <TabsTrigger value="reviews">{t("pdp.tab.reviews")} ({product.reviewCount})</TabsTrigger>
-        {product.faqs && product.faqs.length > 0 && (
-          <TabsTrigger value="faq">{t("faq.title")}</TabsTrigger>
-        )}
         {product.processingAdvice && (
           <TabsTrigger value="verwerking">{t("pdp.tab.processing")}</TabsTrigger>
         )}
@@ -119,14 +131,20 @@ export function ProductTabs({ product }: { product: Product }) {
         </div>
       </TabsContent>
 
-      {/* FAQ */}
-      {product.faqs && product.faqs.length > 0 && (
+      {/* FAQ — catalogus-FAQ of gepubliceerde AI-FAQ uit KV */}
+      {hasFaq && (
         <TabsContent value="faq">
           <Accordion type="single" collapsible className="max-w-2xl">
-            {product.faqs.map((f, i) => (
+            {faqItems.map((f, i) => (
               <AccordionItem key={i} value={`faq-${i}`}>
-                <AccordionTrigger>{f.question}</AccordionTrigger>
-                <AccordionContent>{f.answer}</AccordionContent>
+                <AccordionTrigger className="text-left text-sm font-semibold">
+                  {f.question}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
+                    {f.answer}
+                  </p>
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -149,4 +167,35 @@ export function ProductTabs({ product }: { product: Product }) {
       )}
     </Tabs>
   );
+}
+
+/**
+ * Parse de gepubliceerde AI-FAQ ("V: …\nA: …") naar losse vraag/antwoord-paren,
+ * zodat we ze net als de catalogus-FAQ in een nette accordion kunnen tonen.
+ */
+function parsePublishedFaqs(text: string): { question: string; answer: string }[] {
+  const strip = (s: string) => s.replace(/\*\*/g, "").trim();
+  const items: { question: string; answer: string }[] = [];
+  let cur: { question: string; answer: string } | null = null;
+  let mode: "q" | "a" | null = null;
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const q = line.match(/^(?:\*\*)?\s*(?:Vraag|V|Q)\s*[:.\-]\s*(.*)$/i);
+    const a = line.match(/^(?:\*\*)?\s*(?:Antwoord|A)\s*[:.\-]\s*(.*)$/i);
+    if (q) {
+      if (cur) items.push(cur);
+      cur = { question: strip(q[1]), answer: "" };
+      mode = "q";
+    } else if (a && cur) {
+      cur.answer = strip(a[1]);
+      mode = "a";
+    } else if (cur) {
+      if (mode === "a") cur.answer += (cur.answer ? " " : "") + strip(line);
+      else cur.question += " " + strip(line);
+    }
+  }
+  if (cur) items.push(cur);
+  return items.filter((i) => i.question && i.answer);
 }

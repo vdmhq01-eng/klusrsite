@@ -97,7 +97,8 @@ export function PublishedContent({
 }: {
   content: Record<string, ProductContentOverride>;
 }) {
-  const order = ["description", "specifications", "faqs"] as const;
+  // FAQ wordt nu in de producttabs getoond; hier alleen nog beschrijving + specs.
+  const order = ["description", "specifications"] as const;
   const sections = order
     .map((type) => content[type])
     .filter((c): c is ProductContentOverride => Boolean(c?.content?.trim()));

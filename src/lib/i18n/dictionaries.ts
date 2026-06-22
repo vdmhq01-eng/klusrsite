@@ -326,6 +326,28 @@ export type Messages = {
   "checkout.thanks.deliveryAddress": string;
   "checkout.thanks.loadError": string;
   "checkout.thanks.backHome": string;
+  // Bedankpagina — statusafhankelijke koppen (succes / verwerken / mislukt)
+  "checkout.thanks.successBadge": string; // klein label boven de titel bij betaald
+  "checkout.thanks.orderSummary": string; // koptitel boven de orderkaart
+  "checkout.thanks.needHelp.title": string; // trust-blok: hulp nodig?
+  "checkout.thanks.needHelp.text": string;
+  "checkout.thanks.needHelp.cta": string;
+  // ── Bedankpagina — betaling in verwerking (open/pending) ───────────────────
+  "checkout.pending.title": string;
+  "checkout.pending.text": string;
+  "checkout.pending.hint": string;
+  "checkout.pending.refreshNow": string;
+  "checkout.pending.backHome": string;
+  // ── Bedankpagina — betaling niet gelukt (failed/canceled/expired) ──────────
+  "checkout.failed.title": string; // mislukt
+  "checkout.failed.canceledTitle": string; // geannuleerd
+  "checkout.failed.expiredTitle": string; // verlopen
+  "checkout.failed.text": string;
+  "checkout.failed.cartKept": string; // "je winkelwagen is bewaard gebleven"
+  "checkout.failed.retry": string; // CTA → checkout
+  "checkout.failed.toCart": string; // CTA → winkelwagen
+  "checkout.failed.help": string; // link → klantenservice
+  "checkout.failed.orderRef": string; // {ref}
 
   // ── Checkout — validatie (zod-schema, binnen de component) ─────────────────
   "checkout.validation.required": string;
@@ -671,7 +693,7 @@ export type Messages = {
   // Ingelogd (pasprijs toegepast): "jouw prijs"-framing i.p.v. de marketingpitch.
   "pdp.yourPrice": string;
   "pdp.yourPassPrice": string; // {pass}
-  "pdp.passApplied": string; // {pass}
+  "pdp.passApplied": string; // {pass}, {pct}
   "pdp.perLiterCheaper": string;
   "pdp.stockForBasePre": string;
   "pdp.stockForBasePost": string;
@@ -874,7 +896,7 @@ const nl: Messages = {
   "cart.continueShopping": "Verder winkelen",
   "cart.toCart": "Naar winkelwagen",
 
-  "cart.usp.returns": "Gratis retourneren",
+  "cart.usp.returns": "Retourneren mogelijk",
   "cart.usp.payment": "Veilig betalen via Mollie",
 
   "cart.upsell.title": "Maak je klus compleet",
@@ -953,7 +975,7 @@ const nl: Messages = {
   "checkout.pay": "Betaal {amount}",
   "checkout.chooseBankHint": "Kies je bank om verder te gaan.",
   "checkout.choosePaymentHint": "Kies eerst een betaalmethode.",
-  "checkout.usp.freeReturn": "Gratis retour",
+  "checkout.usp.freeReturn": "14 dagen bedenktijd",
   "checkout.usp.fastDelivery": "Snelle levering",
 
   "checkout.trust.heading": "Wat klanten over KLUSR zeggen",
@@ -1010,6 +1032,29 @@ const nl: Messages = {
   "checkout.thanks.loadError":
     "We konden de bestelgegevens niet laden, maar je betaling is in goede orde ontvangen. Je ontvangt een bevestiging per e-mail.",
   "checkout.thanks.backHome": "Terug naar home",
+  "checkout.thanks.successBadge": "Betaling geslaagd",
+  "checkout.thanks.orderSummary": "Je bestelling",
+  "checkout.thanks.needHelp.title": "Vragen over je bestelling?",
+  "checkout.thanks.needHelp.text":
+    "Onze klushulp staat voor je klaar — van levertijd tot productadvies.",
+  "checkout.thanks.needHelp.cta": "Naar de klantenservice",
+  "checkout.pending.title": "We verwerken je betaling…",
+  "checkout.pending.text":
+    "Je betaling wordt nog bevestigd door je bank. Dit duurt meestal maar een paar seconden.",
+  "checkout.pending.hint":
+    "Deze pagina ververst automatisch zodra je betaling rond is. Je hoeft niets te doen.",
+  "checkout.pending.refreshNow": "Status nu verversen",
+  "checkout.pending.backHome": "Terug naar home",
+  "checkout.failed.title": "Je betaling is niet gelukt",
+  "checkout.failed.canceledTitle": "Je betaling is geannuleerd",
+  "checkout.failed.expiredTitle": "Je betaling is verlopen",
+  "checkout.failed.text":
+    "Er is geen bedrag afgeschreven. Je kunt het zonder zorgen opnieuw proberen.",
+  "checkout.failed.cartKept": "Je winkelwagen is bewaard gebleven.",
+  "checkout.failed.retry": "Opnieuw proberen",
+  "checkout.failed.toCart": "Naar winkelwagen",
+  "checkout.failed.help": "Hulp nodig? Neem contact op met de klantenservice",
+  "checkout.failed.orderRef": "Bestelnummer: {ref}",
 
   "checkout.validation.required": "Verplicht",
   "checkout.validation.email": "Vul een geldig e-mailadres in",
@@ -1024,7 +1069,7 @@ const nl: Messages = {
     "Vind hieronder snel antwoord op de meestgestelde vragen, of neem direct contact met ons op. Onze klussers staan voor je klaar.",
 
   "service.trust.delivery": "Voor 19:00 besteld, morgen in huis",
-  "service.trust.returns": "14 dagen gratis retour",
+  "service.trust.returns": "14 dagen bedenktijd",
   "service.trust.payment": "Veilig betalen via Mollie",
   "service.trust.advice": "Advies van ex-schilders",
   "service.trust.warranty": "Wettelijke garantie op alles",
@@ -1053,7 +1098,7 @@ const nl: Messages = {
 
   "service.group.shipping.title": "Verzending & retour",
   "service.group.shipping.intro":
-    "Gratis verzending vanaf {free} in NL en BE, voor 19:00 besteld is morgen in huis, en gratis retour per post met retourlabel. Naar de rest van de EU vanaf {eu}.",
+    "Gratis verzending vanaf {free} in NL en BE, voor 19:00 besteld is morgen in huis, en retourneren kan per post met retourlabel — de retourkosten zijn voor eigen rekening. Naar de rest van de EU vanaf {eu}.",
   "service.group.payment.title": "Veilig betalen",
   "service.group.payment.intro":
     "Betaal eenvoudig en veilig met iDEAL, Bancontact, creditcard of achteraf met Klarna via Mollie.",
@@ -1078,7 +1123,7 @@ const nl: Messages = {
     "We bezorgen in de hele EU. Naar België is verzending gratis vanaf {beFree}; naar de overige EU-landen geldt een vast tarief per land vanaf {eu}, dat je tijdens het afrekenen ziet. Buiten de EU — waaronder Zwitserland en het Verenigd Koninkrijk — verzenden we niet, vanwege de douane.",
   "service.faq.shipping.return.q": "Hoe retourneer ik een product?",
   "service.faq.shipping.return.a":
-    "Retourneren is gratis per post met een retourlabel. Meld je retour aan via je account of de klantenservice, dan ontvang je het retourlabel en de instructies. Je hebt 14 dagen bedenktijd.",
+    "Retourneren kan per post met een retourlabel; de retourkosten zijn voor eigen rekening. Meld je retour aan via je account of de klantenservice, dan ontvang je het retourlabel en de instructies. Je hebt 14 dagen bedenktijd.",
 
   "service.faq.payment.methods.q": "Welke betaalmethodes accepteren jullie?",
   "service.faq.payment.methods.a":
@@ -1136,7 +1181,7 @@ const nl: Messages = {
 
   "service.guarantee.title": "Niet goed? Geld terug.",
   "service.guarantee.text":
-    "We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd, gratis retour per post met retourlabel en wettelijke garantie op alles. Op kleur gemengde verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het altijd kosteloos op.",
+    "We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd, retourneren kan per post met retourlabel (de retourkosten zijn voor eigen rekening) en wettelijke garantie op alles. Op kleur gemengde verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het altijd kosteloos op.",
   "service.guarantee.cta": "Lees de retourvoorwaarden",
 
   "service.contactBlock.title": "Staat je vraag er niet bij?",
@@ -1376,14 +1421,14 @@ const nl: Messages = {
   "pdp.withPass": "met {pass}",
   "pdp.passExplain": "{pct}% korting op de hele collectie met je gratis {pass}.",
   "pdp.yourPrice": "Jouw prijs",
-  "pdp.yourPassPrice": "Jouw {pass}-prijs",
-  "pdp.passApplied": "Automatisch toegepast met je {pass}.",
+  "pdp.yourPassPrice": "met {pass}",
+  "pdp.passApplied": "{pct}% korting, automatisch verrekend met je {pass}.",
   "pdp.perLiterCheaper": "grotere bus is voordeliger per liter",
   "pdp.stockForBasePre": "Voorraad getoond voor ",
   "pdp.stockForBasePost": " — elke basis heeft een eigen voorraad.",
 
   "pdp.usp.freeShipping": "Gratis verzending vanaf €50",
-  "pdp.usp.returns": "Gratis retourneren binnen 30 dagen",
+  "pdp.usp.returns": "Retourneren binnen 14 dagen",
   "pdp.usp.afterpay": "Achteraf betalen mogelijk",
 
   "pdp.tab.description": "Omschrijving",
@@ -1574,7 +1619,7 @@ const en: Messages = {
   "cart.continueShopping": "Continue shopping",
   "cart.toCart": "Go to cart",
 
-  "cart.usp.returns": "Free returns",
+  "cart.usp.returns": "Returns possible",
   "cart.usp.payment": "Secure payment via Mollie",
 
   "cart.upsell.title": "Complete your project",
@@ -1653,7 +1698,7 @@ const en: Messages = {
   "checkout.pay": "Pay {amount}",
   "checkout.chooseBankHint": "Choose your bank to continue.",
   "checkout.choosePaymentHint": "Please choose a payment method first.",
-  "checkout.usp.freeReturn": "Free returns",
+  "checkout.usp.freeReturn": "14-day right of withdrawal",
   "checkout.usp.fastDelivery": "Fast delivery",
 
   "checkout.trust.heading": "What customers say about KLUSR",
@@ -1710,6 +1755,29 @@ const en: Messages = {
   "checkout.thanks.loadError":
     "We couldn't load the order details, but your payment was received in good order. You'll receive a confirmation by email.",
   "checkout.thanks.backHome": "Back to home",
+  "checkout.thanks.successBadge": "Payment successful",
+  "checkout.thanks.orderSummary": "Your order",
+  "checkout.thanks.needHelp.title": "Questions about your order?",
+  "checkout.thanks.needHelp.text":
+    "Our team is happy to help — from delivery times to product advice.",
+  "checkout.thanks.needHelp.cta": "Go to customer service",
+  "checkout.pending.title": "We're processing your payment…",
+  "checkout.pending.text":
+    "Your payment is still being confirmed by your bank. This usually only takes a few seconds.",
+  "checkout.pending.hint":
+    "This page refreshes automatically once your payment is complete. There's nothing you need to do.",
+  "checkout.pending.refreshNow": "Refresh status now",
+  "checkout.pending.backHome": "Back to home",
+  "checkout.failed.title": "Your payment didn't go through",
+  "checkout.failed.canceledTitle": "Your payment was canceled",
+  "checkout.failed.expiredTitle": "Your payment expired",
+  "checkout.failed.text":
+    "No amount was charged. You can safely try again.",
+  "checkout.failed.cartKept": "Your shopping cart has been kept.",
+  "checkout.failed.retry": "Try again",
+  "checkout.failed.toCart": "Go to cart",
+  "checkout.failed.help": "Need help? Contact customer service",
+  "checkout.failed.orderRef": "Order number: {ref}",
 
   "checkout.validation.required": "Required",
   "checkout.validation.email": "Enter a valid email address",
@@ -1724,7 +1792,7 @@ const en: Messages = {
     "Find quick answers to the most frequently asked questions below, or get in touch with us directly. Our DIYers are ready to help.",
 
   "service.trust.delivery": "Order before 19:00, delivered tomorrow",
-  "service.trust.returns": "14-day free returns",
+  "service.trust.returns": "14-day right of withdrawal",
   "service.trust.payment": "Secure payment via Mollie",
   "service.trust.advice": "Advice from former painters",
   "service.trust.warranty": "Statutory warranty on everything",
@@ -1753,7 +1821,7 @@ const en: Messages = {
 
   "service.group.shipping.title": "Shipping & returns",
   "service.group.shipping.intro":
-    "Free shipping from {free} in NL and BE, ordered before 19:00 means delivery tomorrow, and free returns by post with a return label. To the rest of the EU from {eu}.",
+    "Free shipping from {free} in NL and BE, ordered before 19:00 means delivery tomorrow, and returns by post with a return label — return shipping is at your own expense. To the rest of the EU from {eu}.",
   "service.group.payment.title": "Secure payment",
   "service.group.payment.intro":
     "Pay easily and securely with iDEAL, Bancontact, credit card or pay later with Klarna via Mollie.",
@@ -1778,7 +1846,7 @@ const en: Messages = {
     "We deliver throughout the EU. Shipping to Belgium is free from {beFree}; for the other EU countries a fixed rate per country applies from {eu}, which you'll see during checkout. We don't ship outside the EU — including Switzerland and the United Kingdom — due to customs.",
   "service.faq.shipping.return.q": "How do I return a product?",
   "service.faq.shipping.return.a":
-    "Returns are free by post with a return label. Register your return via your account or customer service and you'll receive the return label and instructions. You have 14 days to change your mind.",
+    "Returns are possible by post with a return label; return shipping is at your own expense. Register your return via your account or customer service and you'll receive the return label and instructions. You have 14 days to change your mind.",
 
   "service.faq.payment.methods.q": "Which payment methods do you accept?",
   "service.faq.payment.methods.a":
@@ -1836,7 +1904,7 @@ const en: Messages = {
 
   "service.guarantee.title": "Not happy? Money back.",
   "service.guarantee.text":
-    "We want you to start your project with peace of mind. That's why: 14 days to change your mind, free returns by post with a return label and a statutory warranty on everything. Colour-mixed paint is made to order and therefore excluded from returns — but in the event of a defect we'll always sort it out free of charge.",
+    "We want you to start your project with peace of mind. That's why: 14 days to change your mind, returns by post with a return label (return shipping is at your own expense) and a statutory warranty on everything. Colour-mixed paint is made to order and therefore excluded from returns — but in the event of a defect we'll always sort it out free of charge.",
   "service.guarantee.cta": "Read the return policy",
 
   "service.contactBlock.title": "Can't find your question?",
@@ -2076,14 +2144,14 @@ const en: Messages = {
   "pdp.withPass": "with {pass}",
   "pdp.passExplain": "{pct}% off the entire range with your free {pass}.",
   "pdp.yourPrice": "Your price",
-  "pdp.yourPassPrice": "Your {pass} price",
-  "pdp.passApplied": "Automatically applied with your {pass}.",
+  "pdp.yourPassPrice": "with {pass}",
+  "pdp.passApplied": "{pct}% off, automatically applied with your {pass}.",
   "pdp.perLiterCheaper": "larger tin is cheaper per litre",
   "pdp.stockForBasePre": "Stock shown for ",
   "pdp.stockForBasePost": " — each base has its own stock.",
 
   "pdp.usp.freeShipping": "Free shipping from €50",
-  "pdp.usp.returns": "Free returns within 30 days",
+  "pdp.usp.returns": "Returns within 14 days",
   "pdp.usp.afterpay": "Pay later available",
 
   "pdp.tab.description": "Description",
@@ -2274,7 +2342,7 @@ const fr: Messages = {
   "cart.continueShopping": "Continuer mes achats",
   "cart.toCart": "Voir le panier",
 
-  "cart.usp.returns": "Retours gratuits",
+  "cart.usp.returns": "Retours possibles",
   "cart.usp.payment": "Paiement sécurisé via Mollie",
 
   "cart.upsell.title": "Complétez vos travaux",
@@ -2353,7 +2421,7 @@ const fr: Messages = {
   "checkout.pay": "Payer {amount}",
   "checkout.chooseBankHint": "Choisissez votre banque pour continuer.",
   "checkout.choosePaymentHint": "Veuillez d'abord choisir un mode de paiement.",
-  "checkout.usp.freeReturn": "Retour gratuit",
+  "checkout.usp.freeReturn": "14 jours de rétractation",
   "checkout.usp.fastDelivery": "Livraison rapide",
 
   "checkout.trust.heading": "Ce que disent nos clients",
@@ -2410,6 +2478,29 @@ const fr: Messages = {
   "checkout.thanks.loadError":
     "Nous n'avons pas pu charger les détails de la commande, mais votre paiement a bien été reçu. Vous recevrez une confirmation par e-mail.",
   "checkout.thanks.backHome": "Retour à l'accueil",
+  "checkout.thanks.successBadge": "Paiement réussi",
+  "checkout.thanks.orderSummary": "Votre commande",
+  "checkout.thanks.needHelp.title": "Des questions sur votre commande ?",
+  "checkout.thanks.needHelp.text":
+    "Notre équipe est là pour vous aider — des délais de livraison aux conseils produits.",
+  "checkout.thanks.needHelp.cta": "Vers le service client",
+  "checkout.pending.title": "Nous traitons votre paiement…",
+  "checkout.pending.text":
+    "Votre paiement est encore en cours de confirmation par votre banque. Cela ne prend généralement que quelques secondes.",
+  "checkout.pending.hint":
+    "Cette page s'actualise automatiquement dès que votre paiement est confirmé. Vous n'avez rien à faire.",
+  "checkout.pending.refreshNow": "Actualiser le statut",
+  "checkout.pending.backHome": "Retour à l'accueil",
+  "checkout.failed.title": "Votre paiement a échoué",
+  "checkout.failed.canceledTitle": "Votre paiement a été annulé",
+  "checkout.failed.expiredTitle": "Votre paiement a expiré",
+  "checkout.failed.text":
+    "Aucun montant n'a été débité. Vous pouvez réessayer en toute sécurité.",
+  "checkout.failed.cartKept": "Votre panier a été conservé.",
+  "checkout.failed.retry": "Réessayer",
+  "checkout.failed.toCart": "Vers le panier",
+  "checkout.failed.help": "Besoin d'aide ? Contactez le service client",
+  "checkout.failed.orderRef": "Numéro de commande : {ref}",
 
   "checkout.validation.required": "Obligatoire",
   "checkout.validation.email": "Saisissez une adresse e-mail valide",
@@ -2424,7 +2515,7 @@ const fr: Messages = {
     "Trouvez ci-dessous une réponse rapide aux questions les plus fréquentes, ou contactez-nous directement. Nos bricoleurs sont là pour vous.",
 
   "service.trust.delivery": "Commandé avant 19h, livré demain",
-  "service.trust.returns": "Retours gratuits sous 14 jours",
+  "service.trust.returns": "14 jours de rétractation",
   "service.trust.payment": "Paiement sécurisé via Mollie",
   "service.trust.advice": "Conseils d'anciens peintres",
   "service.trust.warranty": "Garantie légale sur tout",
@@ -2453,7 +2544,7 @@ const fr: Messages = {
 
   "service.group.shipping.title": "Livraison & retours",
   "service.group.shipping.intro":
-    "Livraison gratuite à partir de {free} aux NL et en BE, commandé avant 19h c'est livré demain, et retours gratuits par la poste avec étiquette de retour. Vers le reste de l'UE à partir de {eu}.",
+    "Livraison gratuite à partir de {free} aux NL et en BE, commandé avant 19h c'est livré demain, et retours possibles par la poste avec étiquette de retour — les frais de retour sont à votre charge. Vers le reste de l'UE à partir de {eu}.",
   "service.group.payment.title": "Paiement sécurisé",
   "service.group.payment.intro":
     "Payez facilement et en toute sécurité avec iDEAL, Bancontact, carte de crédit ou en différé avec Klarna via Mollie.",
@@ -2478,7 +2569,7 @@ const fr: Messages = {
     "Nous livrons dans toute l'UE. Vers la Belgique, la livraison est gratuite à partir de {beFree} ; pour les autres pays de l'UE, un tarif fixe par pays s'applique à partir de {eu}, que vous voyez au moment du paiement. En dehors de l'UE — y compris la Suisse et le Royaume-Uni — nous ne livrons pas, en raison de la douane.",
   "service.faq.shipping.return.q": "Comment retourner un produit ?",
   "service.faq.shipping.return.a":
-    "Les retours sont gratuits par la poste avec une étiquette de retour. Déclarez votre retour via votre compte ou le service client et vous recevrez l'étiquette de retour et les instructions. Vous disposez de 14 jours de réflexion.",
+    "Les retours sont possibles par la poste avec une étiquette de retour ; les frais de retour sont à votre charge. Déclarez votre retour via votre compte ou le service client et vous recevrez l'étiquette de retour et les instructions. Vous disposez de 14 jours de réflexion.",
 
   "service.faq.payment.methods.q": "Quels moyens de paiement acceptez-vous ?",
   "service.faq.payment.methods.a":
@@ -2536,7 +2627,7 @@ const fr: Messages = {
 
   "service.guarantee.title": "Pas satisfait ? Remboursé.",
   "service.guarantee.text":
-    "Nous voulons que vous abordiez vos travaux l'esprit tranquille. C'est pourquoi : 14 jours de réflexion, retours gratuits par la poste avec étiquette de retour et garantie légale sur tout. La peinture teintée sur mesure est un produit personnalisé et donc exclue des retours — mais en cas de défaut, nous le résolvons toujours gratuitement.",
+    "Nous voulons que vous abordiez vos travaux l'esprit tranquille. C'est pourquoi : 14 jours de réflexion, retours possibles par la poste avec étiquette de retour (les frais de retour sont à votre charge) et garantie légale sur tout. La peinture teintée sur mesure est un produit personnalisé et donc exclue des retours — mais en cas de défaut, nous le résolvons toujours gratuitement.",
   "service.guarantee.cta": "Lisez les conditions de retour",
 
   "service.contactBlock.title": "Votre question n'y figure pas ?",
@@ -2776,14 +2867,14 @@ const fr: Messages = {
   "pdp.withPass": "avec {pass}",
   "pdp.passExplain": "{pct} % de réduction sur toute la gamme avec votre {pass} gratuit.",
   "pdp.yourPrice": "Votre prix",
-  "pdp.yourPassPrice": "Votre prix {pass}",
-  "pdp.passApplied": "Appliqué automatiquement avec votre {pass}.",
+  "pdp.yourPassPrice": "avec {pass}",
+  "pdp.passApplied": "-{pct} %, appliqué automatiquement avec votre {pass}.",
   "pdp.perLiterCheaper": "le plus grand pot est plus avantageux au litre",
   "pdp.stockForBasePre": "Stock affiché pour ",
   "pdp.stockForBasePost": " — chaque base a son propre stock.",
 
   "pdp.usp.freeShipping": "Livraison gratuite dès €50",
-  "pdp.usp.returns": "Retours gratuits sous 30 jours",
+  "pdp.usp.returns": "Retours sous 14 jours",
   "pdp.usp.afterpay": "Paiement différé possible",
 
   "pdp.tab.description": "Description",
@@ -2974,7 +3065,7 @@ const de: Messages = {
   "cart.continueShopping": "Weiter einkaufen",
   "cart.toCart": "Zum Warenkorb",
 
-  "cart.usp.returns": "Kostenlose Rückgabe",
+  "cart.usp.returns": "Rückgabe möglich",
   "cart.usp.payment": "Sicher bezahlen über Mollie",
 
   "cart.upsell.title": "Vervollständigen Sie Ihr Projekt",
@@ -3053,7 +3144,7 @@ const de: Messages = {
   "checkout.pay": "Bezahlen {amount}",
   "checkout.chooseBankHint": "Wählen Sie Ihre Bank, um fortzufahren.",
   "checkout.choosePaymentHint": "Bitte wählen Sie zuerst eine Zahlungsart.",
-  "checkout.usp.freeReturn": "Kostenlose Rückgabe",
+  "checkout.usp.freeReturn": "14 Tage Widerrufsrecht",
   "checkout.usp.fastDelivery": "Schnelle Lieferung",
 
   "checkout.trust.heading": "Was Kunden über KLUSR sagen",
@@ -3110,6 +3201,29 @@ const de: Messages = {
   "checkout.thanks.loadError":
     "Wir konnten die Bestelldaten nicht laden, aber Ihre Zahlung ist ordnungsgemäß eingegangen. Sie erhalten eine Bestätigung per E-Mail.",
   "checkout.thanks.backHome": "Zurück zur Startseite",
+  "checkout.thanks.successBadge": "Zahlung erfolgreich",
+  "checkout.thanks.orderSummary": "Ihre Bestellung",
+  "checkout.thanks.needHelp.title": "Fragen zu Ihrer Bestellung?",
+  "checkout.thanks.needHelp.text":
+    "Unser Team hilft Ihnen gerne — von Lieferzeiten bis zur Produktberatung.",
+  "checkout.thanks.needHelp.cta": "Zum Kundenservice",
+  "checkout.pending.title": "Wir verarbeiten Ihre Zahlung…",
+  "checkout.pending.text":
+    "Ihre Zahlung wird noch von Ihrer Bank bestätigt. Das dauert in der Regel nur wenige Sekunden.",
+  "checkout.pending.hint":
+    "Diese Seite aktualisiert sich automatisch, sobald Ihre Zahlung abgeschlossen ist. Sie müssen nichts tun.",
+  "checkout.pending.refreshNow": "Status jetzt aktualisieren",
+  "checkout.pending.backHome": "Zurück zur Startseite",
+  "checkout.failed.title": "Ihre Zahlung ist fehlgeschlagen",
+  "checkout.failed.canceledTitle": "Ihre Zahlung wurde abgebrochen",
+  "checkout.failed.expiredTitle": "Ihre Zahlung ist abgelaufen",
+  "checkout.failed.text":
+    "Es wurde kein Betrag abgebucht. Sie können es bedenkenlos erneut versuchen.",
+  "checkout.failed.cartKept": "Ihr Warenkorb wurde gespeichert.",
+  "checkout.failed.retry": "Erneut versuchen",
+  "checkout.failed.toCart": "Zum Warenkorb",
+  "checkout.failed.help": "Brauchen Sie Hilfe? Kontaktieren Sie den Kundenservice",
+  "checkout.failed.orderRef": "Bestellnummer: {ref}",
 
   "checkout.validation.required": "Pflichtfeld",
   "checkout.validation.email": "Geben Sie eine gültige E-Mail-Adresse ein",
@@ -3124,7 +3238,7 @@ const de: Messages = {
     "Finden Sie unten schnell eine Antwort auf die häufigsten Fragen oder nehmen Sie direkt Kontakt mit uns auf. Unsere Heimwerker stehen für Sie bereit.",
 
   "service.trust.delivery": "Vor 19:00 Uhr bestellt, morgen geliefert",
-  "service.trust.returns": "14 Tage kostenlose Rückgabe",
+  "service.trust.returns": "14 Tage Widerrufsrecht",
   "service.trust.payment": "Sicher bezahlen über Mollie",
   "service.trust.advice": "Beratung von ehemaligen Malern",
   "service.trust.warranty": "Gesetzliche Garantie auf alles",
@@ -3153,7 +3267,7 @@ const de: Messages = {
 
   "service.group.shipping.title": "Versand & Rückgabe",
   "service.group.shipping.intro":
-    "Kostenloser Versand ab {free} in NL und BE, vor 19:00 Uhr bestellt ist morgen geliefert, und kostenlose Rückgabe per Post mit Rücksendeetikett. In den Rest der EU ab {eu}.",
+    "Kostenloser Versand ab {free} in NL und BE, vor 19:00 Uhr bestellt ist morgen geliefert, und Rückgabe per Post mit Rücksendeetikett möglich — die Rücksendekosten trägt der Kunde. In den Rest der EU ab {eu}.",
   "service.group.payment.title": "Sicher bezahlen",
   "service.group.payment.intro":
     "Bezahlen Sie einfach und sicher mit iDEAL, Bancontact, Kreditkarte oder später mit Klarna über Mollie.",
@@ -3178,7 +3292,7 @@ const de: Messages = {
     "Wir liefern in die gesamte EU. Nach Belgien ist der Versand ab {beFree} kostenlos; für die übrigen EU-Länder gilt ein fester Tarif pro Land ab {eu}, den Sie während des Bezahlvorgangs sehen. Außerhalb der EU — einschließlich der Schweiz und des Vereinigten Königreichs — versenden wir aufgrund des Zolls nicht.",
   "service.faq.shipping.return.q": "Wie gebe ich ein Produkt zurück?",
   "service.faq.shipping.return.a":
-    "Die Rückgabe ist per Post mit einem Rücksendeetikett kostenlos. Melden Sie Ihre Rückgabe über Ihr Konto oder den Kundenservice an, dann erhalten Sie das Rücksendeetikett und die Anweisungen. Sie haben 14 Tage Bedenkzeit.",
+    "Die Rückgabe ist per Post mit einem Rücksendeetikett möglich; die Rücksendekosten trägt der Kunde. Melden Sie Ihre Rückgabe über Ihr Konto oder den Kundenservice an, dann erhalten Sie das Rücksendeetikett und die Anweisungen. Sie haben 14 Tage Bedenkzeit.",
 
   "service.faq.payment.methods.q": "Welche Zahlungsmethoden akzeptieren Sie?",
   "service.faq.payment.methods.a":
@@ -3236,7 +3350,7 @@ const de: Messages = {
 
   "service.guarantee.title": "Nicht zufrieden? Geld zurück.",
   "service.guarantee.text":
-    "Wir möchten, dass Sie Ihr Projekt mit gutem Gefühl angehen. Deshalb: 14 Tage Bedenkzeit, kostenlose Rückgabe per Post mit Rücksendeetikett und gesetzliche Garantie auf alles. Nach Farbton gemischte Farbe ist Maßarbeit und daher von der Rückgabe ausgenommen — aber bei einem Mangel lösen wir es immer kostenlos.",
+    "Wir möchten, dass Sie Ihr Projekt mit gutem Gefühl angehen. Deshalb: 14 Tage Bedenkzeit, Rückgabe per Post mit Rücksendeetikett möglich (die Rücksendekosten trägt der Kunde) und gesetzliche Garantie auf alles. Nach Farbton gemischte Farbe ist Maßarbeit und daher von der Rückgabe ausgenommen — aber bei einem Mangel lösen wir es immer kostenlos.",
   "service.guarantee.cta": "Lesen Sie die Rückgabebedingungen",
 
   "service.contactBlock.title": "Ist Ihre Frage nicht dabei?",
@@ -3476,14 +3590,14 @@ const de: Messages = {
   "pdp.withPass": "mit {pass}",
   "pdp.passExplain": "{pct}% Rabatt auf das gesamte Sortiment mit deiner kostenlosen {pass}.",
   "pdp.yourPrice": "Dein Preis",
-  "pdp.yourPassPrice": "Dein {pass}-Preis",
-  "pdp.passApplied": "Automatisch angewendet mit deiner {pass}.",
+  "pdp.yourPassPrice": "mit {pass}",
+  "pdp.passApplied": "{pct}% Rabatt, automatisch mit deiner {pass} verrechnet.",
   "pdp.perLiterCheaper": "größerer Eimer ist günstiger pro Liter",
   "pdp.stockForBasePre": "Bestand angezeigt für ",
   "pdp.stockForBasePost": " — jede Basis hat einen eigenen Bestand.",
 
   "pdp.usp.freeShipping": "Kostenloser Versand ab €50",
-  "pdp.usp.returns": "Kostenlose Rückgabe innerhalb von 30 Tagen",
+  "pdp.usp.returns": "Rückgabe innerhalb von 14 Tagen",
   "pdp.usp.afterpay": "Kauf auf Rechnung möglich",
 
   "pdp.tab.description": "Beschreibung",

@@ -1096,7 +1096,15 @@ export const products: Product[] = (
 /* ------------------------------------------------------------------ lookups */
 
 export function getProduct(slug: string): Product | undefined {
-  return products.find((p) => p.slug === slug);
+  const exact = products.find((p) => p.slug === slug);
+  if (exact) return exact;
+  // Terugval: een gewijzigde slug (bv. na een feed-rebuild waarbij de titel —
+  // en dus het tekstdeel van de slug — veranderde) eindigt nog op het stabiele
+  // tilroy-id. Resolve op dat id zodat bestaande winkelwagen-links, bookmarks en
+  // zoekresultaten niet 404'en maar netjes op het juiste product uitkomen.
+  const m = slug.match(/-(\d+)$/);
+  if (m) return products.find((p) => p.id === `tilroy-${m[1]}`);
+  return undefined;
 }
 
 export function getProductById(id: string): Product | undefined {

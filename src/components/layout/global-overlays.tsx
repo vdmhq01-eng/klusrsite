@@ -4,6 +4,7 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { AiAssistantWidget } from "@/components/ai/ai-assistant-widget";
 import { CompareBar } from "@/components/product/compare-bar";
 import { Toaster } from "@/components/ui/sonner";
+import { AddedToCartOverlay } from "@/components/cart/added-to-cart-toast";
 import { AnalyticsPageView } from "@/components/analytics/gtm";
 
 /**
@@ -17,6 +18,7 @@ export function GlobalOverlays() {
       <AiAssistantWidget />
       <CompareBar />
       <Toaster />
+      <AddedToCartOverlay />
       <AnalyticsPageView />
     </>
   );

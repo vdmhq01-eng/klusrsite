@@ -1,0 +1,170 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createOrder, setMolliePaymentId } from "@/lib/store/orders";
+import { createPayment } from "@/lib/payments";
+import { getProductById } from "@/lib/data/products";
+import { shippingForCountry } from "@/lib/shipping";
+import type { CartItem, OrderCustomer } from "@/types";
+
+export const runtime = "nodejs";
+
+/**
+ * Apple Pay Direct — afronding (stap 2 van de native Apple Pay-flow).
+ *
+ * De client levert in `onpaymentauthorized` de payment-token + het door Apple
+ * verzamelde contact/bezorgadres aan. We bouwen hier server-side de order op
+ * (zodat de bedragen niet manipuleerbaar zijn) en maken via Mollie een betaling
+ * met de Apple Pay-token. Verzendkosten worden — net als op de client-sheet —
+ * altijd voor NL berekend, zodat het totaal exact overeenkomt.
+ */
+
+const colorSchema = z
+  .object({
+    name: z.string(),
+    code: z.string(),
+    hex: z.string(),
+    collection: z.string().optional(),
+  })
+  .nullable()
+  .optional();
+
+const bodySchema = z.object({
+  productId: z.string(),
+  variantId: z.string(),
+  quantity: z.number().int().positive(),
+  color: colorSchema,
+  token: z.unknown(),
+  // Apple Pay shippingContact — losjes getypeerd; we lezen de velden defensief uit.
+  contact: z.any(),
+});
+
+export async function POST(req: Request) {
+  try {
+    const json = await req.json();
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, error: "Ongeldige Apple Pay-gegevens" },
+        { status: 500 },
+      );
+    }
+    const data = parsed.data;
+
+    // 1. Product + variant opzoeken (terugval op de eerste variant).
+    const product = getProductById(data.productId);
+    if (!product) {
+      return NextResponse.json({ ok: false, error: "Product niet gevonden" }, { status: 400 });
+    }
+    const variant =
+      product.variants.find((v) => v.id === data.variantId) ?? product.variants[0];
+    if (!variant) {
+      return NextResponse.json({ ok: false, error: "Variant niet gevonden" }, { status: 400 });
+    }
+
+    // 2. Eventuele gekozen kleur (alleen ter info op de orderregel). De Apple Pay-
+    //    sheet rekent met de kale variantprijs, dus we tellen geen base-toeslag mee
+    //    zodat de regel exact op `subtotal` aansluit.
+    const color = data.color ?? undefined;
+
+    // 3. Regel opbouwen (zelfde vorm als create-payment verwacht).
+    const cartItem: CartItem = {
+      key: [product.id, variant.id, color?.code ?? "default"].join("__"),
+      productId: product.id,
+      variantId: variant.id,
+      title: product.title,
+      brand: product.brand,
+      image: product.images[0],
+      variantLabel: variant.label,
+      slug: product.slug,
+      gtin: product.gtin,
+      quantity: data.quantity,
+      price: variant.price,
+      kluspasPrice: variant.kluspasPrice,
+      selectedColor: color,
+    };
+
+    // 4. Klantgegevens uit het Apple Pay-contact.
+    const contact = (data.contact ?? {}) as {
+      givenName?: string;
+      familyName?: string;
+      emailAddress?: string;
+      phoneNumber?: string;
+      addressLines?: string[];
+      postalCode?: string;
+      locality?: string;
+      countryCode?: string;
+    };
+    const customer: OrderCustomer = {
+      firstName: contact.givenName ?? "",
+      lastName: contact.familyName ?? "",
+      email: contact.emailAddress ?? "",
+      phone: contact.phoneNumber,
+      street: contact.addressLines?.[0] ?? "",
+      postalCode: contact.postalCode ?? "",
+      city: contact.locality ?? "",
+      country: (contact.countryCode || "NL").toUpperCase(),
+    };
+
+    // 5. Bedragen: verzendkosten ALTIJD voor NL (matcht de client-sheet).
+    const subtotal = variant.price * data.quantity;
+    const shipping = shippingForCountry(subtotal, "NL", {});
+    const total = subtotal + shipping;
+
+    // 6. Order vastleggen (status "open").
+    const order = await createOrder({
+      customer,
+      items: [cartItem],
+      subtotal,
+      shipping,
+      total,
+      kluspasSavings: 0,
+      paymentMethod: "applepay",
+    });
+
+    // 7. Mollie-betaling met de Apple Pay-token. Factuuradres zoals create-payment.
+    const origin =
+      req.headers.get("origin") ||
+      (() => {
+        try {
+          return new URL(req.url).origin;
+        } catch {
+          return undefined;
+        }
+      })();
+
+    const billingAddress = {
+      givenName: customer.firstName,
+      familyName: customer.lastName,
+      email: customer.email,
+      streetAndNumber: customer.street,
+      postalCode: customer.postalCode,
+      city: customer.city,
+      country: (customer.country || "NL").toUpperCase().slice(0, 2),
+    };
+
+    const payment = await createPayment({
+      orderId: order.id,
+      reference: order.reference,
+      amount: total,
+      method: "applepay",
+      applePayToken: JSON.stringify(data.token),
+      baseUrl: origin,
+      billingAddress,
+    });
+
+    if (payment.molliePaymentId) {
+      await setMolliePaymentId(order.id, payment.molliePaymentId);
+    }
+
+    return NextResponse.json({
+      ok: true,
+      orderId: order.id,
+      reference: order.reference,
+    });
+  } catch (err) {
+    // Faal hard maar netjes: de client breekt de Apple Pay-sheet af (STATUS_FAILURE).
+    console.error("[api/checkout/applepay-pay]", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: false, error: detail }, { status: 500 });
+  }
+}

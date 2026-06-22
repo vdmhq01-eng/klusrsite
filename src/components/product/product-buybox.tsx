@@ -13,9 +13,9 @@ import {
   Sparkles,
   CreditCard,
   Palette,
-  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { showAddedToCartToast } from "@/components/cart/added-to-cart-toast";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
 import type { GlansVariant } from "@/lib/data/products";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
+import { shippingForCountry } from "@/lib/shipping";
 import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
 
 /** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
@@ -51,7 +52,7 @@ const VAT_SUFFIX_KEY: Record<string, MessageKey> = {
 
 /**
  * GAMMA-stijl prijsblok voor INGELOGDE pashouders: de pasprijs is al toegepast,
- * dus framen we 'm als "Jouw prijs" (geen sales-pitch) + "X% KORTING"-badge +
+ * dus tonen we 'm als "X met {pass}" (GAMMA-stijl) + "X% KORTING"-badge +
  * (optioneel) prijs per liter en een korte bevestiging dat de korting automatisch
  * is verrekend. Werkt voor zowel KLUSRPAS als ProfPas. Geen "Wat is de KLUSRPAS?"-
  * uitlegregel: een pashouder kent de pas al.
@@ -70,27 +71,27 @@ function PassDiscountBox({
   t: ReturnType<typeof useT>;
 }) {
   return (
-    <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+    <div className="mt-3 rounded-xl border border-border bg-muted/60 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-2xl font-black leading-none text-primary">
+          <p className="text-2xl font-black leading-none">
             {formatPrice(amount)}
           </p>
           <p className="mt-1 text-sm font-semibold">
             {t("pdp.yourPassPrice", { pass: passName })}
           </p>
         </div>
-        <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-primary">
           {t("pdp.discountBadge", { pct })}
         </span>
       </div>
       {perLiter !== null && (
-        <p className="mt-1.5 text-sm font-semibold text-primary">
+        <p className="mt-1.5 text-sm font-semibold text-muted-foreground">
           {t("pdp.perLiter", { price: formatPrice(perLiter) })}
         </p>
       )}
       <p className="mt-2 text-xs leading-snug text-muted-foreground">
-        {t("pdp.passApplied", { pass: passName })}
+        {t("pdp.passApplied", { pass: passName, pct })}
       </p>
     </div>
   );
@@ -107,7 +108,7 @@ function PassBoxSkeleton() {
   return (
     <div
       aria-hidden
-      className="mt-3 h-[92px] animate-pulse rounded-xl border border-primary/20 bg-secondary/40 motion-reduce:animate-none"
+      className="mt-3 h-[104px] animate-pulse rounded-xl border border-border bg-muted/60 motion-reduce:animate-none"
     />
   );
 }
@@ -122,42 +123,40 @@ function PassTeaserBox({
   amount,
   savings,
   pct,
-  redirect,
+  perLiter,
   t,
 }: {
   amount: number;
   savings: number;
   pct: number;
-  redirect: string;
+  perLiter: number | null;
   t: ReturnType<typeof useT>;
 }) {
-  const loginHref = `/inloggen?redirect=${encodeURIComponent(redirect)}`;
+  // Bewust GEEN inlog-/registratie-CTA op de productpagina: we tonen alleen de
+  // KLUSRPAS-prijs als voordeel — zelfde GAMMA-stijl blok als voor ingelogde
+  // pashouders. De korting wordt gewoon bij het afrekenen verrekend.
   return (
-    <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+    <div className="mt-3 rounded-xl border border-border bg-muted/60 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-2xl font-black leading-none text-primary">
-            {t("pdp.kluspas.teaserTitle", { price: formatPrice(amount) })}
+          <p className="text-2xl font-black leading-none">
+            {formatPrice(amount)}
           </p>
           <p className="mt-1 text-sm font-semibold">
-            {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings), pct })}
+            {t("pdp.yourPassPrice", { pass: "KLUSRPAS" })}
           </p>
         </div>
-        <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-primary">
           {t("pdp.discountBadge", { pct })}
         </span>
       </div>
-      <Button asChild size="sm" className="mt-3 w-full">
-        <Link href={loginHref}>
-          {t("pdp.kluspas.teaserCta")}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </Button>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        {t("pdp.kluspas.body")}{" "}
-        <Link href="/registreren" className="font-semibold text-primary underline-offset-2 hover:underline">
-          {t("pdp.kluspas.drawer.cta")}
-        </Link>
+      {perLiter !== null && (
+        <p className="mt-1.5 text-sm font-semibold text-muted-foreground">
+          {t("pdp.perLiter", { price: formatPrice(perLiter) })}
+        </p>
+      )}
+      <p className="mt-2 text-xs leading-snug text-muted-foreground">
+        {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings), pct })}
       </p>
     </div>
   );
@@ -170,6 +169,36 @@ const usps: { icon: typeof Truck; labelKey: MessageKey }[] = [
   { icon: CreditCard, labelKey: "pdp.usp.afterpay" },
 ];
 
+/**
+ * Minimale, lokale types voor de Apple Pay JS-API. Apple levert hiervoor geen
+ * officieel @types-pakket, dus typen we precies de stukken die we gebruiken.
+ * Zo blijft `tsc` schoon zonder een nieuwe dependency of losse `any`-casts.
+ */
+interface ApplePayValidateMerchantEvent {
+  validationURL: string;
+}
+interface ApplePayPaymentAuthorizedEvent {
+  payment: {
+    token: unknown;
+    shippingContact?: unknown;
+  };
+}
+interface ApplePaySessionInstance {
+  onvalidatemerchant: (event: ApplePayValidateMerchantEvent) => void;
+  onpaymentauthorized: (event: ApplePayPaymentAuthorizedEvent) => void;
+  oncancel: () => void;
+  begin(): void;
+  abort(): void;
+  completeMerchantValidation(merchantSession: unknown): void;
+  completePayment(status: number): void;
+}
+interface ApplePaySessionConstructor {
+  new (version: number, request: unknown): ApplePaySessionInstance;
+  canMakePayments(): boolean;
+  STATUS_SUCCESS: number;
+  STATUS_FAILURE: number;
+}
+
 export function ProductBuybox({
   product,
   glansVariants = [],
@@ -181,6 +210,12 @@ export function ProductBuybox({
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
   const [color, setColor] = useState<SelectedColor | undefined>();
   const [quantity, setQuantity] = useState(1);
+  // Inline-melding bij de winkelwagen-knop wanneer een kleur nog ontbreekt
+  // (i.p.v. een toast bovenin). Verdwijnt zodra er een kleur is gekozen.
+  const [colorError, setColorError] = useState(false);
+  // Apple Pay express-knop: alleen zichtbaar wanneer de express-flag aanstaat én
+  // het apparaat/browser Apple Pay daadwerkelijk kan tonen (zie effect onder).
+  const [applePayAvailable, setApplePayAvailable] = useState(false);
 
   // Voorkeuze van kleur via ?kleur=<code> (bijv. vanuit de Kleurenkiezer-funnel).
   // Client-side gelezen zodat de productpagina statisch/ISR blijft.
@@ -191,6 +226,20 @@ export function ProductBuybox({
     const found = findColor(code);
     if (found) setColor(withBase(found));
   }, [product.colorMatchable]);
+
+  // Apple Pay-detectie: toon de "Betaal met Apple Pay"-knop op élk toestel dat
+  // Apple Pay ondersteunt (Safari op iOS/macOS). Werkt alleen écht op het in
+  // Mollie geverifieerde domein (www.klus-r.nl). Client-only zodat de PDP
+  // statisch/ISR blijft; faalt de detectie, dan blijft de knop gewoon weg.
+  useEffect(() => {
+    try {
+      const AP = (window as unknown as { ApplePaySession?: { canMakePayments(): boolean } })
+        .ApplePaySession;
+      if (AP && AP.canMakePayments()) setApplePayAvailable(true);
+    } catch {
+      // Apple Pay niet beschikbaar → knop blijft verborgen.
+    }
+  }, []);
 
   const addItem = useCart((s) => s.addItem);
   const toggleFavorite = useFavorites((s) => s.toggle);
@@ -241,6 +290,11 @@ export function ProductBuybox({
   // getoonde bedragen zodat ze de juiste btw-modus volgen.
   const normalPerLiter = variant.size ? headlinePrice / variant.size : null;
   const memberPerLiter = variant.size && showPass ? priceInfo.amount / variant.size : null;
+  // Per-liter voor de gast-teaser: de potentiële KLUSRPAS-prijs gedeeld door inhoud.
+  const teaserPerLiter =
+    variant.size && showTeaser && priceInfo.passAmount
+      ? priceInfo.passAmount / variant.size
+      : null;
 
   function buildItem() {
     return addItem({ product, variant, quantity, color });
@@ -252,9 +306,7 @@ export function ProductBuybox({
    * (daar staan o.a. Apple Pay / Google Pay zodra die in Mollie actief zijn). */
   function handleBuyNow() {
     if (product.colorMatchable && !color) {
-      toast(t("pdp.chooseColorTitle"), {
-        description: t("pdp.chooseColorBuy"),
-      });
+      setColorError(true);
       return;
     }
     buildItem();
@@ -262,11 +314,90 @@ export function ProductBuybox({
     router.push("/checkout");
   }
 
+  /**
+   * Native Apple Pay express-betaling vanaf de PDP (Mollie Apple Pay Direct).
+   * Flow: open de Apple Pay-sheet → valideer de merchant via Mollie → maak de
+   * order + betaling aan met de payment-token → stuur door naar /bedankt. Bij elke
+   * fout breken we de sheet netjes af (geen halve bestelling). Verzendkosten worden
+   * altijd voor NL berekend, zodat het bedrag in de sheet en op de server matcht.
+   */
+  function payWithApplePay() {
+    // Mengverf vereist eerst een kleur (zelfde gate als de andere knoppen).
+    if (product.colorMatchable && !color) {
+      setColorError(true);
+      return;
+    }
+
+    const subtotal = variant.price * quantity;
+    const shipping = shippingForCountry(subtotal, "NL", {});
+    const total = subtotal + shipping;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const AP = (window as any).ApplePaySession as ApplePaySessionConstructor | undefined;
+    if (!AP) return;
+
+    const session = new AP(3, {
+      countryCode: "NL",
+      currencyCode: "EUR",
+      supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"],
+      merchantCapabilities: ["supports3DS"],
+      requiredShippingContactFields: ["name", "email", "postalAddress", "phone"],
+      total: { label: "KLUSR", amount: total.toFixed(2) },
+    });
+
+    // Stap 1 — merchant-validatie: laat Mollie de Apple-sessie ondertekenen.
+    session.onvalidatemerchant = async (event) => {
+      try {
+        const r = await fetch("/api/checkout/applepay-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ validationUrl: event.validationURL }),
+        });
+        if (!r.ok) throw new Error("validation failed");
+        const merchantSession = await r.json();
+        session.completeMerchantValidation(merchantSession);
+      } catch {
+        session.abort();
+        toast.error("Apple Pay is even niet beschikbaar. Probeer het opnieuw.");
+      }
+    };
+
+    // Stap 2 — betaling geautoriseerd: order + Mollie-betaling server-side aanmaken.
+    session.onpaymentauthorized = async (event) => {
+      try {
+        const r = await fetch("/api/checkout/applepay-pay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+            variantId: variant.id,
+            quantity,
+            color: color ?? null,
+            token: event.payment.token,
+            contact: event.payment.shippingContact,
+          }),
+        });
+        const d = await r.json();
+        if (r.ok && d.ok) {
+          session.completePayment(AP.STATUS_SUCCESS);
+          router.push(`/bedankt?order=${d.orderId}`);
+        } else {
+          session.completePayment(AP.STATUS_FAILURE);
+        }
+      } catch {
+        session.completePayment(AP.STATUS_FAILURE);
+      }
+    };
+
+    // Annuleren door de gebruiker: niets te doen (sheet sluit vanzelf).
+    session.oncancel = () => {};
+
+    session.begin();
+  }
+
   function handleAdd() {
     if (product.colorMatchable && !color) {
-      toast(t("pdp.chooseColorTitle"), {
-        description: t("pdp.chooseColorAdd"),
-      });
+      setColorError(true);
       return;
     }
     buildItem();
@@ -286,8 +417,16 @@ export function ProductBuybox({
         },
       ],
     });
-    toast.success(t("pdp.addedToCart"), {
-      description: `${product.title} · ${variant.label}${color ? ` · ${color.name}` : ""}`,
+    showAddedToCartToast({
+      title: product.title,
+      brand: product.brand,
+      image: product.images[0],
+      meta: `${variant.label}${color ? ` · ${color.name}` : ""}${quantity > 1 ? ` · ${quantity}×` : ""}`,
+      labels: {
+        added: t("pdp.addedToCart"),
+        toCart: t("cart.toCart"),
+        continue: t("cart.continueShopping"),
+      },
     });
   }
 
@@ -377,7 +516,7 @@ export function ProductBuybox({
             amount={priceInfo.passAmount!}
             savings={priceInfo.passSavings!}
             pct={priceInfo.passSavingsPct ?? 0}
-            redirect={`/product/${product.slug}`}
+            perLiter={teaserPerLiter}
             t={t}
           />
         ) : null}
@@ -554,6 +693,23 @@ export function ProductBuybox({
 
       {/* Quantity + CTAs */}
       <div className="flex flex-col gap-3">
+        {/* Apple Pay express-knop — alleen op iPhone/Safari met Apple Pay én de
+            express-flag aan. Native sheet via Mollie Apple Pay Direct. */}
+        {applePayAvailable && (
+          <Button
+            type="button"
+            onClick={payWithApplePay}
+            size="lg"
+            className="w-full gap-1.5 bg-klusr-black text-white hover:bg-klusr-black/90"
+            aria-label="Betaal met Apple Pay"
+          >
+            {/* Apple-glyph (inline SVG) zodat we geen extra icon-import nodig hebben. */}
+            <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-current">
+              <path d="M16.36 12.78c.02 2.3 2.02 3.07 2.04 3.08-.02.05-.32 1.1-1.06 2.18-.64.94-1.3 1.87-2.35 1.89-1.03.02-1.36-.61-2.54-.61-1.18 0-1.55.59-2.52.63-1.01.04-1.78-1.01-2.42-1.95-1.32-1.91-2.32-5.39-.97-7.74.67-1.17 1.87-1.91 3.17-1.93.99-.02 1.93.67 2.54.67.61 0 1.75-.83 2.95-.71.5.02 1.91.2 2.81 1.53-.07.05-1.68.98-1.66 2.94M14.44 6.5c.54-.65.9-1.56.8-2.46-.78.03-1.71.52-2.27 1.17-.5.58-.94 1.5-.82 2.39.86.07 1.75-.44 2.29-1.1"/>
+            </svg>
+            Betaal met Apple&nbsp;Pay
+          </Button>
+        )}
         <div className="flex items-stretch gap-3">
           <QuantityStepper value={quantity} onChange={setQuantity} />
           <Button onClick={handleAdd} size="lg" className="flex-1">
@@ -561,6 +717,12 @@ export function ProductBuybox({
             {t("pdp.addToCart")}
           </Button>
         </div>
+        {colorError && !color && (
+          <p className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm font-semibold text-primary">
+            <Palette className="h-4 w-4 shrink-0" />
+            {t("pdp.chooseColorTitle")}
+          </p>
+        )}
         <Button
           onClick={handleBuyNow}
           size="lg"

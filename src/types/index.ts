@@ -222,6 +222,22 @@ export interface Order {
   isTest?: boolean;
   /** (Deels) terugbetaald bedrag via Mollie (in euro's). */
   refundedAmount?: number;
+  /**
+   * GA4-attributie, op de client uit de cookies gehaald bij het afrekenen. Wordt
+   * gebruikt voor de server-side `purchase` (Measurement Protocol) vanuit de
+   * webhook, zodat élke betaalde order in GA4 (en via de Ads-koppeling in Google
+   * Ads) telt — los van of de klant terugkeert naar /bedankt of cookies accepteert.
+   */
+  ga?: {
+    /** GA4 client-id (uit het `_ga`-cookie). */
+    clientId?: string;
+    /** GA4 sessie-id (uit het `_ga_<meet-id>`-cookie). */
+    sessionId?: string;
+    /** Google Ads click-id (uit het `_gcl_aw`-cookie). */
+    gclid?: string;
+    /** Analytics-toestemming op het moment van afrekenen. */
+    consent?: boolean;
+  };
   subtotal: number;
   shipping: number;
   total: number;

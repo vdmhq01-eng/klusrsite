@@ -3,6 +3,7 @@ import { getPaymentStatus, mapMollieStatus } from "@/lib/payments";
 import { getOrder, getOrderByMollieId, updateOrderStatus } from "@/lib/store/orders";
 import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
 import { sendPushToAdmins } from "@/lib/push";
+import { sendGa4Purchase } from "@/lib/ga4-mp";
 import { formatPrice } from "@/lib/utils";
 
 export const runtime = "nodejs";
@@ -47,6 +48,9 @@ export async function POST(req: Request) {
         refunded && status.amount != null && (status.amountRefunded ?? 0) >= status.amount - 0.005;
       const finalStatus = fullyRefunded ? "refunded" : mapped;
       const isTest = status.mode === "test" ? true : undefined;
+      // `order` is opgehaald vóór updateOrderStatus, dus dit is de VORIGE status.
+      // Zo herkennen we de éérste overgang naar betaald (voor de GA4-purchase).
+      const wasPaid = order.paymentStatus === "paid" || order.paymentStatus === "authorized";
       await updateOrderStatus(order.id, finalStatus, {
         isTest,
         refundedAmount: refunded ? status.amountRefunded : undefined,
@@ -57,9 +61,21 @@ export async function POST(req: Request) {
         await fulfillPaidOrder(paidOrder);
         // Send the branded confirmation once (claim guards against retries).
         await sendOrderConfirmationEmail(paidOrder);
-        // Beheerders een push sturen over de nieuwe bestelling. Best-effort en
-        // afgeschermd (gooit nooit) zodat het de webhook-respons niet raakt.
-        void sendPushToAdmins({
+        // Server-side GA4 `purchase` (Measurement Protocol) — alleen bij de éérste
+        // overgang naar betaald, zodat retries niet dubbel tellen (GA4 ontdubbelt
+        // bovendien op transaction_id). Best-effort: gooit nooit en raakt de
+        // 200-respons niet. Testorders worden hierboven al overgeslagen.
+        if (!wasPaid) {
+          // Awaiten (géén fire-and-forget): op Vercel serverless kan de functie
+          // ná de 200-respons bevriezen vóórdat de fetch klaar is. sendGa4Purchase
+          // gooit nooit en heeft een eigen 3s-timeout, dus awaiten is veilig en
+          // garandeert dat de purchase écht wordt verstuurd.
+          await sendGa4Purchase(paidOrder);
+        }
+        // Beheerders een push sturen over de nieuwe bestelling. Awaiten (parallel +
+        // in tijd gebonden, gooit nooit) zodat de melding écht verstuurd wordt vóór
+        // de serverless functie kan bevriezen; de outer try/catch garandeert 200.
+        await sendPushToAdmins({
           title: "Nieuwe bestelling",
           body: `${order.reference} · ${formatPrice(order.total)}`,
           url: "/admin",
