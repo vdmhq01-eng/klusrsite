@@ -13,7 +13,6 @@ import {
   Sparkles,
   CreditCard,
   Palette,
-  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { showAddedToCartToast } from "@/components/cart/added-to-cart-toast";
@@ -124,16 +123,16 @@ function PassTeaserBox({
   amount,
   savings,
   pct,
-  redirect,
   t,
 }: {
   amount: number;
   savings: number;
   pct: number;
-  redirect: string;
   t: ReturnType<typeof useT>;
 }) {
-  const loginHref = `/inloggen?redirect=${encodeURIComponent(redirect)}`;
+  // Bewust GEEN inlog-/registratie-CTA op de productpagina: we tonen alleen de
+  // KLUSRPAS-prijs als voordeel. De korting wordt gewoon bij het afrekenen
+  // verrekend — geen push om hier in te loggen of een account te maken.
   return (
     <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
       <div className="flex items-start justify-between gap-3">
@@ -149,18 +148,6 @@ function PassTeaserBox({
           {t("pdp.discountBadge", { pct })}
         </span>
       </div>
-      <Button asChild size="sm" className="mt-3 w-full">
-        <Link href={loginHref}>
-          {t("pdp.kluspas.teaserCta")}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </Button>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        {t("pdp.kluspas.body")}{" "}
-        <Link href="/registreren" className="font-semibold text-primary underline-offset-2 hover:underline">
-          {t("pdp.kluspas.drawer.cta")}
-        </Link>
-      </p>
     </div>
   );
 }
@@ -517,7 +504,6 @@ export function ProductBuybox({
             amount={priceInfo.passAmount!}
             savings={priceInfo.passSavings!}
             pct={priceInfo.passSavingsPct ?? 0}
-            redirect={`/product/${product.slug}`}
             t={t}
           />
         ) : null}
