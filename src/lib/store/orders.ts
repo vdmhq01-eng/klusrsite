@@ -70,6 +70,8 @@ export interface CreateOrderInput {
   total: number;
   kluspasSavings: number;
   paymentMethod?: string;
+  /** GA4-attributie uit de cookies (voor de server-side `purchase` in de webhook). */
+  ga?: Order["ga"];
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
@@ -85,6 +87,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     items: input.items,
     paymentStatus: "open",
     paymentMethod: input.paymentMethod,
+    ...(input.ga ? { ga: input.ga } : {}),
     subtotal: input.subtotal,
     shipping: input.shipping,
     total: input.total,

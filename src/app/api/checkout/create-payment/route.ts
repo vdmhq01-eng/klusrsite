@@ -60,6 +60,16 @@ const bodySchema = z.object({
   method: z.string().optional(),
   issuer: z.string().optional(),
   cardToken: z.string().optional(),
+  // GA4-attributie uit de cookies (op de client opgehaald) — voor de server-side
+  // `purchase` (Measurement Protocol) vanuit de webhook. Volledig optioneel.
+  ga: z
+    .object({
+      clientId: z.string().optional(),
+      sessionId: z.string().optional(),
+      gclid: z.string().optional(),
+      consent: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -85,6 +95,7 @@ export async function POST(req: Request) {
       total: data.total,
       kluspasSavings: data.kluspasSavings,
       paymentMethod: data.method,
+      ga: data.ga,
     });
 
     // 2. Create the Mollie payment (or a simulated one in demo mode).

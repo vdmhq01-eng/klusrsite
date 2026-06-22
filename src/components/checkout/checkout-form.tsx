@@ -107,6 +107,63 @@ function fallbackFor(country: string): PaymentMethodInfo[] {
     : [{ id: "ideal", label: "iDEAL", image: `${MOLLIE_ICON}/ideal.svg` }, ...rest];
 }
 
+// GA4 measurement-id (zonder "G-") voor de naam van het GA4-sessiecookie. Moet
+// gelijk zijn aan de stream in GTM/GA4 (G-M854M83RJW).
+const GA4_MEASUREMENT_ID = "M854M83RJW";
+
+/**
+ * Leest de GA4-/Ads-attributie uit `document.cookie` + de bewaarde consent. Wordt
+ * meegestuurd naar create-payment zodat de webhook server-side een `purchase` kan
+ * vuren (Measurement Protocol). Volledig best-effort: gooit nooit en geeft alleen
+ * de aanwezige velden terug — mag het afrekenen nooit breken.
+ */
+function readGaAttribution(): {
+  clientId?: string;
+  sessionId?: string;
+  gclid?: string;
+  consent?: boolean;
+} {
+  const ga: { clientId?: string; sessionId?: string; gclid?: string; consent?: boolean } = {};
+  try {
+    const cookies = new Map<string, string>();
+    for (const part of document.cookie.split(";")) {
+      const eq = part.indexOf("=");
+      if (eq === -1) continue;
+      cookies.set(part.slice(0, eq).trim(), part.slice(eq + 1).trim());
+    }
+
+    // _ga = "GA1.1.<A>.<B>" → client-id = de laatste twee dot-segmenten ("A.B").
+    const gaCookie = cookies.get("_ga");
+    if (gaCookie) {
+      const clientId = gaCookie.split(".").slice(-2).join(".");
+      if (clientId) ga.clientId = clientId;
+    }
+
+    // _ga_<meet-id> = "GS1.1.<sid>.<...>" → sessie-id = het 3e dot-segment.
+    const sessionCookie = cookies.get(`_ga_${GA4_MEASUREMENT_ID}`);
+    if (sessionCookie) {
+      const sessionId = sessionCookie.split(".")[2];
+      if (sessionId) ga.sessionId = sessionId;
+    }
+
+    // _gcl_aw = "GCL.<ts>.<gclid>" → gclid = alles vanaf het 3e segment.
+    const gclCookie = cookies.get("_gcl_aw");
+    if (gclCookie) {
+      const gclid = gclCookie.split(".").slice(2).join(".");
+      if (gclid) ga.gclid = gclid;
+    }
+
+    // Analytics-toestemming uit de bewaarde cookiekeuze (klusr-consent).
+    const consent = JSON.parse(localStorage.getItem("klusr-consent") || "null") as {
+      analytics?: boolean;
+    } | null;
+    if (consent) ga.consent = Boolean(consent.analytics);
+  } catch {
+    /* best-effort: nooit het afrekenen breken */
+  }
+  return ga;
+}
+
 export function CheckoutForm({
   expressMode,
   mollieProfile,
@@ -505,6 +562,12 @@ export function CheckoutForm({
 
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
 
+    // GA4-/Ads-attributie uit de cookies lezen (best-effort) zodat de webhook
+    // server-side een `purchase` kan vuren — los van of de klant terugkeert naar
+    // /bedankt of cookies accepteert. Alleen meesturen als er iets gevonden is.
+    const ga = readGaAttribution();
+    const hasGa = Object.keys(ga).length > 0;
+
     try {
       const res = await fetch("/api/checkout/create-payment", {
         method: "POST",
@@ -520,6 +583,7 @@ export function CheckoutForm({
           // de hosted-modus blijft dit weg → het body is identiek aan voorheen.
           ...(expressMode && method ? { method } : {}),
           ...(expressMode && cardToken ? { cardToken } : {}),
+          ...(hasGa ? { ga } : {}),
         }),
       });
       const data = await res.json();
