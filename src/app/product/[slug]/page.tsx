@@ -206,7 +206,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
       {/* Tabs */}
       <div className="mt-10">
-        <ProductTabs product={product} />
+        <ProductTabs product={product} publishedFaq={publishedContent?.faqs?.content} />
       </div>
 
       {/* Gepubliceerde AI-content (admin) */}
