@@ -33,6 +33,16 @@ export function isMollieConfigured(): boolean {
   return Boolean(API_KEY);
 }
 
+/**
+ * De opgeschoonde Mollie-sleutel. Gebruikt door routes die rechtstreeks met de
+ * Mollie-API praten (bijv. de Apple Pay merchant-sessie), zodat ze exact dezelfde
+ * normalisatie krijgen als deze helper en de "Invalid Authorization header"-fout
+ * voorkomen wordt. Geeft undefined wanneer er geen sleutel is geconfigureerd.
+ */
+export function getMollieApiKey(): string | undefined {
+  return API_KEY;
+}
+
 function getClient(): MollieClient | null {
   if (!isMollieConfigured()) return null;
   if (!client) client = createMollieClient({ apiKey: API_KEY! });
@@ -66,6 +76,8 @@ export interface CreatePaymentInput {
   baseUrl?: string;
   /** Mollie Components card-token (creditcard ingebed op onze eigen pagina). */
   cardToken?: string;
+  /** Apple Pay payment-token (JSON-string) uit de native Apple Pay-sheet. */
+  applePayToken?: string;
   /** iDEAL-bank (issuer-id) — vooraf gekozen op onze eigen checkout. */
   issuer?: string;
   /** Factuuradres — vereist voor Klarna e.d. (pay-later). */
@@ -108,6 +120,9 @@ export async function createPayment(
   if (mollieMethod === "ideal" && input.issuer) params.issuer = input.issuer;
   // Mollie Components: card-token meegeven bij een ingebedde creditcard-betaling.
   if (input.cardToken) params.cardToken = input.cardToken;
+  // Apple Pay Direct: de payment-token uit de native sheet meegeven → Mollie
+  // verwerkt de betaling direct zonder gehoste redirect (method "applepay").
+  if (input.applePayToken) params.applePayPaymentToken = input.applePayToken;
   // Factuuradres + order-regels (Klarna e.d.).
   if (input.billingAddress) params.billingAddress = input.billingAddress;
   if (input.lines && input.lines.length) params.lines = input.lines;

@@ -29,6 +29,7 @@ import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
+import { shippingForCountry } from "@/lib/shipping";
 import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
 
 /** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
@@ -171,6 +172,36 @@ const usps: { icon: typeof Truck; labelKey: MessageKey }[] = [
   { icon: CreditCard, labelKey: "pdp.usp.afterpay" },
 ];
 
+/**
+ * Minimale, lokale types voor de Apple Pay JS-API. Apple levert hiervoor geen
+ * officieel @types-pakket, dus typen we precies de stukken die we gebruiken.
+ * Zo blijft `tsc` schoon zonder een nieuwe dependency of losse `any`-casts.
+ */
+interface ApplePayValidateMerchantEvent {
+  validationURL: string;
+}
+interface ApplePayPaymentAuthorizedEvent {
+  payment: {
+    token: unknown;
+    shippingContact?: unknown;
+  };
+}
+interface ApplePaySessionInstance {
+  onvalidatemerchant: (event: ApplePayValidateMerchantEvent) => void;
+  onpaymentauthorized: (event: ApplePayPaymentAuthorizedEvent) => void;
+  oncancel: () => void;
+  begin(): void;
+  abort(): void;
+  completeMerchantValidation(merchantSession: unknown): void;
+  completePayment(status: number): void;
+}
+interface ApplePaySessionConstructor {
+  new (version: number, request: unknown): ApplePaySessionInstance;
+  canMakePayments(): boolean;
+  STATUS_SUCCESS: number;
+  STATUS_FAILURE: number;
+}
+
 export function ProductBuybox({
   product,
   glansVariants = [],
@@ -185,6 +216,9 @@ export function ProductBuybox({
   // Inline-melding bij de winkelwagen-knop wanneer een kleur nog ontbreekt
   // (i.p.v. een toast bovenin). Verdwijnt zodra er een kleur is gekozen.
   const [colorError, setColorError] = useState(false);
+  // Apple Pay express-knop: alleen zichtbaar wanneer de express-flag aanstaat én
+  // het apparaat/browser Apple Pay daadwerkelijk kan tonen (zie effect onder).
+  const [applePayAvailable, setApplePayAvailable] = useState(false);
 
   // Voorkeuze van kleur via ?kleur=<code> (bijv. vanuit de Kleurenkiezer-funnel).
   // Client-side gelezen zodat de productpagina statisch/ISR blijft.
@@ -195,6 +229,23 @@ export function ProductBuybox({
     const found = findColor(code);
     if (found) setColor(withBase(found));
   }, [product.colorMatchable]);
+
+  // Detecteer Apple Pay: zet de express-knop alléén aan wanneer de feature-flag
+  // (NEXT_PUBLIC_CHECKOUT_EXPRESS) aanstaat ÉN ApplePaySession beschikbaar is en
+  // betalingen kan doen. Staat de flag uit, dan gebeurt er hier niets → geen knop,
+  // geen neveneffecten. Client-only zodat de PDP statisch/ISR blijft.
+  useEffect(() => {
+    const flag =
+      process.env.NEXT_PUBLIC_CHECKOUT_EXPRESS === "1" ||
+      process.env.NEXT_PUBLIC_CHECKOUT_EXPRESS === "true";
+    try {
+      const AP = (window as unknown as { ApplePaySession?: { canMakePayments(): boolean } })
+        .ApplePaySession;
+      if (flag && AP && AP.canMakePayments()) setApplePayAvailable(true);
+    } catch {
+      // Apple Pay niet beschikbaar → knop blijft verborgen.
+    }
+  }, []);
 
   const addItem = useCart((s) => s.addItem);
   const toggleFavorite = useFavorites((s) => s.toggle);
@@ -262,6 +313,87 @@ export function ProductBuybox({
     buildItem();
     trackEvent("begin_checkout", { value: variant.kluspasPrice * quantity });
     router.push("/checkout");
+  }
+
+  /**
+   * Native Apple Pay express-betaling vanaf de PDP (Mollie Apple Pay Direct).
+   * Flow: open de Apple Pay-sheet → valideer de merchant via Mollie → maak de
+   * order + betaling aan met de payment-token → stuur door naar /bedankt. Bij elke
+   * fout breken we de sheet netjes af (geen halve bestelling). Verzendkosten worden
+   * altijd voor NL berekend, zodat het bedrag in de sheet en op de server matcht.
+   */
+  function payWithApplePay() {
+    // Mengverf vereist eerst een kleur (zelfde gate als de andere knoppen).
+    if (product.colorMatchable && !color) {
+      setColorError(true);
+      return;
+    }
+
+    const subtotal = variant.price * quantity;
+    const shipping = shippingForCountry(subtotal, "NL", {});
+    const total = subtotal + shipping;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const AP = (window as any).ApplePaySession as ApplePaySessionConstructor | undefined;
+    if (!AP) return;
+
+    const session = new AP(3, {
+      countryCode: "NL",
+      currencyCode: "EUR",
+      supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"],
+      merchantCapabilities: ["supports3DS"],
+      requiredShippingContactFields: ["name", "email", "postalAddress", "phone"],
+      total: { label: "KLUSR", amount: total.toFixed(2) },
+    });
+
+    // Stap 1 — merchant-validatie: laat Mollie de Apple-sessie ondertekenen.
+    session.onvalidatemerchant = async (event) => {
+      try {
+        const r = await fetch("/api/checkout/applepay-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ validationUrl: event.validationURL }),
+        });
+        if (!r.ok) throw new Error("validation failed");
+        const merchantSession = await r.json();
+        session.completeMerchantValidation(merchantSession);
+      } catch {
+        session.abort();
+        toast.error("Apple Pay is even niet beschikbaar. Probeer het opnieuw.");
+      }
+    };
+
+    // Stap 2 — betaling geautoriseerd: order + Mollie-betaling server-side aanmaken.
+    session.onpaymentauthorized = async (event) => {
+      try {
+        const r = await fetch("/api/checkout/applepay-pay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+            variantId: variant.id,
+            quantity,
+            color: color ?? null,
+            token: event.payment.token,
+            contact: event.payment.shippingContact,
+          }),
+        });
+        const d = await r.json();
+        if (r.ok && d.ok) {
+          session.completePayment(AP.STATUS_SUCCESS);
+          router.push(`/bedankt?order=${d.orderId}`);
+        } else {
+          session.completePayment(AP.STATUS_FAILURE);
+        }
+      } catch {
+        session.completePayment(AP.STATUS_FAILURE);
+      }
+    };
+
+    // Annuleren door de gebruiker: niets te doen (sheet sluit vanzelf).
+    session.oncancel = () => {};
+
+    session.begin();
   }
 
   function handleAdd() {
@@ -562,6 +694,23 @@ export function ProductBuybox({
 
       {/* Quantity + CTAs */}
       <div className="flex flex-col gap-3">
+        {/* Apple Pay express-knop — alleen op iPhone/Safari met Apple Pay én de
+            express-flag aan. Native sheet via Mollie Apple Pay Direct. */}
+        {applePayAvailable && (
+          <Button
+            type="button"
+            onClick={payWithApplePay}
+            size="lg"
+            className="w-full gap-1.5 bg-klusr-black text-white hover:bg-klusr-black/90"
+            aria-label="Betaal met Apple Pay"
+          >
+            {/* Apple-glyph (inline SVG) zodat we geen extra icon-import nodig hebben. */}
+            <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-current">
+              <path d="M16.36 12.78c.02 2.3 2.02 3.07 2.04 3.08-.02.05-.32 1.1-1.06 2.18-.64.94-1.3 1.87-2.35 1.89-1.03.02-1.36-.61-2.54-.61-1.18 0-1.55.59-2.52.63-1.01.04-1.78-1.01-2.42-1.95-1.32-1.91-2.32-5.39-.97-7.74.67-1.17 1.87-1.91 3.17-1.93.99-.02 1.93.67 2.54.67.61 0 1.75-.83 2.95-.71.5.02 1.91.2 2.81 1.53-.07.05-1.68.98-1.66 2.94M14.44 6.5c.54-.65.9-1.56.8-2.46-.78.03-1.71.52-2.27 1.17-.5.58-.94 1.5-.82 2.39.86.07 1.75-.44 2.29-1.1"/>
+            </svg>
+            Betaal met Apple&nbsp;Pay
+          </Button>
+        )}
         <div className="flex items-stretch gap-3">
           <QuantityStepper value={quantity} onChange={setQuantity} />
           <Button onClick={handleAdd} size="lg" className="flex-1">
