@@ -1,10 +1,22 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { TopicImage } from "@/components/shared/topic-image";
-import { articleHeroKeywords, topicImageUrl } from "@/lib/topic-images";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ChevronRight, Clock, User } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  Clock,
+  User,
+  Paintbrush,
+  Wrench,
+  Palette,
+  TreePine,
+  Home,
+  Zap,
+  Layers,
+  type LucideIcon,
+} from "lucide-react";
 import { articles, getArticle, getRelatedArticles } from "@/lib/data";
 import { getProductsByCategory } from "@/lib/data/products";
 import { ArticleCard } from "@/components/content/article-card";
@@ -28,6 +40,17 @@ const PRODUCT_CATEGORY_BY_ARTICLE: Record<string, string> = {
   Vloeren: "vloeren-raam",
 };
 
+/** Categorie → Lucide-icoon voor het on-brand hero-beeld (fallback achter de foto). */
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  Verven: Paintbrush,
+  Gereedschap: Wrench,
+  Inspiratie: Palette,
+  Tuin: TreePine,
+  Buiten: Home,
+  Elektra: Zap,
+  Vloeren: Layers,
+};
+
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
 }
@@ -37,10 +60,8 @@ export function generateMetadata({ params }: ArticlePageProps): Metadata {
   if (!article) {
     return { title: "Artikel niet gevonden" };
   }
-  const heroUrl = topicImageUrl(
-    articleHeroKeywords(article.slug, article.category),
-    article.slug,
-  );
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+  const heroUrl = `${base}/generated/blog/${article.slug}.jpg`;
   return {
     title: article.title,
     description: article.excerpt,
@@ -143,13 +164,16 @@ export default function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const related = getRelatedArticles(article, 3);
-  const heroKeywords = articleHeroKeywords(article.slug, article.category);
-  const heroUrl = topicImageUrl(heroKeywords, article.slug);
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+  // Pre-gegenereerde fal.ai-hero (public/generated/blog/<slug>.jpg). Bestaat die
+  // (nog) niet, dan valt TopicImage netjes terug op de on-brand BrandedVisual.
+  const heroSrc = `/generated/blog/${article.slug}.jpg`;
+  const heroUrl = `${siteUrl}${heroSrc}`;
+  const heroIcon = CATEGORY_ICON[article.category];
   const productCategory = PRODUCT_CATEGORY_BY_ARTICLE[article.category];
   const featuredProducts = productCategory
     ? getProductsByCategory(productCategory).slice(0, 3)
     : [];
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -237,9 +261,9 @@ export default function ArticlePage({ params }: ArticlePageProps) {
           </div>
         </header>
 
-        {/* Hero image — unieke, onderwerp-relevante foto per artikel (+ alt voor SEO) */}
+        {/* Hero — pre-gegenereerde fal.ai-foto, met on-brand BrandedVisual als fallback */}
         <div className="group relative mx-auto mt-8 aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl">
-          <TopicImage seed={article.slug} keywords={heroKeywords} alt={article.title} />
+          <TopicImage seed={article.slug} src={heroSrc} icon={heroIcon} alt={article.title} />
         </div>
 
         {/* Body */}
