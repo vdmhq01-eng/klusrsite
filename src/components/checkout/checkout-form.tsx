@@ -92,6 +92,27 @@ type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 // prominente knop bovenaan; de overige methoden staan in de gewone keuzelijst.
 const walletIds = ["applepay", "googlepay", "paypal"];
 
+/** Minimale Apple Pay (JS) typing voor de native express-flow op de checkout. */
+interface ApplePaySessionConstructor {
+  new (
+    version: number,
+    request: unknown,
+  ): {
+    onvalidatemerchant: (event: { validationURL: string }) => void;
+    onpaymentauthorized: (event: {
+      payment: { token: unknown; shippingContact?: unknown };
+    }) => void;
+    oncancel: () => void;
+    begin(): void;
+    completeMerchantValidation(session: unknown): void;
+    completePayment(status: unknown): void;
+    abort(): void;
+  };
+  STATUS_SUCCESS: unknown;
+  STATUS_FAILURE: unknown;
+  canMakePayments(): boolean;
+}
+
 const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
 /** Fallback wanneer de methodenroute onbereikbaar is. Landbewust: BE → Bancontact,
  *  anders iDEAL. Apple Pay & Google Pay altijd erbij. */
@@ -211,6 +232,19 @@ export function CheckoutForm({
   const [loginError, setLoginError] = useState<string | null>(null);
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPw, setAccountPw] = useState("");
+  const [applePayAvailable, setApplePayAvailable] = useState(false);
+  const [expressBusy, setExpressBusy] = useState(false);
+  // Apple Pay-detectie: toon de native express-knop alleen als het toestel 'm kan.
+  useEffect(() => {
+    if (!expressMode) return;
+    try {
+      const AP = (window as unknown as { ApplePaySession?: { canMakePayments(): boolean } })
+        .ApplePaySession;
+      if (AP && AP.canMakePayments()) setApplePayAvailable(true);
+    } catch {
+      /* Apple Pay niet beschikbaar */
+    }
+  }, [expressMode]);
 
   // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
   const schema = useMemo(() => makeSchema(t), [t]);
@@ -422,10 +456,106 @@ export function CheckoutForm({
   );
 
   // Een express-knop: leg de gekozen wallet vast (state + ref) en verstuur meteen.
-  function payWith(id: string) {
-    expressMethodRef.current = id;
-    setPaymentMethod(id);
-    formRef.current?.requestSubmit();
+  // Google Pay/PayPal express (Snelle checkout): direct order + Mollie-betaling
+  // aanmaken en doorsturen naar de wallet. Het bezorgadres komt via Mollie terug
+  // en wordt door de webhook aangevuld — dus geen formulier nodig.
+  async function onWalletExpress(method: string) {
+    if (expressBusy || submitting) return;
+    setError(null);
+    setExpressBusy(true);
+    try {
+      const ga = readGaAttribution();
+      const email = getValues("email")?.trim();
+      const res = await fetch("/api/checkout/express", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items,
+          subtotal: summary.grossSubtotal,
+          shipping: summary.grossShipping,
+          total: summary.total,
+          kluspasSavings: summary.savings,
+          method,
+          ...(email ? { email } : {}),
+          ...(Object.keys(ga).length ? { ga } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.checkoutUrl) {
+        throw new Error(data.error || t("checkout.error.paymentFailed"));
+      }
+      window.location.href = data.checkoutUrl;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("checkout.error.generic"));
+      setExpressBusy(false);
+    }
+  }
+
+  // Apple Pay Direct (native sheet): Apple levert naam, e-mail én bezorgadres →
+  // /applepay-cart maakt order + Mollie-betaling. Geen formulier nodig.
+  async function onApplePayExpress() {
+    if (expressBusy || submitting) return;
+    setError(null);
+    const AP = (window as unknown as { ApplePaySession?: ApplePaySessionConstructor })
+      .ApplePaySession;
+    if (!AP) return;
+    setExpressBusy(true);
+    const session = new AP(3, {
+      countryCode: "NL",
+      currencyCode: "EUR",
+      supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"],
+      merchantCapabilities: ["supports3DS"],
+      requiredShippingContactFields: ["name", "email", "postalAddress", "phone"],
+      total: { label: "KLUSR", amount: summary.total.toFixed(2) },
+    });
+    session.onvalidatemerchant = async (event) => {
+      try {
+        const r = await fetch("/api/checkout/applepay-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ validationUrl: event.validationURL }),
+        });
+        if (!r.ok) throw new Error("validation failed");
+        session.completeMerchantValidation(await r.json());
+      } catch {
+        session.abort();
+        setExpressBusy(false);
+        setError("Apple Pay is even niet beschikbaar. Probeer het opnieuw.");
+      }
+    };
+    session.onpaymentauthorized = async (event) => {
+      try {
+        const ga = readGaAttribution();
+        const r = await fetch("/api/checkout/applepay-cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items,
+            subtotal: summary.grossSubtotal,
+            shipping: summary.grossShipping,
+            total: summary.total,
+            kluspasSavings: summary.savings,
+            token: event.payment.token,
+            contact: event.payment.shippingContact,
+            ...(Object.keys(ga).length ? { ga } : {}),
+          }),
+        });
+        const d = await r.json();
+        if (r.ok && d.ok) {
+          session.completePayment(AP.STATUS_SUCCESS);
+          window.location.href = `/bedankt?order=${d.orderId}`;
+        } else {
+          session.completePayment(AP.STATUS_FAILURE);
+          setExpressBusy(false);
+          setError(d.error || "Apple Pay-betaling mislukt.");
+        }
+      } catch {
+        session.completePayment(AP.STATUS_FAILURE);
+        setExpressBusy(false);
+      }
+    };
+    session.oncancel = () => setExpressBusy(false);
+    session.begin();
   }
 
   async function onSubmit(values: FormValues) {
@@ -610,6 +740,53 @@ export function CheckoutForm({
             viewport (grid-items hebben standaard min-width:auto → anders kan
             inhoud de hele pagina op mobiel naar rechts duwen). */}
         <div className="min-w-0 space-y-6">
+          {/* Snelle checkout — express-wallets bovenaan (Shopify-stijl). Apple Pay
+              is écht direct (native sheet levert het bezorgadres); Google Pay/PayPal
+              lopen via Mollie en de webhook vult het adres aan. */}
+          {expressMode &&
+            (applePayAvailable || expressMethods.some((m) => m.id !== "applepay")) && (
+              <div className="space-y-3">
+                <p className="text-center text-sm font-semibold text-muted-foreground">
+                  Snelle checkout
+                </p>
+                <div className="grid gap-2">
+                  {applePayAvailable && (
+                    <button
+                      type="button"
+                      onClick={onApplePayExpress}
+                      disabled={expressBusy}
+                      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`${MOLLIE_ICON}/applepay.svg`} alt="" className="h-[18px] w-auto" />
+                      <span>Apple Pay</span>
+                    </button>
+                  )}
+                  {expressMethods
+                    .filter((m) => m.id !== "applepay")
+                    .map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => onWalletExpress(m.id)}
+                        disabled={expressBusy}
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                      >
+                        {m.image && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.image} alt="" className="h-[18px] w-auto" />
+                        )}
+                        <span>{m.label}</span>
+                      </button>
+                    ))}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="shrink-0 font-medium">OF</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </div>
+            )}
           {/* Particulier of zakelijk bestellen */}
           <div className="flex rounded-xl border border-border bg-secondary/40 p-1">
             {(["particulier", "zakelijk"] as const).map((m) => (
@@ -866,31 +1043,6 @@ export function CheckoutForm({
           {expressMode && (
             <Section title={t("checkout.section.payment")} step={4}>
               <div className="space-y-3">
-                {expressMethods.length > 0 && (
-                  <div className="space-y-2">
-                    {expressMethods.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => payWith(m.id)}
-                        disabled={submitting}
-                        className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm ring-1 ring-black/5 transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50"
-                      >
-                        {m.image && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.image} alt="" className="h-[18px] w-auto" />
-                        )}
-                        <span>{m.label}</span>
-                      </button>
-                    ))}
-                    <div className="flex items-center gap-3 py-0.5 text-xs text-muted-foreground">
-                      <span className="h-px flex-1 bg-border" />
-                      <span className="shrink-0">of kies zelf je betaalmethode</span>
-                      <span className="h-px flex-1 bg-border" />
-                    </div>
-                  </div>
-                )}
-
                 <PaymentMethods
                   methods={pickMethods}
                   value={paymentMethod}
