@@ -1,8 +1,8 @@
 import { Breadcrumb } from "@/components/plp/breadcrumb";
 
-/** Bedrijfsgegevens — KLUSR is een handelsnaam van VDM Online BV. */
+/** Bedrijfsgegevens — KLUSR is een handelsnaam van KLUS=R BV. */
 export const COMPANY = {
-  legalName: "VDM Online BV",
+  legalName: "KLUS=R BV",
   tradeName: "KLUSR",
   email: "klantenservice@klus-r.nl",
   phone: "+31 85 273 8338",
@@ -16,7 +16,7 @@ export const COMPANY = {
   kvk: "70367922",
   btw: "NL855528618B01",
   iban: "NL41INGB0105014877",
-  note: "KLUSR is een handelsnaam van VDM Online BV",
+  note: "KLUSR is een handelsnaam van KLUS=R BV",
 };
 
 export interface LegalSection {

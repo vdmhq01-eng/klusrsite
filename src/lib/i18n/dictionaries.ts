@@ -896,7 +896,7 @@ const nl: Messages = {
   "cart.continueShopping": "Verder winkelen",
   "cart.toCart": "Naar winkelwagen",
 
-  "cart.usp.returns": "Retourneren mogelijk",
+  "cart.usp.returns": "Retourneren binnen 14 dagen",
   "cart.usp.payment": "Veilig betalen via Mollie",
 
   "cart.upsell.title": "Maak je klus compleet",
@@ -975,7 +975,7 @@ const nl: Messages = {
   "checkout.pay": "Betaal {amount}",
   "checkout.chooseBankHint": "Kies je bank om verder te gaan.",
   "checkout.choosePaymentHint": "Kies eerst een betaalmethode.",
-  "checkout.usp.freeReturn": "14 dagen bedenktijd",
+  "checkout.usp.freeReturn": "Retourneren binnen 14 dagen",
   "checkout.usp.fastDelivery": "Snelle levering",
 
   "checkout.trust.heading": "Wat klanten over KLUSR zeggen",
