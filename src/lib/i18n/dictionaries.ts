@@ -1619,7 +1619,7 @@ const en: Messages = {
   "cart.continueShopping": "Continue shopping",
   "cart.toCart": "Go to cart",
 
-  "cart.usp.returns": "Returns possible",
+  "cart.usp.returns": "Return within 14 days",
   "cart.usp.payment": "Secure payment via Mollie",
 
   "cart.upsell.title": "Complete your project",
@@ -1698,7 +1698,7 @@ const en: Messages = {
   "checkout.pay": "Pay {amount}",
   "checkout.chooseBankHint": "Choose your bank to continue.",
   "checkout.choosePaymentHint": "Please choose a payment method first.",
-  "checkout.usp.freeReturn": "14-day right of withdrawal",
+  "checkout.usp.freeReturn": "Return within 14 days",
   "checkout.usp.fastDelivery": "Fast delivery",
 
   "checkout.trust.heading": "What customers say about KLUSR",
@@ -2342,7 +2342,7 @@ const fr: Messages = {
   "cart.continueShopping": "Continuer mes achats",
   "cart.toCart": "Voir le panier",
 
-  "cart.usp.returns": "Retours possibles",
+  "cart.usp.returns": "Retour sous 14 jours",
   "cart.usp.payment": "Paiement sécurisé via Mollie",
 
   "cart.upsell.title": "Complétez vos travaux",
@@ -2421,7 +2421,7 @@ const fr: Messages = {
   "checkout.pay": "Payer {amount}",
   "checkout.chooseBankHint": "Choisissez votre banque pour continuer.",
   "checkout.choosePaymentHint": "Veuillez d'abord choisir un mode de paiement.",
-  "checkout.usp.freeReturn": "14 jours de rétractation",
+  "checkout.usp.freeReturn": "Retour sous 14 jours",
   "checkout.usp.fastDelivery": "Livraison rapide",
 
   "checkout.trust.heading": "Ce que disent nos clients",
@@ -3065,7 +3065,7 @@ const de: Messages = {
   "cart.continueShopping": "Weiter einkaufen",
   "cart.toCart": "Zum Warenkorb",
 
-  "cart.usp.returns": "Rückgabe möglich",
+  "cart.usp.returns": "Rückgabe innerhalb von 14 Tagen",
   "cart.usp.payment": "Sicher bezahlen über Mollie",
 
   "cart.upsell.title": "Vervollständigen Sie Ihr Projekt",
@@ -3144,7 +3144,7 @@ const de: Messages = {
   "checkout.pay": "Bezahlen {amount}",
   "checkout.chooseBankHint": "Wählen Sie Ihre Bank, um fortzufahren.",
   "checkout.choosePaymentHint": "Bitte wählen Sie zuerst eine Zahlungsart.",
-  "checkout.usp.freeReturn": "14 Tage Widerrufsrecht",
+  "checkout.usp.freeReturn": "Rückgabe innerhalb von 14 Tagen",
   "checkout.usp.fastDelivery": "Schnelle Lieferung",
 
   "checkout.trust.heading": "Was Kunden über KLUSR sagen",
