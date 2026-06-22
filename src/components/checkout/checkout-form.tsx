@@ -874,18 +874,20 @@ export function CheckoutForm({
                         type="button"
                         onClick={() => payWith(m.id)}
                         disabled={submitting}
-                        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-klusr-black bg-klusr-black text-sm font-semibold text-white transition-colors hover:bg-klusr-black/90 disabled:opacity-50"
+                        className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm ring-1 ring-black/5 transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50"
                       >
                         {m.image && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.image} alt="" className="h-5 w-auto" />
+                          <img src={m.image} alt="" className="h-[18px] w-auto" />
                         )}
-                        {m.label}
+                        <span>{m.label}</span>
                       </button>
                     ))}
-                    <p className="text-center text-xs text-muted-foreground">
-                      of kies zelf je betaalmethode
-                    </p>
+                    <div className="flex items-center gap-3 py-0.5 text-xs text-muted-foreground">
+                      <span className="h-px flex-1 bg-border" />
+                      <span className="shrink-0">of kies zelf je betaalmethode</span>
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
                   </div>
                 )}
 
