@@ -859,6 +859,49 @@ export function CheckoutForm({
               <DeliveryCountdown compact className="px-1 text-xs" />
             </div>
           </Section>
+
+          {/* Stap 4 — Betaalmethode (interne checkout): express-knoppen + eigen
+              methodekeuze + ingebedde kaart, direct ná de verzendmethode in de
+              hoofdflow. Alleen in expressMode (hosted-modus kiest op Mollie). */}
+          {expressMode && (
+            <Section title={t("checkout.section.payment")} step={4}>
+              <div className="space-y-3">
+                {expressMethods.length > 0 && (
+                  <div className="space-y-2">
+                    {expressMethods.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => payWith(m.id)}
+                        disabled={submitting}
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-klusr-black bg-klusr-black text-sm font-semibold text-white transition-colors hover:bg-klusr-black/90 disabled:opacity-50"
+                      >
+                        {m.image && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.image} alt="" className="h-5 w-auto" />
+                        )}
+                        {m.label}
+                      </button>
+                    ))}
+                    <p className="text-center text-xs text-muted-foreground">
+                      of kies zelf je betaalmethode
+                    </p>
+                  </div>
+                )}
+
+                <PaymentMethods
+                  methods={pickMethods}
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                  loading={methodsLoading}
+                />
+
+                {paymentMethod === "creditcard" && mollieProfile && (
+                  <MollieCard ref={cardRef} profileId={mollieProfile} testmode={Boolean(mollieTest)} />
+                )}
+              </div>
+            </Section>
+          )}
         </div>
 
         {/* Right: order summary */}
@@ -963,47 +1006,6 @@ export function CheckoutForm({
               <p className="mt-3 rounded-md bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
                 {error}
               </p>
-            )}
-
-            {/* Interne checkout: express-knoppen + methodekeuze + ingebedde kaart.
-                Rendert ALLEEN bij expressMode; staat-ie uit, dan is dit blok er niet
-                en blijft de pagina exact zoals de huidige hosted-checkout. */}
-            {expressMode && (
-              <div className="mt-4 space-y-3">
-                {expressMethods.length > 0 && (
-                  <div className="space-y-2">
-                    {expressMethods.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => payWith(m.id)}
-                        disabled={submitting}
-                        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-klusr-black bg-klusr-black text-sm font-semibold text-white transition-colors hover:bg-klusr-black/90 disabled:opacity-50"
-                      >
-                        {m.image && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.image} alt="" className="h-5 w-auto" />
-                        )}
-                        {m.label}
-                      </button>
-                    ))}
-                    <p className="text-center text-xs text-muted-foreground">
-                      of kies zelf je betaalmethode
-                    </p>
-                  </div>
-                )}
-
-                <PaymentMethods
-                  methods={pickMethods}
-                  value={paymentMethod}
-                  onChange={setPaymentMethod}
-                  loading={methodsLoading}
-                />
-
-                {paymentMethod === "creditcard" && mollieProfile && (
-                  <MollieCard ref={cardRef} profileId={mollieProfile} testmode={Boolean(mollieTest)} />
-                )}
-              </div>
             )}
 
             <Button
