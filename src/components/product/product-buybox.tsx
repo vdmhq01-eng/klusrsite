@@ -52,7 +52,7 @@ const VAT_SUFFIX_KEY: Record<string, MessageKey> = {
 
 /**
  * GAMMA-stijl prijsblok voor INGELOGDE pashouders: de pasprijs is al toegepast,
- * dus framen we 'm als "Jouw prijs" (geen sales-pitch) + "X% KORTING"-badge +
+ * dus tonen we 'm als "X met {pass}" (GAMMA-stijl) + "X% KORTING"-badge +
  * (optioneel) prijs per liter en een korte bevestiging dat de korting automatisch
  * is verrekend. Werkt voor zowel KLUSRPAS als ProfPas. Geen "Wat is de KLUSRPAS?"-
  * uitlegregel: een pashouder kent de pas al.
@@ -71,27 +71,27 @@ function PassDiscountBox({
   t: ReturnType<typeof useT>;
 }) {
   return (
-    <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+    <div className="mt-3 rounded-xl border border-border bg-muted/60 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-2xl font-black leading-none text-primary">
+          <p className="text-2xl font-black leading-none">
             {formatPrice(amount)}
           </p>
           <p className="mt-1 text-sm font-semibold">
             {t("pdp.yourPassPrice", { pass: passName })}
           </p>
         </div>
-        <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-primary">
           {t("pdp.discountBadge", { pct })}
         </span>
       </div>
       {perLiter !== null && (
-        <p className="mt-1.5 text-sm font-semibold text-primary">
+        <p className="mt-1.5 text-sm font-semibold text-muted-foreground">
           {t("pdp.perLiter", { price: formatPrice(perLiter) })}
         </p>
       )}
       <p className="mt-2 text-xs leading-snug text-muted-foreground">
-        {t("pdp.passApplied", { pass: passName })}
+        {t("pdp.passApplied", { pass: passName, pct })}
       </p>
     </div>
   );
@@ -108,7 +108,7 @@ function PassBoxSkeleton() {
   return (
     <div
       aria-hidden
-      className="mt-3 h-[92px] animate-pulse rounded-xl border border-primary/20 bg-secondary/40 motion-reduce:animate-none"
+      className="mt-3 h-[104px] animate-pulse rounded-xl border border-border bg-muted/60 motion-reduce:animate-none"
     />
   );
 }
@@ -123,31 +123,41 @@ function PassTeaserBox({
   amount,
   savings,
   pct,
+  perLiter,
   t,
 }: {
   amount: number;
   savings: number;
   pct: number;
+  perLiter: number | null;
   t: ReturnType<typeof useT>;
 }) {
   // Bewust GEEN inlog-/registratie-CTA op de productpagina: we tonen alleen de
-  // KLUSRPAS-prijs als voordeel. De korting wordt gewoon bij het afrekenen
-  // verrekend — geen push om hier in te loggen of een account te maken.
+  // KLUSRPAS-prijs als voordeel — zelfde GAMMA-stijl blok als voor ingelogde
+  // pashouders. De korting wordt gewoon bij het afrekenen verrekend.
   return (
-    <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5">
+    <div className="mt-3 rounded-xl border border-border bg-muted/60 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-2xl font-black leading-none text-primary">
-            {t("pdp.kluspas.teaserTitle", { price: formatPrice(amount) })}
+          <p className="text-2xl font-black leading-none">
+            {formatPrice(amount)}
           </p>
           <p className="mt-1 text-sm font-semibold">
-            {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings), pct })}
+            {t("pdp.yourPassPrice", { pass: "KLUSRPAS" })}
           </p>
         </div>
-        <span className="shrink-0 rounded-md bg-primary px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
+        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-extrabold uppercase tracking-wide text-primary">
           {t("pdp.discountBadge", { pct })}
         </span>
       </div>
+      {perLiter !== null && (
+        <p className="mt-1.5 text-sm font-semibold text-muted-foreground">
+          {t("pdp.perLiter", { price: formatPrice(perLiter) })}
+        </p>
+      )}
+      <p className="mt-2 text-xs leading-snug text-muted-foreground">
+        {t("pdp.kluspas.teaserSave", { amount: formatPrice(savings), pct })}
+      </p>
     </div>
   );
 }
@@ -292,6 +302,11 @@ export function ProductBuybox({
   // getoonde bedragen zodat ze de juiste btw-modus volgen.
   const normalPerLiter = variant.size ? headlinePrice / variant.size : null;
   const memberPerLiter = variant.size && showPass ? priceInfo.amount / variant.size : null;
+  // Per-liter voor de gast-teaser: de potentiële KLUSRPAS-prijs gedeeld door inhoud.
+  const teaserPerLiter =
+    variant.size && showTeaser && priceInfo.passAmount
+      ? priceInfo.passAmount / variant.size
+      : null;
 
   function buildItem() {
     return addItem({ product, variant, quantity, color });
@@ -513,6 +528,7 @@ export function ProductBuybox({
             amount={priceInfo.passAmount!}
             savings={priceInfo.passSavings!}
             pct={priceInfo.passSavingsPct ?? 0}
+            perLiter={teaserPerLiter}
             t={t}
           />
         ) : null}
