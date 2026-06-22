@@ -225,10 +225,19 @@ export function ProductBuybox({
     const flag =
       process.env.NEXT_PUBLIC_CHECKOUT_EXPRESS === "1" ||
       process.env.NEXT_PUBLIC_CHECKOUT_EXPRESS === "true";
+    // Test-ingang: forceer de knop met ?applepay=1 in de URL — zo test je op het
+    // echte, in Mollie geverifieerde domein (www.klus-r.nl) zonder env-var/rebuild
+    // en zonder de knop meteen voor álle klanten aan te zetten.
+    let forced = false;
+    try {
+      forced = new URLSearchParams(window.location.search).get("applepay") === "1";
+    } catch {
+      // Geen window/URL beschikbaar → niet forceren.
+    }
     try {
       const AP = (window as unknown as { ApplePaySession?: { canMakePayments(): boolean } })
         .ApplePaySession;
-      if (flag && AP && AP.canMakePayments()) setApplePayAvailable(true);
+      if ((flag || forced) && AP && AP.canMakePayments()) setApplePayAvailable(true);
     } catch {
       // Apple Pay niet beschikbaar → knop blijft verborgen.
     }
