@@ -896,7 +896,7 @@ const nl: Messages = {
   "cart.continueShopping": "Verder winkelen",
   "cart.toCart": "Naar winkelwagen",
 
-  "cart.usp.returns": "Gratis retourneren",
+  "cart.usp.returns": "Retourneren mogelijk",
   "cart.usp.payment": "Veilig betalen via Mollie",
 
   "cart.upsell.title": "Maak je klus compleet",
@@ -975,7 +975,7 @@ const nl: Messages = {
   "checkout.pay": "Betaal {amount}",
   "checkout.chooseBankHint": "Kies je bank om verder te gaan.",
   "checkout.choosePaymentHint": "Kies eerst een betaalmethode.",
-  "checkout.usp.freeReturn": "Gratis retour",
+  "checkout.usp.freeReturn": "14 dagen bedenktijd",
   "checkout.usp.fastDelivery": "Snelle levering",
 
   "checkout.trust.heading": "Wat klanten over KLUSR zeggen",
@@ -1069,7 +1069,7 @@ const nl: Messages = {
     "Vind hieronder snel antwoord op de meestgestelde vragen, of neem direct contact met ons op. Onze klussers staan voor je klaar.",
 
   "service.trust.delivery": "Voor 19:00 besteld, morgen in huis",
-  "service.trust.returns": "14 dagen gratis retour",
+  "service.trust.returns": "14 dagen bedenktijd",
   "service.trust.payment": "Veilig betalen via Mollie",
   "service.trust.advice": "Advies van ex-schilders",
   "service.trust.warranty": "Wettelijke garantie op alles",
@@ -1098,7 +1098,7 @@ const nl: Messages = {
 
   "service.group.shipping.title": "Verzending & retour",
   "service.group.shipping.intro":
-    "Gratis verzending vanaf {free} in NL en BE, voor 19:00 besteld is morgen in huis, en gratis retour per post met retourlabel. Naar de rest van de EU vanaf {eu}.",
+    "Gratis verzending vanaf {free} in NL en BE, voor 19:00 besteld is morgen in huis, en retourneren kan per post met retourlabel — de retourkosten zijn voor eigen rekening. Naar de rest van de EU vanaf {eu}.",
   "service.group.payment.title": "Veilig betalen",
   "service.group.payment.intro":
     "Betaal eenvoudig en veilig met iDEAL, Bancontact, creditcard of achteraf met Klarna via Mollie.",
@@ -1123,7 +1123,7 @@ const nl: Messages = {
     "We bezorgen in de hele EU. Naar België is verzending gratis vanaf {beFree}; naar de overige EU-landen geldt een vast tarief per land vanaf {eu}, dat je tijdens het afrekenen ziet. Buiten de EU — waaronder Zwitserland en het Verenigd Koninkrijk — verzenden we niet, vanwege de douane.",
   "service.faq.shipping.return.q": "Hoe retourneer ik een product?",
   "service.faq.shipping.return.a":
-    "Retourneren is gratis per post met een retourlabel. Meld je retour aan via je account of de klantenservice, dan ontvang je het retourlabel en de instructies. Je hebt 14 dagen bedenktijd.",
+    "Retourneren kan per post met een retourlabel; de retourkosten zijn voor eigen rekening. Meld je retour aan via je account of de klantenservice, dan ontvang je het retourlabel en de instructies. Je hebt 14 dagen bedenktijd.",
 
   "service.faq.payment.methods.q": "Welke betaalmethodes accepteren jullie?",
   "service.faq.payment.methods.a":
@@ -1181,7 +1181,7 @@ const nl: Messages = {
 
   "service.guarantee.title": "Niet goed? Geld terug.",
   "service.guarantee.text":
-    "We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd, gratis retour per post met retourlabel en wettelijke garantie op alles. Op kleur gemengde verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het altijd kosteloos op.",
+    "We willen dat je met een gerust hart de klus in gaat. Daarom: 14 dagen bedenktijd, retourneren kan per post met retourlabel (de retourkosten zijn voor eigen rekening) en wettelijke garantie op alles. Op kleur gemengde verf is maatwerk en daarom uitgezonderd van retour — maar bij een gebrek lossen we het altijd kosteloos op.",
   "service.guarantee.cta": "Lees de retourvoorwaarden",
 
   "service.contactBlock.title": "Staat je vraag er niet bij?",
@@ -1428,7 +1428,7 @@ const nl: Messages = {
   "pdp.stockForBasePost": " — elke basis heeft een eigen voorraad.",
 
   "pdp.usp.freeShipping": "Gratis verzending vanaf €50",
-  "pdp.usp.returns": "Gratis retourneren binnen 30 dagen",
+  "pdp.usp.returns": "Retourneren binnen 14 dagen",
   "pdp.usp.afterpay": "Achteraf betalen mogelijk",
 
   "pdp.tab.description": "Omschrijving",
@@ -1619,7 +1619,7 @@ const en: Messages = {
   "cart.continueShopping": "Continue shopping",
   "cart.toCart": "Go to cart",
 
-  "cart.usp.returns": "Free returns",
+  "cart.usp.returns": "Returns possible",
   "cart.usp.payment": "Secure payment via Mollie",
 
   "cart.upsell.title": "Complete your project",
@@ -1698,7 +1698,7 @@ const en: Messages = {
   "checkout.pay": "Pay {amount}",
   "checkout.chooseBankHint": "Choose your bank to continue.",
   "checkout.choosePaymentHint": "Please choose a payment method first.",
-  "checkout.usp.freeReturn": "Free returns",
+  "checkout.usp.freeReturn": "14-day right of withdrawal",
   "checkout.usp.fastDelivery": "Fast delivery",
 
   "checkout.trust.heading": "What customers say about KLUSR",
@@ -1792,7 +1792,7 @@ const en: Messages = {
     "Find quick answers to the most frequently asked questions below, or get in touch with us directly. Our DIYers are ready to help.",
 
   "service.trust.delivery": "Order before 19:00, delivered tomorrow",
-  "service.trust.returns": "14-day free returns",
+  "service.trust.returns": "14-day right of withdrawal",
   "service.trust.payment": "Secure payment via Mollie",
   "service.trust.advice": "Advice from former painters",
   "service.trust.warranty": "Statutory warranty on everything",
@@ -1821,7 +1821,7 @@ const en: Messages = {
 
   "service.group.shipping.title": "Shipping & returns",
   "service.group.shipping.intro":
-    "Free shipping from {free} in NL and BE, ordered before 19:00 means delivery tomorrow, and free returns by post with a return label. To the rest of the EU from {eu}.",
+    "Free shipping from {free} in NL and BE, ordered before 19:00 means delivery tomorrow, and returns by post with a return label — return shipping is at your own expense. To the rest of the EU from {eu}.",
   "service.group.payment.title": "Secure payment",
   "service.group.payment.intro":
     "Pay easily and securely with iDEAL, Bancontact, credit card or pay later with Klarna via Mollie.",
@@ -1846,7 +1846,7 @@ const en: Messages = {
     "We deliver throughout the EU. Shipping to Belgium is free from {beFree}; for the other EU countries a fixed rate per country applies from {eu}, which you'll see during checkout. We don't ship outside the EU — including Switzerland and the United Kingdom — due to customs.",
   "service.faq.shipping.return.q": "How do I return a product?",
   "service.faq.shipping.return.a":
-    "Returns are free by post with a return label. Register your return via your account or customer service and you'll receive the return label and instructions. You have 14 days to change your mind.",
+    "Returns are possible by post with a return label; return shipping is at your own expense. Register your return via your account or customer service and you'll receive the return label and instructions. You have 14 days to change your mind.",
 
   "service.faq.payment.methods.q": "Which payment methods do you accept?",
   "service.faq.payment.methods.a":
@@ -1904,7 +1904,7 @@ const en: Messages = {
 
   "service.guarantee.title": "Not happy? Money back.",
   "service.guarantee.text":
-    "We want you to start your project with peace of mind. That's why: 14 days to change your mind, free returns by post with a return label and a statutory warranty on everything. Colour-mixed paint is made to order and therefore excluded from returns — but in the event of a defect we'll always sort it out free of charge.",
+    "We want you to start your project with peace of mind. That's why: 14 days to change your mind, returns by post with a return label (return shipping is at your own expense) and a statutory warranty on everything. Colour-mixed paint is made to order and therefore excluded from returns — but in the event of a defect we'll always sort it out free of charge.",
   "service.guarantee.cta": "Read the return policy",
 
   "service.contactBlock.title": "Can't find your question?",
@@ -2151,7 +2151,7 @@ const en: Messages = {
   "pdp.stockForBasePost": " — each base has its own stock.",
 
   "pdp.usp.freeShipping": "Free shipping from €50",
-  "pdp.usp.returns": "Free returns within 30 days",
+  "pdp.usp.returns": "Returns within 14 days",
   "pdp.usp.afterpay": "Pay later available",
 
   "pdp.tab.description": "Description",
@@ -2342,7 +2342,7 @@ const fr: Messages = {
   "cart.continueShopping": "Continuer mes achats",
   "cart.toCart": "Voir le panier",
 
-  "cart.usp.returns": "Retours gratuits",
+  "cart.usp.returns": "Retours possibles",
   "cart.usp.payment": "Paiement sécurisé via Mollie",
 
   "cart.upsell.title": "Complétez vos travaux",
@@ -2421,7 +2421,7 @@ const fr: Messages = {
   "checkout.pay": "Payer {amount}",
   "checkout.chooseBankHint": "Choisissez votre banque pour continuer.",
   "checkout.choosePaymentHint": "Veuillez d'abord choisir un mode de paiement.",
-  "checkout.usp.freeReturn": "Retour gratuit",
+  "checkout.usp.freeReturn": "14 jours de rétractation",
   "checkout.usp.fastDelivery": "Livraison rapide",
 
   "checkout.trust.heading": "Ce que disent nos clients",
@@ -2515,7 +2515,7 @@ const fr: Messages = {
     "Trouvez ci-dessous une réponse rapide aux questions les plus fréquentes, ou contactez-nous directement. Nos bricoleurs sont là pour vous.",
 
   "service.trust.delivery": "Commandé avant 19h, livré demain",
-  "service.trust.returns": "Retours gratuits sous 14 jours",
+  "service.trust.returns": "14 jours de rétractation",
   "service.trust.payment": "Paiement sécurisé via Mollie",
   "service.trust.advice": "Conseils d'anciens peintres",
   "service.trust.warranty": "Garantie légale sur tout",
@@ -2544,7 +2544,7 @@ const fr: Messages = {
 
   "service.group.shipping.title": "Livraison & retours",
   "service.group.shipping.intro":
-    "Livraison gratuite à partir de {free} aux NL et en BE, commandé avant 19h c'est livré demain, et retours gratuits par la poste avec étiquette de retour. Vers le reste de l'UE à partir de {eu}.",
+    "Livraison gratuite à partir de {free} aux NL et en BE, commandé avant 19h c'est livré demain, et retours possibles par la poste avec étiquette de retour — les frais de retour sont à votre charge. Vers le reste de l'UE à partir de {eu}.",
   "service.group.payment.title": "Paiement sécurisé",
   "service.group.payment.intro":
     "Payez facilement et en toute sécurité avec iDEAL, Bancontact, carte de crédit ou en différé avec Klarna via Mollie.",
@@ -2569,7 +2569,7 @@ const fr: Messages = {
     "Nous livrons dans toute l'UE. Vers la Belgique, la livraison est gratuite à partir de {beFree} ; pour les autres pays de l'UE, un tarif fixe par pays s'applique à partir de {eu}, que vous voyez au moment du paiement. En dehors de l'UE — y compris la Suisse et le Royaume-Uni — nous ne livrons pas, en raison de la douane.",
   "service.faq.shipping.return.q": "Comment retourner un produit ?",
   "service.faq.shipping.return.a":
-    "Les retours sont gratuits par la poste avec une étiquette de retour. Déclarez votre retour via votre compte ou le service client et vous recevrez l'étiquette de retour et les instructions. Vous disposez de 14 jours de réflexion.",
+    "Les retours sont possibles par la poste avec une étiquette de retour ; les frais de retour sont à votre charge. Déclarez votre retour via votre compte ou le service client et vous recevrez l'étiquette de retour et les instructions. Vous disposez de 14 jours de réflexion.",
 
   "service.faq.payment.methods.q": "Quels moyens de paiement acceptez-vous ?",
   "service.faq.payment.methods.a":
@@ -2627,7 +2627,7 @@ const fr: Messages = {
 
   "service.guarantee.title": "Pas satisfait ? Remboursé.",
   "service.guarantee.text":
-    "Nous voulons que vous abordiez vos travaux l'esprit tranquille. C'est pourquoi : 14 jours de réflexion, retours gratuits par la poste avec étiquette de retour et garantie légale sur tout. La peinture teintée sur mesure est un produit personnalisé et donc exclue des retours — mais en cas de défaut, nous le résolvons toujours gratuitement.",
+    "Nous voulons que vous abordiez vos travaux l'esprit tranquille. C'est pourquoi : 14 jours de réflexion, retours possibles par la poste avec étiquette de retour (les frais de retour sont à votre charge) et garantie légale sur tout. La peinture teintée sur mesure est un produit personnalisé et donc exclue des retours — mais en cas de défaut, nous le résolvons toujours gratuitement.",
   "service.guarantee.cta": "Lisez les conditions de retour",
 
   "service.contactBlock.title": "Votre question n'y figure pas ?",
@@ -2874,7 +2874,7 @@ const fr: Messages = {
   "pdp.stockForBasePost": " — chaque base a son propre stock.",
 
   "pdp.usp.freeShipping": "Livraison gratuite dès €50",
-  "pdp.usp.returns": "Retours gratuits sous 30 jours",
+  "pdp.usp.returns": "Retours sous 14 jours",
   "pdp.usp.afterpay": "Paiement différé possible",
 
   "pdp.tab.description": "Description",
@@ -3065,7 +3065,7 @@ const de: Messages = {
   "cart.continueShopping": "Weiter einkaufen",
   "cart.toCart": "Zum Warenkorb",
 
-  "cart.usp.returns": "Kostenlose Rückgabe",
+  "cart.usp.returns": "Rückgabe möglich",
   "cart.usp.payment": "Sicher bezahlen über Mollie",
 
   "cart.upsell.title": "Vervollständigen Sie Ihr Projekt",
@@ -3144,7 +3144,7 @@ const de: Messages = {
   "checkout.pay": "Bezahlen {amount}",
   "checkout.chooseBankHint": "Wählen Sie Ihre Bank, um fortzufahren.",
   "checkout.choosePaymentHint": "Bitte wählen Sie zuerst eine Zahlungsart.",
-  "checkout.usp.freeReturn": "Kostenlose Rückgabe",
+  "checkout.usp.freeReturn": "14 Tage Widerrufsrecht",
   "checkout.usp.fastDelivery": "Schnelle Lieferung",
 
   "checkout.trust.heading": "Was Kunden über KLUSR sagen",
@@ -3238,7 +3238,7 @@ const de: Messages = {
     "Finden Sie unten schnell eine Antwort auf die häufigsten Fragen oder nehmen Sie direkt Kontakt mit uns auf. Unsere Heimwerker stehen für Sie bereit.",
 
   "service.trust.delivery": "Vor 19:00 Uhr bestellt, morgen geliefert",
-  "service.trust.returns": "14 Tage kostenlose Rückgabe",
+  "service.trust.returns": "14 Tage Widerrufsrecht",
   "service.trust.payment": "Sicher bezahlen über Mollie",
   "service.trust.advice": "Beratung von ehemaligen Malern",
   "service.trust.warranty": "Gesetzliche Garantie auf alles",
@@ -3267,7 +3267,7 @@ const de: Messages = {
 
   "service.group.shipping.title": "Versand & Rückgabe",
   "service.group.shipping.intro":
-    "Kostenloser Versand ab {free} in NL und BE, vor 19:00 Uhr bestellt ist morgen geliefert, und kostenlose Rückgabe per Post mit Rücksendeetikett. In den Rest der EU ab {eu}.",
+    "Kostenloser Versand ab {free} in NL und BE, vor 19:00 Uhr bestellt ist morgen geliefert, und Rückgabe per Post mit Rücksendeetikett möglich — die Rücksendekosten trägt der Kunde. In den Rest der EU ab {eu}.",
   "service.group.payment.title": "Sicher bezahlen",
   "service.group.payment.intro":
     "Bezahlen Sie einfach und sicher mit iDEAL, Bancontact, Kreditkarte oder später mit Klarna über Mollie.",
@@ -3292,7 +3292,7 @@ const de: Messages = {
     "Wir liefern in die gesamte EU. Nach Belgien ist der Versand ab {beFree} kostenlos; für die übrigen EU-Länder gilt ein fester Tarif pro Land ab {eu}, den Sie während des Bezahlvorgangs sehen. Außerhalb der EU — einschließlich der Schweiz und des Vereinigten Königreichs — versenden wir aufgrund des Zolls nicht.",
   "service.faq.shipping.return.q": "Wie gebe ich ein Produkt zurück?",
   "service.faq.shipping.return.a":
-    "Die Rückgabe ist per Post mit einem Rücksendeetikett kostenlos. Melden Sie Ihre Rückgabe über Ihr Konto oder den Kundenservice an, dann erhalten Sie das Rücksendeetikett und die Anweisungen. Sie haben 14 Tage Bedenkzeit.",
+    "Die Rückgabe ist per Post mit einem Rücksendeetikett möglich; die Rücksendekosten trägt der Kunde. Melden Sie Ihre Rückgabe über Ihr Konto oder den Kundenservice an, dann erhalten Sie das Rücksendeetikett und die Anweisungen. Sie haben 14 Tage Bedenkzeit.",
 
   "service.faq.payment.methods.q": "Welche Zahlungsmethoden akzeptieren Sie?",
   "service.faq.payment.methods.a":
@@ -3350,7 +3350,7 @@ const de: Messages = {
 
   "service.guarantee.title": "Nicht zufrieden? Geld zurück.",
   "service.guarantee.text":
-    "Wir möchten, dass Sie Ihr Projekt mit gutem Gefühl angehen. Deshalb: 14 Tage Bedenkzeit, kostenlose Rückgabe per Post mit Rücksendeetikett und gesetzliche Garantie auf alles. Nach Farbton gemischte Farbe ist Maßarbeit und daher von der Rückgabe ausgenommen — aber bei einem Mangel lösen wir es immer kostenlos.",
+    "Wir möchten, dass Sie Ihr Projekt mit gutem Gefühl angehen. Deshalb: 14 Tage Bedenkzeit, Rückgabe per Post mit Rücksendeetikett möglich (die Rücksendekosten trägt der Kunde) und gesetzliche Garantie auf alles. Nach Farbton gemischte Farbe ist Maßarbeit und daher von der Rückgabe ausgenommen — aber bei einem Mangel lösen wir es immer kostenlos.",
   "service.guarantee.cta": "Lesen Sie die Rückgabebedingungen",
 
   "service.contactBlock.title": "Ist Ihre Frage nicht dabei?",
@@ -3597,7 +3597,7 @@ const de: Messages = {
   "pdp.stockForBasePost": " — jede Basis hat einen eigenen Bestand.",
 
   "pdp.usp.freeShipping": "Kostenloser Versand ab €50",
-  "pdp.usp.returns": "Kostenlose Rückgabe innerhalb von 30 Tagen",
+  "pdp.usp.returns": "Rückgabe innerhalb von 14 Tagen",
   "pdp.usp.afterpay": "Kauf auf Rechnung möglich",
 
   "pdp.tab.description": "Beschreibung",
