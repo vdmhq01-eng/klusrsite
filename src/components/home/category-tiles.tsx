@@ -34,19 +34,24 @@ export function CategoryTiles() {
   return (
     <section className="container-klusr">
       <SectionHeading title={t("home.categories.title")} subtitle={t("home.categories.subtitle")} />
-      {/* Horizontally scrollable on mobile, grid on desktop */}
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-8">
+      {/* Altijd één rij: horizontaal scrollen (met snap) op smal scherm, op
+          desktop passen alle tegels naast elkaar. Bewust géén grid → geen
+          omloop naar meerdere rijen. */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:mx-0 sm:px-0">
         {tiles.map((cat) => (
           <Link
             key={cat.slug}
             href={`/categorie/${cat.slug}`}
-            className="group relative flex aspect-square w-32 shrink-0 flex-col justify-end overflow-hidden rounded-xl sm:w-auto"
+            className="group relative flex aspect-square w-32 shrink-0 snap-start flex-col justify-end overflow-hidden rounded-xl sm:flex-1 sm:basis-32"
           >
             <TopicImage
               seed={cat.slug}
               keywords={categoryKeywords(cat.slug)}
               icon={CATEGORY_ICONS[cat.slug]}
+              // Gegenereerd sfeerbeeld als dat in /generated bestaat, anders het
+              // vaste categoriebeeld; faalt ook dat, dan blijft de gradient staan.
               src={`/generated/categorie-${cat.slug}.jpg`}
+              fallbackSrc={cat.image}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-klusr-black/85 to-transparent" />
             <span className="relative p-3 text-sm font-bold text-white">{cat.title}</span>
