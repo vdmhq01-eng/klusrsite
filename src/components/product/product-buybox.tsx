@@ -182,6 +182,9 @@ export function ProductBuybox({
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
   const [color, setColor] = useState<SelectedColor | undefined>();
   const [quantity, setQuantity] = useState(1);
+  // Inline-melding bij de winkelwagen-knop wanneer een kleur nog ontbreekt
+  // (i.p.v. een toast bovenin). Verdwijnt zodra er een kleur is gekozen.
+  const [colorError, setColorError] = useState(false);
 
   // Voorkeuze van kleur via ?kleur=<code> (bijv. vanuit de Kleurenkiezer-funnel).
   // Client-side gelezen zodat de productpagina statisch/ISR blijft.
@@ -253,9 +256,7 @@ export function ProductBuybox({
    * (daar staan o.a. Apple Pay / Google Pay zodra die in Mollie actief zijn). */
   function handleBuyNow() {
     if (product.colorMatchable && !color) {
-      toast(t("pdp.chooseColorTitle"), {
-        description: t("pdp.chooseColorBuy"),
-      });
+      setColorError(true);
       return;
     }
     buildItem();
@@ -265,9 +266,7 @@ export function ProductBuybox({
 
   function handleAdd() {
     if (product.colorMatchable && !color) {
-      toast(t("pdp.chooseColorTitle"), {
-        description: t("pdp.chooseColorAdd"),
-      });
+      setColorError(true);
       return;
     }
     buildItem();
@@ -570,6 +569,12 @@ export function ProductBuybox({
             {t("pdp.addToCart")}
           </Button>
         </div>
+        {colorError && !color && (
+          <p className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm font-semibold text-primary">
+            <Palette className="h-4 w-4 shrink-0" />
+            {t("pdp.chooseColorTitle")}
+          </p>
+        )}
         <Button
           onClick={handleBuyNow}
           size="lg"
