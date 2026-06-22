@@ -158,7 +158,10 @@ export async function POST(req: Request) {
       orderId: order.id,
       reference: order.reference,
       amount: data.total,
-      method: undefined,
+      // Hosted-modus stuurt geen methode mee (data.method undefined) → Mollie
+      // toont z'n eigen keuzescherm. De interne checkout (express) stuurt wél een
+      // gekozen methode mee → Mollie gaat dan direct naar die methode.
+      method: data.method,
       issuer: data.issuer,
       baseUrl: origin,
       cardToken: data.cardToken,
