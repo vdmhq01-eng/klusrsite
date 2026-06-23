@@ -1,11 +1,14 @@
 import { Check, PackageX, Truck } from "lucide-react";
 import type { StoreStock } from "@/types";
+import { onlineStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 
 interface StockStatusProps {
   stockByStore: StoreStock[];
   /** Behouden voor API-compatibiliteit; niet meer gebruikt (geen fysieke winkels). */
   storeId?: string;
+  /** Veiligheidsvoorraad: onder dit aantal (Nijverdal) tonen we uitverkocht. */
+  safetyStock?: number;
   showScarcity?: boolean;
   showDelivery?: boolean;
   className?: string;
@@ -14,16 +17,18 @@ interface StockStatusProps {
 const SCARCITY_THRESHOLD = 5;
 
 /**
- * Online voorraadindicator. We tonen de totale (online) beschikbaarheid; er zijn
- * op dit moment geen fysieke winkels, dus geen filiaal-specifieke voorraad.
+ * Online voorraadindicator. We tonen uitsluitend de voorraad van de
+ * hoofdvestiging (Nijverdal), en pas vanaf de veiligheidsvoorraad: zakt die
+ * eronder, dan is het product niet leverbaar ("uitverkocht").
  */
 export function StockStatus({
   stockByStore,
+  safetyStock = DEFAULT_SAFETY_STOCK,
   showScarcity = true,
   showDelivery = false,
   className,
 }: StockStatusProps) {
-  const qty = stockByStore.reduce((sum, s) => sum + s.quantity, 0);
+  const qty = onlineStock(stockByStore, safetyStock);
   const inStock = qty > 0;
 
   return (

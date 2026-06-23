@@ -1,6 +1,7 @@
 import { products, categories } from "@/lib/data";
 import type { Product, ProductVariant } from "@/types";
 import { localePrefix, type Locale } from "@/lib/i18n/config";
+import { onlineStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
 import enOverlay from "@/lib/data/i18n/products.en.json";
 import frOverlay from "@/lib/data/i18n/products.fr.json";
 import deOverlay from "@/lib/data/i18n/products.de.json";
@@ -27,6 +28,10 @@ import deOverlay from "@/lib/data/i18n/products.de.json";
  */
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
+
+// Veiligheidsvoorraad voor de (statische) feed: onder dit aantal markeren we
+// out_of_stock. Instelbaar via env SAFETY_STOCK; default = de app-default.
+const SAFETY_STOCK = Number(process.env.SAFETY_STOCK) || DEFAULT_SAFETY_STOCK;
 
 const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
 
@@ -93,7 +98,8 @@ function clean(s: string): string {
 }
 
 function variantStock(v: ProductVariant): number {
-  return v.stockByStore.reduce((sum, x) => sum + x.quantity, 0);
+  // Alleen Nijverdal-voorraad, gegate op de veiligheidsvoorraad.
+  return onlineStock(v.stockByStore, SAFETY_STOCK);
 }
 
 function productType(p: Product): string {

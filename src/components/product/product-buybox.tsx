@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { showAddedToCartToast } from "@/components/cart/added-to-cart-toast";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
 import type { GlansVariant } from "@/lib/data/products";
+import { onlineStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "./star-rating";
@@ -202,9 +203,11 @@ interface ApplePaySessionConstructor {
 export function ProductBuybox({
   product,
   glansVariants = [],
+  safetyStock = DEFAULT_SAFETY_STOCK,
 }: {
   product: Product;
   glansVariants?: GlansVariant[];
+  safetyStock?: number;
 }) {
   const t = useT();
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
@@ -255,6 +258,8 @@ export function ProductBuybox({
     color?.base && product.colorMatchable
       ? baseStockByStore(variant.stockByStore, color.base.id)
       : variant.stockByStore;
+  // Online verkoopbaar = Nijverdal-voorraad ≥ veiligheidsvoorraad.
+  const sellable = onlineStock(effectiveStock, safetyStock) > 0;
 
   // De KLUSRPAS-prijs (5%) is een ingelogd voordeel: alleen ingelogde bezoekers
   // krijgen 'm toegepast. Gasten zien de normale prijs + een teaser (zie onder).
@@ -402,6 +407,7 @@ export function ProductBuybox({
   }
 
   function handleAdd() {
+    if (!sellable) return;
     if (product.colorMatchable && !color) {
       setColorError(true);
       return;
@@ -546,6 +552,7 @@ export function ProductBuybox({
       {/* Stock + delivery (base-specific when a colour is chosen) */}
       <StockStatus
         stockByStore={effectiveStock}
+        safetyStock={safetyStock}
         showScarcity
         className="text-sm"
       />
@@ -708,9 +715,9 @@ export function ProductBuybox({
       <div className="flex flex-col gap-3">
         <div className="flex items-stretch gap-3">
           <QuantityStepper value={quantity} onChange={setQuantity} />
-          <Button onClick={handleAdd} size="lg" className="flex-1">
+          <Button onClick={handleAdd} size="lg" className="flex-1" disabled={!sellable}>
             <ShoppingCart className="h-5 w-5" />
-            {t("pdp.addToCart")}
+            {sellable ? t("pdp.addToCart") : "Tijdelijk uitverkocht"}
           </Button>
         </div>
         {colorError && !color && (
