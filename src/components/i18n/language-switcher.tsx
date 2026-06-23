@@ -48,8 +48,20 @@ function persistLocale(locale: Locale) {
  * Compacte taalschakelaar (knoppen). Navigeert naar hetzelfde pad met de nieuwe
  * prefix en onthoudt de keuze in een cookie. Rendert NIETS als de feature-flag
  * uit staat — dus geen visuele wijziging voor de huidige NL-site.
+ *
+ * `variant`: "dark" (default) voor donkere achtergronden (topbar, footer),
+ * "light" voor lichte achtergronden (mobiel menu). `afterSwitch` wordt na een
+ * keuze aangeroepen — handig om bv. het mobiele menu te sluiten.
  */
-export function LanguageSwitcher({ className }: { className?: string }) {
+export function LanguageSwitcher({
+  className,
+  variant = "dark",
+  afterSwitch,
+}: {
+  className?: string;
+  variant?: "dark" | "light";
+  afterSwitch?: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const current = useLocale();
@@ -57,11 +69,17 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   if (!i18nEnabled()) return null;
 
   function switchTo(target: Locale) {
-    if (target === current) return;
+    if (target === current) {
+      afterSwitch?.();
+      return;
+    }
     persistLocale(target);
     router.push(localizedPath(pathname || "/", target));
     router.refresh();
+    afterSwitch?.();
   }
+
+  const dark = variant === "dark";
 
   return (
     <div
@@ -69,7 +87,13 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       role="group"
       aria-label={LOCALE_LABELS[current]}
     >
-      <Globe className="h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
+      <Globe
+        className={cn(
+          "h-4 w-4 shrink-0",
+          dark ? "text-white/50" : "text-muted-foreground",
+        )}
+        aria-hidden="true"
+      />
       <div className="flex flex-wrap items-center gap-1">
         {LOCALES.map((locale) => {
           const active = locale === current;
@@ -83,8 +107,12 @@ export function LanguageSwitcher({ className }: { className?: string }) {
               className={cn(
                 "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors",
                 active
-                  ? "bg-white/15 text-white"
-                  : "text-white/60 hover:bg-white/10 hover:text-white",
+                  ? dark
+                    ? "bg-white/15 text-white"
+                    : "bg-primary/10 text-primary"
+                  : dark
+                    ? "text-white/60 hover:bg-white/10 hover:text-white"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
               {active && <Check className="h-3 w-3" aria-hidden="true" />}

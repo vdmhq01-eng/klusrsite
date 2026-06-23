@@ -1,4 +1,5 @@
 import type { Locale } from "./config";
+import plOverlay from "./messages.pl.json";
 
 /**
  * Getypeerde berichtencatalogus voor de GLOBALE CHROME (topbar, footer, header).
@@ -3638,6 +3639,10 @@ const de: Messages = {
   "delivery.countdown": "noch {h} Std. {m} Min.",
 };
 
-export const dictionaries: Record<Locale, Messages> = { nl, en, fr, de };
+// Pools: overlay bovenop NL. De vertaal-cron (scripts/translate-ui.mjs) vult
+// messages.pl.json; ontbrekende keys vallen netjes terug op het Nederlands.
+const pl: Messages = { ...nl, ...(plOverlay as Partial<Messages>) } as Messages;
+
+export const dictionaries: Record<Locale, Messages> = { nl, en, fr, de, pl };
 
 export type MessageKey = keyof Messages;

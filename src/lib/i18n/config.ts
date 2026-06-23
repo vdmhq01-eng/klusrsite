@@ -8,7 +8,7 @@
  */
 
 /** Alle ondersteunde locales. Nederlands is de bron en de default. */
-export const LOCALES = ["nl", "en", "fr", "de"] as const;
+export const LOCALES = ["nl", "en", "fr", "de", "pl"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
@@ -28,6 +28,7 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   fr: "Français",
   de: "Deutsch",
+  pl: "Polski",
 };
 
 /** Korte labels (bv. voor compacte schakelaars / mobiel). */
@@ -36,6 +37,7 @@ export const LOCALE_SHORT_LABELS: Record<Locale, string> = {
   en: "EN",
   fr: "FR",
   de: "DE",
+  pl: "PL",
 };
 
 /**
