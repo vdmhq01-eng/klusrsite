@@ -357,6 +357,8 @@ export type Messages = {
   "checkout.validation.street": string;
   "checkout.validation.terms": string;
   "checkout.validation.postalCodeNl": string; // ook placeholder "Bijv. 7443 BR"
+  "checkout.validation.coc": string;
+  "checkout.validation.vat": string;
 
   // ── Klantenservice ────────────────────────────────────────────────────────
   "service.hero.kicker": string;
@@ -941,8 +943,8 @@ const nl: Messages = {
   "checkout.createAccount.passwordHint": "Minimaal 8 tekens.",
   "checkout.field.company": "Bedrijfsnaam",
   "checkout.field.companyPlaceholder": "Bedrijfsnaam B.V.",
-  "checkout.field.coc": "KVK-nummer (optioneel)",
-  "checkout.field.vat": "BTW-nummer (optioneel)",
+  "checkout.field.coc": "KVK-nummer",
+  "checkout.field.vat": "BTW-nummer",
 
   "checkout.field.country": "Land",
   "checkout.country.outsideNote":
@@ -1063,6 +1065,8 @@ const nl: Messages = {
   "checkout.validation.street": "Vul je straatnaam in",
   "checkout.validation.terms": "Ga akkoord met de algemene voorwaarden om te bestellen.",
   "checkout.validation.postalCodeNl": "Bijv. 7443 BR",
+  "checkout.validation.coc": "Een KVK-nummer bestaat uit 8 cijfers.",
+  "checkout.validation.vat": "Voer een geldig btw-nummer in, bijv. NL000000000B00.",
 
   "service.hero.kicker": "Klantenservice",
   "service.hero.title": "Waarmee kunnen we je helpen?",
@@ -1664,8 +1668,8 @@ const en: Messages = {
   "checkout.createAccount.passwordHint": "At least 8 characters.",
   "checkout.field.company": "Company name",
   "checkout.field.companyPlaceholder": "Company Ltd.",
-  "checkout.field.coc": "CoC number (optional)",
-  "checkout.field.vat": "VAT number (optional)",
+  "checkout.field.coc": "CoC number",
+  "checkout.field.vat": "VAT number",
 
   "checkout.field.country": "Country",
   "checkout.country.outsideNote":
@@ -1786,6 +1790,8 @@ const en: Messages = {
   "checkout.validation.street": "Enter your street name",
   "checkout.validation.terms": "Please accept the terms & conditions to place your order.",
   "checkout.validation.postalCodeNl": "E.g. 7443 BR",
+  "checkout.validation.coc": "A CoC number has 8 digits.",
+  "checkout.validation.vat": "Enter a valid VAT number, e.g. NL000000000B00.",
 
   "service.hero.kicker": "Customer service",
   "service.hero.title": "How can we help you?",
@@ -2387,8 +2393,8 @@ const fr: Messages = {
   "checkout.createAccount.passwordHint": "Au moins 8 caractères.",
   "checkout.field.company": "Nom de l'entreprise",
   "checkout.field.companyPlaceholder": "Entreprise SARL",
-  "checkout.field.coc": "Numéro RCS (facultatif)",
-  "checkout.field.vat": "Numéro de TVA (facultatif)",
+  "checkout.field.coc": "Numéro RCS",
+  "checkout.field.vat": "Numéro de TVA",
 
   "checkout.field.country": "Pays",
   "checkout.country.outsideNote":
@@ -2509,6 +2515,8 @@ const fr: Messages = {
   "checkout.validation.street": "Saisissez votre nom de rue",
   "checkout.validation.terms": "Veuillez accepter les conditions générales pour commander.",
   "checkout.validation.postalCodeNl": "Ex. 7443 BR",
+  "checkout.validation.coc": "Un numéro RCS comporte 8 chiffres.",
+  "checkout.validation.vat": "Saisissez un numéro de TVA valide, p. ex. NL000000000B00.",
 
   "service.hero.kicker": "Service client",
   "service.hero.title": "Comment pouvons-nous vous aider ?",
@@ -3110,8 +3118,8 @@ const de: Messages = {
   "checkout.createAccount.passwordHint": "Mindestens 8 Zeichen.",
   "checkout.field.company": "Firmenname",
   "checkout.field.companyPlaceholder": "Firma GmbH",
-  "checkout.field.coc": "Handelsregisternummer (optional)",
-  "checkout.field.vat": "USt-IdNr. (optional)",
+  "checkout.field.coc": "Handelsregisternummer",
+  "checkout.field.vat": "USt-IdNr.",
 
   "checkout.field.country": "Land",
   "checkout.country.outsideNote":
@@ -3232,6 +3240,8 @@ const de: Messages = {
   "checkout.validation.street": "Geben Sie Ihren Straßennamen ein",
   "checkout.validation.terms": "Bitte stimmen Sie den Allgemeinen Geschäftsbedingungen zu, um zu bestellen.",
   "checkout.validation.postalCodeNl": "Z. B. 7443 BR",
+  "checkout.validation.coc": "Eine Handelsregisternummer hat 8 Ziffern.",
+  "checkout.validation.vat": "Geben Sie eine gültige USt-IdNr. ein, z. B. NL000000000B00.",
 
   "service.hero.kicker": "Kundenservice",
   "service.hero.title": "Womit können wir Ihnen helfen?",
