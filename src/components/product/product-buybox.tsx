@@ -693,23 +693,6 @@ export function ProductBuybox({
 
       {/* Quantity + CTAs */}
       <div className="flex flex-col gap-3">
-        {/* Apple Pay express-knop — alleen op iPhone/Safari met Apple Pay én de
-            express-flag aan. Native sheet via Mollie Apple Pay Direct. */}
-        {applePayAvailable && (
-          <Button
-            type="button"
-            onClick={payWithApplePay}
-            size="lg"
-            className="w-full gap-1.5 bg-klusr-black text-white hover:bg-klusr-black/90"
-            aria-label="Betaal met Apple Pay"
-          >
-            {/* Apple-glyph (inline SVG) zodat we geen extra icon-import nodig hebben. */}
-            <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-current">
-              <path d="M16.36 12.78c.02 2.3 2.02 3.07 2.04 3.08-.02.05-.32 1.1-1.06 2.18-.64.94-1.3 1.87-2.35 1.89-1.03.02-1.36-.61-2.54-.61-1.18 0-1.55.59-2.52.63-1.01.04-1.78-1.01-2.42-1.95-1.32-1.91-2.32-5.39-.97-7.74.67-1.17 1.87-1.91 3.17-1.93.99-.02 1.93.67 2.54.67.61 0 1.75-.83 2.95-.71.5.02 1.91.2 2.81 1.53-.07.05-1.68.98-1.66 2.94M14.44 6.5c.54-.65.9-1.56.8-2.46-.78.03-1.71.52-2.27 1.17-.5.58-.94 1.5-.82 2.39.86.07 1.75-.44 2.29-1.1"/>
-            </svg>
-            Betaal met Apple&nbsp;Pay
-          </Button>
-        )}
         <div className="flex items-stretch gap-3">
           <QuantityStepper value={quantity} onChange={setQuantity} />
           <Button onClick={handleAdd} size="lg" className="flex-1">
@@ -723,13 +706,30 @@ export function ProductBuybox({
             {t("pdp.chooseColorTitle")}
           </p>
         )}
-        <Button
-          onClick={handleBuyNow}
-          size="lg"
-          className="w-full bg-klusr-black text-white hover:bg-klusr-black/90"
-        >
-          {t("pdp.buyNow")}
-        </Button>
+        {/* Apple Pay vervangt "Direct afrekenen" wanneer het toestel Apple Pay
+            ondersteunt; anders de gewone direct-checkout. */}
+        {applePayAvailable ? (
+          <Button
+            type="button"
+            onClick={payWithApplePay}
+            size="lg"
+            className="w-full gap-1.5 bg-klusr-black text-white hover:bg-klusr-black/90"
+            aria-label="Betaal met Apple Pay"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-current">
+              <path d="M16.36 12.78c.02 2.3 2.02 3.07 2.04 3.08-.02.05-.32 1.1-1.06 2.18-.64.94-1.3 1.87-2.35 1.89-1.03.02-1.36-.61-2.54-.61-1.18 0-1.55.59-2.52.63-1.01.04-1.78-1.01-2.42-1.95-1.32-1.91-2.32-5.39-.97-7.74.67-1.17 1.87-1.91 3.17-1.93.99-.02 1.93.67 2.54.67.61 0 1.75-.83 2.95-.71.5.02 1.91.2 2.81 1.53-.07.05-1.68.98-1.66 2.94M14.44 6.5c.54-.65.9-1.56.8-2.46-.78.03-1.71.52-2.27 1.17-.5.58-.94 1.5-.82 2.39.86.07 1.75-.44 2.29-1.1"/>
+            </svg>
+            Betaal met Apple&nbsp;Pay
+          </Button>
+        ) : (
+          <Button
+            onClick={handleBuyNow}
+            size="lg"
+            className="w-full bg-klusr-black text-white hover:bg-klusr-black/90"
+          >
+            {t("pdp.buyNow")}
+          </Button>
+        )}
         <Button
           variant="outline"
           className="w-full gap-2"
