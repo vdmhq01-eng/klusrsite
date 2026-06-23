@@ -28,7 +28,7 @@ import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import { shippingForCountry } from "@/lib/shipping";
+import { shippingForCountry, SHIPPING_COUNTRY_MAP } from "@/lib/shipping";
 import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
 
 /** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
@@ -342,6 +342,12 @@ export function ProductBuybox({
       supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"],
       merchantCapabilities: ["supports3DS"],
       requiredShippingContactFields: ["name", "email", "postalAddress", "phone"],
+      // Regelopbouw in de Apple Pay-sheet zelf, zodat de verzendkosten zichtbaar
+      // zijn naast het subtotaal — geen verrassing in het eindbedrag.
+      lineItems: [
+        { label: t("cart.subtotal"), amount: subtotal.toFixed(2) },
+        { label: t("cart.shipping"), amount: shipping.toFixed(2) },
+      ],
       total: { label: "KLUSR", amount: total.toFixed(2) },
     });
 
@@ -430,6 +436,13 @@ export function ProductBuybox({
     });
   }
 
+  // Verzendkosten transparant tonen vóór de klik — express (Apple Pay / direct
+  // afrekenen) slaat de winkelwagen over, dus de €4,95 mag geen verrassing zijn.
+  // Net als de express-flow rekenen we met het NL-tarief en de kale variantprijs.
+  const buyboxSubtotal = variant.price * quantity;
+  const buyboxShipping = shippingForCountry(buyboxSubtotal, "NL", {});
+  const buyboxShipFree = buyboxSubtotal > 0 && buyboxShipping === 0;
+  const freeShipThreshold = SHIPPING_COUNTRY_MAP.NL?.freeOver ?? 50;
 
   return (
     <div className="flex flex-col gap-4">
@@ -729,6 +742,26 @@ export function ProductBuybox({
           >
             {t("pdp.buyNow")}
           </Button>
+        )}
+        {/* Verzendkosten-regel direct onder de afrekenknop: voorkomt dat de
+            klant bij Apple Pay / direct afrekenen verrast wordt door de €4,95. */}
+        {buyboxShipFree ? (
+          <p className="-mt-1 flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+            <Truck className="h-3.5 w-3.5 shrink-0" />
+            <span className="first-letter:uppercase">
+              {t("cart.freeShipping.reachedBold")}
+            </span>
+          </p>
+        ) : (
+          <p className="-mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Truck className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {t("cart.shipping")} {formatPrice(buyboxShipping)}{" "}
+              {t("service.shipping.freeFrom", {
+                amount: formatPrice(freeShipThreshold),
+              })}
+            </span>
+          </p>
         )}
         <Button
           variant="outline"

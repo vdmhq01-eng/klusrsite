@@ -166,6 +166,11 @@ export function ExpressCheckout({ className }: { className?: string }) {
       supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"],
       merchantCapabilities: ["supports3DS"],
       requiredShippingContactFields: ["name", "email", "postalAddress", "phone"],
+      // Subtotaal + verzendkosten zichtbaar in de Apple Pay-sheet zelf.
+      lineItems: [
+        { label: "Subtotaal", amount: summary.grossSubtotal.toFixed(2) },
+        { label: "Verzendkosten", amount: summary.grossShipping.toFixed(2) },
+      ],
       total: { label: "KLUSR", amount: summary.total.toFixed(2) },
     });
     session.onvalidatemerchant = async (event) => {
