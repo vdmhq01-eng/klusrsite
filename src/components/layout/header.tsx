@@ -7,6 +7,7 @@ import { CartButton } from "./cart-button";
 import { MainNav } from "./main-nav";
 import { MobileMenu } from "./mobile-menu";
 import { AccountNav } from "./account-nav";
+import { LanguageMenu } from "@/components/i18n/language-switcher";
 import { t } from "@/lib/i18n/server";
 
 function HeaderAction({
@@ -44,6 +45,9 @@ export function Header() {
             </div>
 
             <div className="ml-auto flex items-center gap-4 lg:gap-6">
+              {/* Compacte taal-dropdown; op mobiel/tablet zit de schakelaar in het
+                  hamburger-menu. Rendert niets als i18n uit staat. */}
+              <LanguageMenu className="hidden lg:inline-flex" />
               <HeaderAction href="/klantenservice" label={t("nav.customerService")} icon={Headphones} />
               <AccountNav />
               <CartButton />

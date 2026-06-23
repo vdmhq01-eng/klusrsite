@@ -211,6 +211,35 @@ function fallbackMethods(country?: string): PaymentMethodInfo[] {
     : [{ id: "ideal", label: "iDEAL", image: mollieIcon("ideal") }, ...rest];
 }
 
+/**
+ * Lokale bankmethoden die aan één land gebonden zijn. Andere methoden
+ * (creditcard, Apple Pay, Google Pay, Klarna, PayPal, SEPA-overboeking) zijn
+ * EU-breed en passen altijd. Voorkomt dat een NL-klant Belgische methoden
+ * (Bancontact/KBC/Belfius) ziet — en omgekeerd geen iDEAL voor BE — ook al
+ * staat alles in Mollie aan.
+ */
+const COUNTRY_LOCKED_METHODS: Record<string, string> = {
+  ideal: "NL",
+  bancontact: "BE",
+  kbc: "BE",
+  belfius: "BE",
+  eps: "AT",
+  przelewy24: "PL",
+  giropay: "DE",
+};
+
+/** Houd landgebonden methoden alleen voor hun eigen land; de rest mag altijd. */
+function filterMethodsByCountry(
+  methods: PaymentMethodInfo[],
+  cc?: string,
+): PaymentMethodInfo[] {
+  if (!cc) return methods;
+  return methods.filter((m) => {
+    const locked = COUNTRY_LOCKED_METHODS[m.id.toLowerCase()];
+    return !locked || locked === cc;
+  });
+}
+
 export interface PaymentMethodsResult {
   /** True wanneer de lijst live uit Mollie komt (anders fallback). */
   configured: boolean;
@@ -236,7 +265,8 @@ export async function listPaymentMethods(
 ): Promise<PaymentMethodsResult> {
   const cc = country ? country.toUpperCase().slice(0, 2) : undefined;
   const mollie = getClient();
-  if (!mollie) return { configured: false, methods: fallbackMethods(cc) };
+  if (!mollie)
+    return { configured: false, methods: filterMethodsByCountry(fallbackMethods(cc), cc) };
   try {
     const params: Record<string, unknown> = {
       include: "issuers",
@@ -257,10 +287,14 @@ export async function listPaymentMethods(
         ? m.issuers.map((i) => ({ id: i.id, name: i.name, image: i.image?.svg }))
         : undefined,
     }));
-    return { configured: true, methods: methods.length ? methods : fallbackMethods(cc) };
+    const filtered = filterMethodsByCountry(methods, cc);
+    return {
+      configured: true,
+      methods: filtered.length ? filtered : filterMethodsByCountry(fallbackMethods(cc), cc),
+    };
   } catch (err) {
     console.error("[mollie] methods list failed", err);
-    return { configured: false, methods: fallbackMethods(cc) };
+    return { configured: false, methods: filterMethodsByCountry(fallbackMethods(cc), cc) };
   }
 }
 

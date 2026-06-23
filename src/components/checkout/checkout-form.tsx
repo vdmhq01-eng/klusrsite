@@ -380,8 +380,15 @@ export function CheckoutForm({
       // "Betaal"-knop meteen actief is → minder afhakers in de checkout.
       setPaymentMethod((cur) => {
         if (cur) return cur;
-        const preferred = country === "BE" ? "bancontact" : "ideal";
-        return list.find((m) => m.id === preferred)?.id ?? null;
+        const preferred =
+          country === "NL" ? "ideal" : country === "BE" ? "bancontact" : null;
+        // iDEAL/Bancontact voor NL/BE; anders gewoon de eerste beschikbare methode
+        // zodat de "Betaal"-knop ook buiten NL/BE meteen actief is.
+        return (
+          (preferred && list.find((m) => m.id === preferred)?.id) ||
+          list[0]?.id ||
+          null
+        );
       });
     };
     fetch(`/api/checkout/payment-methods?${params.toString()}`)
