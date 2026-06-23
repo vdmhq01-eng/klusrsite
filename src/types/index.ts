@@ -249,6 +249,8 @@ export interface Order {
   channableOrderId?: string;
   /** Tijdstip waarop de bestelbevestiging is verstuurd (voorkomt dubbele mails). */
   confirmationSentAt?: string;
+  /** Tijdstip waarop het reviewverzoek is verstuurd (~3 dagen na verzending). */
+  reviewRequestedAt?: string;
   /** Verzending (PostNL-label). */
   shipment?: {
     carrier: "postnl";

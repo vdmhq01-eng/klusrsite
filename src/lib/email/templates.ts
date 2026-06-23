@@ -15,6 +15,9 @@ import { testimonialStats } from "@/lib/data/testimonials";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 const CONTACT_EMAIL = process.env.EMAIL_REPLY_TO || "klantenservice@klus-r.nl";
+// Bestemming voor de reviewverzoek-mail. Zet REVIEW_URL op je review-pagina
+// (bv. je Google-bedrijfsreview-link); zonder instelling val je terug op de site.
+const REVIEW_URL = (process.env.REVIEW_URL || SITE_URL).replace(/\/$/, "");
 
 /** KLUSR huisstijlkleuren (gespiegeld vanuit tailwind.config.ts). */
 const C = {
@@ -690,6 +693,88 @@ export function shippingConfirmationEmail(order: Order): { subject: string; html
     html: layout({
       title: `Je bestelling ${order.reference} is onderweg`,
       preheader: `Hoi ${c.firstName}, je pakket is verzonden met PostNL.${delivery ? ` Verwacht: ${delivery}.` : ""}`,
+      content,
+    }),
+    text: textLines.join("\n"),
+  };
+}
+
+/**
+ * Reviewverzoek — verstuurd door /api/cron/review-request, ~3 dagen na het
+ * aanmaken van het verzendlabel. Vraagt de klant om een review en toont wat er
+ * besteld is. De CTA gaat naar REVIEW_URL (stel die in op je review-pagina).
+ */
+export function reviewRequestEmail(order: Order): { subject: string; html: string; text: string } {
+  const c = order.customer;
+
+  const itemsTable =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">` +
+    order.items.map(itemRow).join("") +
+    `</table>`;
+
+  const stars =
+    `<div style="font-size:30px;letter-spacing:4px;color:#F5B301;line-height:1;">` +
+    `&#9733;&#9733;&#9733;&#9733;&#9733;` +
+    `</div>`;
+
+  const content = `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">
+      <tr>
+        <td valign="middle" style="width:44px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:${C.red};color:#ffffff;text-align:center;line-height:40px;font-size:22px;font-weight:bold;">&#9733;</div>
+        </td>
+        <td valign="middle" style="padding-left:12px;">
+          <h1 style="margin:0;font-size:22px;color:${C.text};font-family:Arial,Helvetica,sans-serif;">Hoe bevalt je bestelling?</h1>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">
+      Hoi ${esc(c.firstName)}, je bestelling <strong>${esc(order.reference)}</strong> is een paar dagen geleden bezorgd. We zijn benieuwd wat je ervan vindt!
+    </p>
+
+    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">
+      Een review kost je een halve minuut en helpt andere klussers enorm bij hun keuze. Alvast bedankt!
+    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td align="center">
+      ${stars}
+      <div style="height:14px;"></div>
+      ${button("Schrijf een review", REVIEW_URL)}
+    </td></tr></table>
+
+    <div style="height:8px;"></div>
+    <h2 style="margin:0 0 4px;font-size:15px;color:${C.text};">Wat je hebt besteld</h2>
+    ${itemsTable}
+
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:${C.muted};text-align:center;">
+      Iets niet helemaal goed? Mail ons eerst op
+      <a href="mailto:${esc(CONTACT_EMAIL)}" style="color:${C.red};text-decoration:none;">${esc(CONTACT_EMAIL)}</a>
+      — dan lossen we het op.
+    </p>
+  `;
+
+  const textLines = [
+    "Hoe bevalt je bestelling?",
+    "",
+    `Hoi ${c.firstName}, je bestelling ${order.reference} is een paar dagen geleden bezorgd.`,
+    "We zijn benieuwd wat je ervan vindt! Een review helpt andere klussers enorm.",
+    "",
+    `Schrijf een review: ${REVIEW_URL}`,
+    "",
+    "Wat je hebt besteld:",
+    ...order.items.map(
+      (i) => `  - ${i.quantity}x ${i.title}${i.selectedColor ? ` (${i.selectedColor.name})` : ""}`,
+    ),
+    "",
+    `Iets niet goed? Mail ons op ${CONTACT_EMAIL} — dan lossen we het op.`,
+  ].filter(Boolean);
+
+  return {
+    subject: `Hoe bevalt je bestelling, ${c.firstName}? Laat een review achter — KLUSR`,
+    html: layout({
+      title: `Hoe bevalt je bestelling, ${c.firstName}?`,
+      preheader: `Je bestelling ${order.reference} is bezorgd — we horen graag wat je ervan vindt.`,
       content,
     }),
     text: textLines.join("\n"),
