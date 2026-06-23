@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { Check, Globe } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Check, ChevronDown, Globe } from "lucide-react";
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -122,5 +123,75 @@ export function LanguageSwitcher({
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * Compacte taal-dropdown (globe + huidige taal) voor de header. Neemt weinig
+ * ruimte in en opent een net menu met alle talen. Rendert NIETS als de
+ * feature-flag uit staat. Bedoeld voor lichte achtergronden.
+ */
+export function LanguageMenu({ className }: { className?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const current = useLocale();
+
+  if (!i18nEnabled()) return null;
+
+  function switchTo(target: Locale) {
+    if (target === current) return;
+    persistLocale(target);
+    router.push(localizedPath(pathname || "/", target));
+    router.refresh();
+  }
+
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          aria-label={LOCALE_LABELS[current]}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+            className,
+          )}
+        >
+          <Globe className="h-4 w-4" aria-hidden="true" />
+          <span>{LOCALE_SHORT_LABELS[current]}</span>
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={6}
+          className="z-50 min-w-[170px] rounded-lg border border-border bg-card p-1 text-foreground shadow-lg"
+        >
+          {LOCALES.map((locale) => {
+            const active = locale === current;
+            return (
+              <DropdownMenu.Item
+                key={locale}
+                onSelect={() => switchTo(locale)}
+                className={cn(
+                  "flex cursor-pointer items-center justify-between gap-3 rounded-md px-2.5 py-2 text-sm outline-none transition-colors",
+                  active
+                    ? "font-semibold text-primary"
+                    : "hover:bg-secondary focus:bg-secondary",
+                )}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {LOCALE_SHORT_LABELS[locale]}
+                  </span>
+                  {LOCALE_LABELS[locale]}
+                </span>
+                {active && <Check className="h-4 w-4" aria-hidden="true" />}
+              </DropdownMenu.Item>
+            );
+          })}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
