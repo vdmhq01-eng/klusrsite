@@ -11,14 +11,14 @@ import type { PaymentMethodInfo } from "@/types";
 /**
  * "Snelle checkout"-blok (Shopify-stijl): de express-wallets op een rij, direct
  * afrekenen vanuit de winkelwagen/drawer. Apple Pay loopt via de native sheet
- * (levert naam/e-mail/bezorgadres) → /applepay-cart; Google Pay/PayPal via
+ * (levert naam/e-mail/bezorgadres) → /applepay-cart; Google Pay via
  * /api/checkout/express (Mollie int het adres, de webhook vult het aan).
  *
  * Self-contained: haalt zelf de winkelwagen, het totaal, de wallet-methoden en de
  * Apple Pay-beschikbaarheid op. Rendert niets wanneer er geen wallets zijn.
  */
 
-const walletIds = ["applepay", "googlepay", "paypal"];
+const walletIds = ["applepay", "googlepay"];
 const MOLLIE_ICON = "https://www.mollie.com/external/icons/payment-methods";
 const GA4_MEASUREMENT_ID = "M854M83RJW";
 
@@ -118,9 +118,11 @@ export function ExpressCheckout({ className }: { className?: string }) {
     }
   }, []);
 
-  // Google Pay tijdelijk verborgen: de hosted-redirect werkt niet bij onze eigen
-  // on-site checkout. De native Google Pay-flow (JS SDK + Mollie-token) komt eraan.
-  // PayPal (van nature redirect-gebaseerd) blijft wél als express-knop staan.
+  // Google Pay is tijdelijk verborgen: de hosted-redirect werkt niet bij onze
+  // eigen on-site checkout (de native flow komt eraan). PayPal is BEWUST geen
+  // snelle-checkoutknop meer — dat is een normale betaalmethode in de volledige
+  // checkout. Er blijven dus geen redirect-wallets over; alleen Apple Pay (native)
+  // verschijnt hieronder nog als snelle knop.
   const wallets = methods.filter(
     (m) => walletIds.includes(m.id) && m.id !== "applepay" && m.id !== "googlepay",
   );
@@ -128,7 +130,7 @@ export function ExpressCheckout({ className }: { className?: string }) {
   if (!mounted || items.length === 0) return null;
   if (!applePayAvailable && wallets.length === 0) return null;
 
-  // Google Pay/PayPal → direct order + Mollie-betaling, dan door naar de wallet.
+  // Google Pay → direct order + Mollie-betaling, dan door naar de wallet.
   async function onWalletExpress(method: string) {
     if (busy) return;
     setError(null);
@@ -268,7 +270,7 @@ export function ExpressCheckout({ className }: { className?: string }) {
       </div>
       {/* Maak duidelijk dat de volledige checkout álle betaalmethoden biedt. */}
       <p className="text-center text-xs text-muted-foreground">
-        Liever iDEAL, creditcard of Klarna? Kies je betaalmethode bij het afrekenen.
+        Liever iDEAL, PayPal, creditcard of Klarna? Kies je betaalmethode bij het afrekenen.
       </p>
     </div>
   );
