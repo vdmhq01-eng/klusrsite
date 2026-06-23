@@ -8,6 +8,7 @@ import type { Product } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { ProductImage } from "@/components/product/product-image";
 import { AddAllToCart } from "@/components/klus/add-all-to-cart";
+import { AddLineToCart } from "@/components/klus/add-line-to-cart";
 import { ShareKlusButton } from "@/components/klus/share-klus-button";
 
 export const dynamic = "force-dynamic";
@@ -133,15 +134,22 @@ export default async function KlusPage({ params }: KlusPageProps) {
                         )}
                       </div>
 
-                      <div className="shrink-0 text-right">
-                        <p className="text-sm font-black">
-                          {formatPrice(variant.price * line.quantity)}
-                        </p>
-                        {line.quantity > 1 && (
-                          <p className="text-[11px] text-muted-foreground">
-                            {formatPrice(variant.price)} p/st
+                      <div className="flex shrink-0 flex-col items-end justify-between gap-2 text-right">
+                        <div>
+                          <p className="text-sm font-black">
+                            {formatPrice(variant.price * line.quantity)}
                           </p>
-                        )}
+                          {line.quantity > 1 && (
+                            <p className="text-[11px] text-muted-foreground">
+                              {formatPrice(variant.price)} p/st
+                            </p>
+                          )}
+                        </div>
+                        <AddLineToCart
+                          productId={line.product.id}
+                          quantity={line.quantity}
+                          title={line.product.title}
+                        />
                       </div>
                     </li>
                   );
