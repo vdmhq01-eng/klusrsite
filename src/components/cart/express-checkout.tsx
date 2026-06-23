@@ -118,7 +118,12 @@ export function ExpressCheckout({ className }: { className?: string }) {
     }
   }, []);
 
-  const wallets = methods.filter((m) => walletIds.includes(m.id) && m.id !== "applepay");
+  // Google Pay tijdelijk verborgen: de hosted-redirect werkt niet bij onze eigen
+  // on-site checkout. De native Google Pay-flow (JS SDK + Mollie-token) komt eraan.
+  // PayPal (van nature redirect-gebaseerd) blijft wél als express-knop staan.
+  const wallets = methods.filter(
+    (m) => walletIds.includes(m.id) && m.id !== "applepay" && m.id !== "googlepay",
+  );
 
   if (!mounted || items.length === 0) return null;
   if (!applePayAvailable && wallets.length === 0) return null;
@@ -261,6 +266,10 @@ export function ExpressCheckout({ className }: { className?: string }) {
         <span className="shrink-0 font-medium">OF</span>
         <span className="h-px flex-1 bg-border" />
       </div>
+      {/* Maak duidelijk dat de volledige checkout álle betaalmethoden biedt. */}
+      <p className="text-center text-xs text-muted-foreground">
+        Liever iDEAL, creditcard of Klarna? Kies je betaalmethode bij het afrekenen.
+      </p>
     </div>
   );
 }

@@ -228,14 +228,22 @@ const COUNTRY_LOCKED_METHODS: Record<string, string> = {
   giropay: "DE",
 };
 
-/** Houd landgebonden methoden alleen voor hun eigen land; de rest mag altijd. */
+/** Google Pay tonen we pas zodra de native flow geconfigureerd is (Google
+ *  Merchant ID gezet). De hosted-redirect werkt niet bij onze eigen checkout. */
+const GOOGLE_PAY_ENABLED =
+  (process.env.NEXT_PUBLIC_GOOGLE_PAY_MERCHANT_ID ?? "").trim().length > 0;
+
+/** Filter de methodenlijst voor de huidige context: landgebonden methoden alleen
+ *  voor hun eigen land, en Google Pay alleen als de native flow aanstaat. */
 function filterMethodsByCountry(
   methods: PaymentMethodInfo[],
   cc?: string,
 ): PaymentMethodInfo[] {
-  if (!cc) return methods;
   return methods.filter((m) => {
-    const locked = COUNTRY_LOCKED_METHODS[m.id.toLowerCase()];
+    const id = m.id.toLowerCase();
+    if (id === "googlepay" && !GOOGLE_PAY_ENABLED) return false;
+    if (!cc) return true;
+    const locked = COUNTRY_LOCKED_METHODS[id];
     return !locked || locked === cc;
   });
 }
