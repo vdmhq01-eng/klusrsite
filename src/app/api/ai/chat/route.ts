@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { chat, type ChatMessage } from "@/lib/ai/client";
 import { logEvent } from "@/lib/store/analytics";
 import { appendTurn } from "@/lib/store/conversations";
+import { getProduct, getProductsByCategory } from "@/lib/data/products";
+import type { Product } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -46,6 +48,49 @@ function deriveProductLink(userMsg: string, reply: string): { productHref: strin
   return { productHref: "/categorie/verf", productLabel: "Bekijk ons assortiment" };
 }
 
+/** Het product van de huidige productpagina (uit `page`), of undefined. */
+function productFromPage(page?: string): Product | undefined {
+  if (!page) return undefined;
+  const path = page.replace(/^\/(en|fr|de)(?=\/|$)/, "");
+  const m = path.match(/^\/product\/([^/?#]+)/);
+  return m ? getProduct(decodeURIComponent(m[1])) : undefined;
+}
+
+/** Contextregel zodat de Klushulp "dit product"-vragen op de juiste PDP begrijpt. */
+function productContextLine(p: Product): string {
+  return `De klant bekijkt NU deze productpagina: "${p.title}" van ${p.brand} (categorie: ${p.category}, vanaf €${p.kluspasPrice.toFixed(2)} met KLUSRPAS). Vragen met "dit product", "deze verf", "dit middel" en dergelijke gaan hierover — vraag dus NIET om een productnaam of foto, maar beantwoord de vraag meteen voor dít product.`;
+}
+
+/**
+ * Kies 2-3 concrete producten om als suggestie terug te geven: eerst de categorie
+ * uit de vraag (zelfde regels als de CTA-link), anders die van het bekeken
+ * product. Binnen die categorie sorteren we op trefwoord-overlap met de vraag.
+ */
+function suggestProducts(userMsg: string, reply: string, current?: Product, limit = 3): Product[] {
+  const hay = `${userMsg} ${reply}`.toLowerCase();
+  let categorySlug: string | undefined;
+  for (const l of TOPIC_LINKS) {
+    if (l.re.test(hay)) {
+      categorySlug = l.href.split("/").pop();
+      break;
+    }
+  }
+  if (!categorySlug) categorySlug = current?.category ?? "verf";
+
+  const words = userMsg.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4);
+  return getProductsByCategory(categorySlug)
+    .filter((p) => p.id !== current?.id)
+    .map((p) => {
+      const text = `${p.title} ${p.brand}`.toLowerCase();
+      let score = 0;
+      for (const w of words) if (text.includes(w)) score += 1;
+      return { p, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.p);
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -72,17 +117,35 @@ export async function POST(req: Request) {
       void logEvent("chat", { question: lastUser.content.slice(0, 300) }).catch(() => {});
     }
 
-    const system = context ? `${SYSTEM_PROMPT}\n\nContext: ${context}` : SYSTEM_PROMPT;
+    // Productpagina-context: zit de klant op /product/<slug>, geef dat product mee
+    // zodat "dit product"-vragen kloppen (i.p.v. om een naam/foto te vragen).
+    const page = typeof body.page === "string" ? body.page : undefined;
+    const currentProduct = productFromPage(page);
+    const contextParts: string[] = [];
+    if (currentProduct) contextParts.push(productContextLine(currentProduct));
+    if (context) contextParts.push(context);
+    const system = contextParts.length
+      ? `${SYSTEM_PROMPT}\n\nContext: ${contextParts.join(" ")}`
+      : SYSTEM_PROMPT;
+
     const { text, source } = await chat({ system, messages });
 
     const { reply, suggestions } = extractSuggestions(text);
     const { productHref, productLabel } = deriveProductLink(lastUser?.content ?? "", reply);
 
+    // Concrete productsuggesties (echte artikelen) bij het antwoord — klikbaar in de chat.
+    const products = suggestProducts(lastUser?.content ?? "", reply, currentProduct).map((p) => ({
+      title: p.title,
+      slug: p.slug,
+      brand: p.brand,
+      image: p.images?.[0],
+      price: p.kluspasPrice,
+    }));
+
     // Bewaar de beurt zodat de admin het gesprek kan teruglezen — best-effort en
     // volledig afgeschermd zodat opslag de chatrespons NOOIT kan breken.
     const conversationId = typeof body.conversationId === "string" ? body.conversationId.trim() : "";
     if (conversationId) {
-      const page = typeof body.page === "string" ? body.page : undefined;
       void appendTurn(conversationId, {
         userMessage: lastUser?.content ?? "",
         assistantReply: reply,
@@ -90,7 +153,7 @@ export async function POST(req: Request) {
       }).catch(() => {});
     }
 
-    return NextResponse.json({ reply, suggestions, productHref, productLabel, source });
+    return NextResponse.json({ reply, suggestions, productHref, productLabel, products, source });
   } catch (err) {
     console.error("[api/ai/chat]", err);
     return NextResponse.json(

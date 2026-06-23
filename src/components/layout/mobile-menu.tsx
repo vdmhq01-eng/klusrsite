@@ -15,6 +15,8 @@ import { navCategories } from "@/lib/data/categories";
 import { getSubCategories } from "@/lib/data/products";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { i18nEnabled } from "@/lib/i18n/config";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -140,6 +142,18 @@ export function MobileMenu() {
                 </li>
               ))}
             </ul>
+
+            {/* Taalschakelaar — alleen zichtbaar als i18n aan staat. */}
+            {i18nEnabled() && (
+              <>
+                <p className="px-3 pb-1 pt-4 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {t("lang.label")}
+                </p>
+                <div className="px-3 pb-2">
+                  <LanguageSwitcher variant="light" afterSwitch={close} />
+                </div>
+              </>
+            )}
           </nav>
         </div>
       </SheetContent>

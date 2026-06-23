@@ -53,6 +53,7 @@ export function ExitIntentPopup() {
       /* non-blocking */
     }
     trackEvent("newsletter_signup", { source: "exit-intent" });
+    trackEvent("generate_lead", { method: "newsletter", source: "exit-intent" });
     setDone(true);
   }
 

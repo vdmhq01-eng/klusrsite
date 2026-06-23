@@ -1,5 +1,6 @@
 import { Hammer, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { PricingModeSwitch } from "./pricing-mode-switch";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { t } from "@/lib/i18n/server";
 
 export function TopBar() {
@@ -21,7 +22,12 @@ export function TopBar() {
               {label}
             </span>
           ))}
-          <PricingModeSwitch className="absolute right-0" />
+          <div className="absolute right-0 flex items-center gap-3">
+            {/* Taalschakelaar alleen op grote schermen; daaronder zit 'm in het
+                mobiele menu (hamburger). Rendert niets als i18n uit staat. */}
+            <LanguageSwitcher className="hidden lg:flex" />
+            <PricingModeSwitch />
+          </div>
         </div>
         {/* Mobile: marquee + prijsschakelaar rechts */}
         <div className="flex h-9 items-center gap-2 md:hidden">

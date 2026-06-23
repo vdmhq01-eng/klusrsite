@@ -14,7 +14,7 @@
  */
 
 import { mkdir, writeFile, access } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const KEY = process.env.FAI_API_KEY || process.env.FAL_KEY || process.env.FAL_API_KEY;
 const OUT_DIR = "public/generated";
@@ -36,6 +36,22 @@ const IMAGES = [
   { name: "categorie-vloeren-raam", size: "square_hd", seed: 2008, prompt: `Installing light oak laminate flooring in a bright living room, ${STYLE}` },
   { name: "categorie-acties", size: "square_hd", seed: 2009, prompt: `Hardware and paint store aisle with bright red sale and discount price tags on shelves of paint cans and tools, ${STYLE}` },
   { name: "winkel-nijverdal", size: "landscape_4_3", seed: 3001, prompt: `Bright modern paint and hardware store interior with shelves of paint cans, ${STYLE}` },
+  // Advies-blog hero's → public/generated/blog/<slug>.jpg (de artikelpagina gebruikt deze).
+  { name: "blog/muur-verven-stappenplan", size: "landscape_16_9", seed: 4001, prompt: `A person painting a smooth interior wall with a paint roller, fresh light paint, masking tape along the trim, bright modern living room, ${STYLE}` },
+  { name: "blog/juiste-kwast-of-roller-kiezen", size: "landscape_16_9", seed: 4002, prompt: `An assortment of paint brushes and paint rollers neatly arranged on a wooden workbench next to paint cans, ${STYLE}` },
+  { name: "blog/kleur-kiezen-interieur", size: "landscape_16_9", seed: 4003, prompt: `Interior paint colour swatches and fan decks fanned out on a table in a styled modern living room, warm and cool tones, ${STYLE}` },
+  { name: "blog/schutting-beitsen", size: "landscape_16_9", seed: 4004, prompt: `Applying brown wood stain with a brush to a wooden garden fence on a sunny day, ${STYLE}` },
+  { name: "blog/stopcontact-veilig-vervangen", size: "landscape_16_9", seed: 4005, prompt: `Close-up of hands installing a white wall power socket with a screwdriver, neat electrical wiring, ${STYLE}` },
+  { name: "blog/laminaat-leggen-tips", size: "landscape_16_9", seed: 4006, prompt: `Installing click laminate flooring planks in a bright empty room, spacer wedges along the skirting, ${STYLE}` },
+  { name: "blog/hoeveel-verf-nodig-berekenen", size: "landscape_16_9", seed: 4007, prompt: `Paint cans, a measuring tape and a notepad with simple calculations on a wooden floor, planning a painting project, ${STYLE}` },
+  { name: "blog/latex-muurverf-sausverf-verschil", size: "landscape_16_9", seed: 4008, prompt: `Several cans of wall paint with matte and satin finishes lined up with a paint roller, ${STYLE}` },
+  { name: "blog/primer-of-grondverf-wanneer-nodig", size: "landscape_16_9", seed: 4009, prompt: `Applying white primer to bare wood with a brush, preparing a smooth surface for painting, ${STYLE}` },
+  { name: "blog/badkamer-schilderen-schimmelwerend", size: "landscape_16_9", seed: 4010, prompt: `Painting a clean modern bathroom wall with a roller, moisture resistant paint, tiles in the background, ${STYLE}` },
+  { name: "blog/buiten-schilderen-temperatuur-seizoen", size: "landscape_16_9", seed: 4011, prompt: `Painting the exterior wooden window frames of a house in spring sunshine, brush and paint pot, ${STYLE}` },
+  { name: "blog/kozijnen-schilderen-stappenplan", size: "landscape_16_9", seed: 4012, prompt: `Painting a white wooden window frame with a brush to a glossy finish, masking tape on the glass, ${STYLE}` },
+  { name: "blog/behang-verwijderen-muur-voorbereiden", size: "landscape_16_9", seed: 4013, prompt: `Stripping old wallpaper from a wall with a scraper, a partially bare and prepared wall, ${STYLE}` },
+  { name: "blog/schuurpapier-korrel-kiezen", size: "landscape_16_9", seed: 4014, prompt: `Assorted sandpaper sheets of different grits with a sanding block on a workbench, fine wood dust, ${STYLE}` },
+  { name: "blog/mengverf-elke-kleur-laten-mengen", size: "landscape_16_9", seed: 4015, prompt: `A paint mixing machine dispensing custom coloured paint into a can in a paint shop, vibrant colour swatches, ${STYLE}` },
 ];
 
 async function exists(path) {
@@ -87,6 +103,7 @@ async function generateOne(img) {
   }
 
   const buf = Buffer.from(await imgRes.arrayBuffer());
+  await mkdir(dirname(file), { recursive: true });
   await writeFile(file, buf);
   console.log(`  ✓ ${img.name} (${Math.round(buf.length / 1024)} kB)`);
 }

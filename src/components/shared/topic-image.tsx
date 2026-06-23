@@ -17,6 +17,7 @@ export function TopicImage({
   className,
   src,
   fallbackSrc,
+  alt,
 }: {
   keywords?: string;
   seed: string;
@@ -28,12 +29,14 @@ export function TopicImage({
   /** Reserve-URL als `src` niet laadt (bv. een vast categoriebeeld) — vóórdat
    * de tegel op de gradient terugvalt. */
   fallbackSrc?: string;
+  /** Alt-tekst voor de foto-laag (SEO/toegankelijkheid). */
+  alt?: string;
 }) {
   const photoSrc = src ?? (keywords ? topicImageUrl(keywords, seed) : undefined);
   return (
     <>
       <BrandedVisual seed={seed} icon={icon} />
-      <TopicImagePhoto src={photoSrc} fallbackSrc={fallbackSrc} className={className} />
+      <TopicImagePhoto src={photoSrc} fallbackSrc={fallbackSrc} className={className} alt={alt} />
     </>
   );
 }

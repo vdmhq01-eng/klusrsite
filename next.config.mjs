@@ -27,6 +27,16 @@ const nextConfig = {
       { source: "/winkels/:slug", destination: "/", permanent: true },
     ];
   },
+  async rewrites() {
+    // Apple Pay-domeinvalidatie: serveer het Mollie-bestand op het door Apple
+    // vereiste .well-known-pad (de route proxyt het rechtstreeks van Mollie).
+    return [
+      {
+        source: "/.well-known/apple-developer-merchantid-domain-association",
+        destination: "/api/applepay-domain-association",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

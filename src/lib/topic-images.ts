@@ -37,3 +37,32 @@ export function topicImageUrl(keywords: string, seed = "klusr"): string {
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   return `https://loremflickr.com/640/480/${keywords}?lock=${h % 100000}`;
 }
+
+/**
+ * Artikel-specifieke trefwoorden per slug → een UNIEKE, onderwerp-relevante
+ * hero-foto per blog. Zonder dit zouden alle artikelen in dezelfde categorie
+ * dezelfde trefwoorden (en dus visueel vergelijkbare foto's) krijgen. Valt
+ * terug op de categorie-trefwoorden voor onbekende slugs.
+ */
+const ARTICLE_HERO_KEYWORDS: Record<string, string> = {
+  "muur-verven-stappenplan": "wall,painting,roller",
+  "juiste-kwast-of-roller-kiezen": "paintbrush,paint,roller",
+  "kleur-kiezen-interieur": "color,swatches,interior",
+  "schutting-beitsen": "fence,wood,stain",
+  "stopcontact-veilig-vervangen": "socket,electrician,wiring",
+  "laminaat-leggen-tips": "laminate,flooring,floor",
+  "hoeveel-verf-nodig-berekenen": "paint,bucket,measuring",
+  "latex-muurverf-sausverf-verschil": "paint,roller,interior",
+  "primer-of-grondverf-wanneer-nodig": "primer,wood,brush",
+  "badkamer-schilderen-schimmelwerend": "bathroom,tiles,paint",
+  "buiten-schilderen-temperatuur-seizoen": "house,facade,exterior",
+  "kozijnen-schilderen-stappenplan": "window,frame,paint",
+  "behang-verwijderen-muur-voorbereiden": "wallpaper,wall,renovation",
+  "schuurpapier-korrel-kiezen": "sandpaper,sanding,wood",
+  "mengverf-elke-kleur-laten-mengen": "paint,mixing,color",
+};
+
+/** Unieke hero-trefwoorden voor één artikel; valt terug op de categorie. */
+export function articleHeroKeywords(slug: string, category: string): string {
+  return ARTICLE_HERO_KEYWORDS[slug] ?? articleKeywords(category);
+}

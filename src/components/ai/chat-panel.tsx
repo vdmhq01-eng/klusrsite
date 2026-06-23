@@ -17,6 +17,8 @@ export interface ChatMessage {
   /** "Bekijk producten"-CTA afgeleid uit het gesprek. */
   productHref?: string;
   productLabel?: string;
+  /** Concrete productsuggesties (echte artikelen) bij dit antwoord. */
+  products?: { title: string; slug: string; brand?: string; image?: string; price?: number }[];
 }
 
 interface ChatPanelProps {
@@ -132,6 +134,7 @@ export function ChatPanel({
           suggestions: Array.isArray(data.suggestions) ? data.suggestions : undefined,
           productHref: typeof data.productHref === "string" ? data.productHref : undefined,
           productLabel: typeof data.productLabel === "string" ? data.productLabel : undefined,
+          products: Array.isArray(data.products) ? data.products : undefined,
         },
       ]);
     } catch {
@@ -232,6 +235,45 @@ export function ChatPanel({
             const last = messages[messages.length - 1];
             return (
               <div className="space-y-2 pt-1">
+                {/* Concrete productsuggesties (echte artikelen) bij dit antwoord. */}
+                {(last.products ?? []).length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="px-1 text-xs font-semibold text-muted-foreground">
+                      Aanbevolen producten:
+                    </p>
+                    {last.products!.map((p) => (
+                      <Link
+                        key={p.slug}
+                        href={`/product/${p.slug}`}
+                        className="flex items-center gap-3 rounded-xl border border-border bg-card p-2 transition-colors hover:border-primary/40 hover:bg-secondary"
+                      >
+                        <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white">
+                          {p.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.image} alt="" className="h-full w-full object-contain" />
+                          ) : (
+                            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-foreground">
+                            {p.title}
+                          </span>
+                          {p.brand && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {p.brand}
+                            </span>
+                          )}
+                        </span>
+                        {typeof p.price === "number" && (
+                          <span className="shrink-0 text-sm font-bold text-primary">
+                            €{p.price.toFixed(2)}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
                 {/* Stel een kluspakket samen uit het gesprek (echte producten + aantallen). */}
                 <button
                   onClick={buildKluspakket}
