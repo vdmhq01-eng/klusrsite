@@ -126,7 +126,7 @@ export default async function PakbonPage({ params }: { params: { orderId: string
             <tr className="border-b-2 border-neutral-200 text-[11px] uppercase tracking-wide text-neutral-500">
               <th className="w-8 py-2 text-center">✓</th>
               <th className="py-2">Artikel</th>
-              <th className="py-2 text-right">SKU</th>
+              <th className="py-2 text-right">Barcode</th>
               <th className="py-2 text-center">Aantal</th>
             </tr>
           </thead>
@@ -150,8 +150,8 @@ export default async function PakbonPage({ params }: { params: { orderId: string
                     </span>
                   ) : null}
                 </td>
-                <td className="py-2.5 text-right text-xs text-neutral-500">
-                  {String(it.productId).replace(/^tilroy-/, "")}
+                <td className="py-2.5 text-right font-mono text-xs text-black">
+                  {it.gtin?.trim() || String(it.productId).replace(/^tilroy-/, "")}
                 </td>
                 <td className="py-2.5 text-center text-base font-black">{it.quantity}</td>
               </tr>
