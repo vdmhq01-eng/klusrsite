@@ -7,6 +7,12 @@ import {
   i18nEnabled,
   type Locale,
 } from "@/lib/i18n/config";
+import {
+  COUNTRY_COOKIE,
+  COUNTRY_SUGGEST_COOKIE,
+  DEFAULT_COUNTRY,
+  isShippingCountry,
+} from "@/lib/shipping";
 
 /** Niet-default locales die als URL-prefix kunnen voorkomen. */
 const PREFIX_LOCALES = LOCALES.filter(
@@ -64,6 +70,22 @@ export function middleware(request: NextRequest): NextResponse {
     const pathname = nextUrl.pathname;
     const prefixLocale = localeFromPath(pathname);
 
+    // Slim bezorgland-voorstel op basis van geo (Vercel IP-land). Alleen als er
+    // nog geen bevestigde landkeuze is én het gedetecteerde land een verzendland
+    // ≠ NL is. De banner + checkout lezen deze (kortlevende) cookie. Nooit een
+    // redirect — puur een voorstel.
+    const applyCountrySuggest = (resp: NextResponse) => {
+      if (request.cookies.has(COUNTRY_COOKIE)) return;
+      const geo = (request.geo?.country || "").toUpperCase();
+      if (geo && geo !== DEFAULT_COUNTRY && isShippingCountry(geo)) {
+        resp.cookies.set(COUNTRY_SUGGEST_COOKIE, geo, {
+          path: "/",
+          maxAge: 60 * 60 * 24, // 1 dag — kortlevend
+          sameSite: "lax",
+        });
+      }
+    };
+
     if (prefixLocale) {
       // Geprefixt pad (EN/FR/DE): render dezelfde route zonder prefix en geef
       // de locale door via een request-header die de server leest.
@@ -83,6 +105,7 @@ export function middleware(request: NextRequest): NextResponse {
         maxAge: 60 * 60 * 24 * 365,
         sameSite: "lax",
       });
+      applyCountrySuggest(response);
       return response;
     }
 
@@ -110,6 +133,7 @@ export function middleware(request: NextRequest): NextResponse {
       }
     }
 
+    applyCountrySuggest(response);
     return response;
   } catch {
     // Wat er ook misgaat: NOOIT een 500. Val terug op normaal doorlaten.

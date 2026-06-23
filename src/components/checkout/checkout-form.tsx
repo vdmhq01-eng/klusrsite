@@ -36,7 +36,13 @@ import {
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
-import { SHIPPING_COUNTRIES, shippingForCountry } from "@/lib/shipping";
+import {
+  SHIPPING_COUNTRIES,
+  shippingForCountry,
+  isShippingCountry,
+  COUNTRY_COOKIE,
+  COUNTRY_SUGGEST_COOKIE,
+} from "@/lib/shipping";
 import { isBrievenbusOrder } from "@/lib/brievenbus";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent } from "@/lib/tracking";
@@ -309,6 +315,25 @@ export function CheckoutForm({
       active = false;
     };
   }, [session, setValue, getValues]);
+
+  // Slim bezorgland als standaard: de middleware zet op basis van het IP-land een
+  // (suggest-)cookie. We nemen dat over zolang de klant het land nog niet zelf
+  // heeft aangeraakt. Het account-adres hierboven wint voor ingelogde klanten.
+  useEffect(() => {
+    const read = (name: string) =>
+      typeof document === "undefined"
+        ? ""
+        : (document.cookie
+            .split("; ")
+            .find((r) => r.startsWith(`${name}=`))
+            ?.split("=")
+            .slice(1)
+            .join("=") ?? "");
+    const pick = (read(COUNTRY_COOKIE) || read(COUNTRY_SUGGEST_COOKIE)).toUpperCase();
+    if (pick && pick !== "NL" && isShippingCountry(pick) && getValues("country") === "NL") {
+      setValue("country", pick);
+    }
+  }, [setValue, getValues]);
 
   // Inline inloggen zonder de checkout te verlaten.
   async function handleLogin() {
@@ -946,7 +971,14 @@ export function CheckoutForm({
           <Section title={t("checkout.section.delivery")} step={2}>
             <Field label={t("checkout.field.country")}>
               <select
-                {...register("country")}
+                {...register("country", {
+                  onChange: (e) => {
+                    // Onthoud de expliciete landkeuze 1 jaar → stopt het voorstel.
+                    document.cookie = `${COUNTRY_COOKIE}=${e.target.value}; path=/; max-age=${
+                      60 * 60 * 24 * 365
+                    }; samesite=lax`;
+                  },
+                })}
                 className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {SHIPPING_COUNTRIES.map((c) => (

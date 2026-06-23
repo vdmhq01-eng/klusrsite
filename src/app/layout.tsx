@@ -14,6 +14,7 @@ import { CookieConsent } from "@/components/analytics/cookie-consent";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { LocaleSuggestBanner } from "@/components/i18n/locale-suggest-banner";
+import { CountrySuggestBanner } from "@/components/i18n/country-suggest-banner";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { i18nEnabled } from "@/lib/i18n/config";
 import { getAlternates } from "@/lib/i18n/alternates";
@@ -155,6 +156,7 @@ export default function RootLayout({
             >
               Naar hoofdinhoud
             </a>
+            <CountrySuggestBanner />
             <LocaleSuggestBanner />
             <Header />
             <main id="main" tabIndex={-1} className="flex-1 pb-16 outline-none lg:pb-0">
