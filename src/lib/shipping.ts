@@ -83,3 +83,15 @@ export function shippingForCountry(
 export function hasFreeShipping(code: string): boolean {
   return SHIPPING_COUNTRY_MAP[code]?.freeOver != null;
 }
+
+/** Cookie met het door de klant gekozen/bevestigde bezorgland (1 jaar). */
+export const COUNTRY_COOKIE = "country";
+
+/** Kortlevende cookie met een geo-voorstel voor het bezorgland; gelezen door de
+ *  suggestie-banner en als slimme standaard in de checkout. */
+export const COUNTRY_SUGGEST_COOKIE = "country-suggest";
+
+/** Verzenden we naar dit land? (case-insensitief) */
+export function isShippingCountry(code: string | null | undefined): boolean {
+  return !!code && code.toUpperCase() in SHIPPING_COUNTRY_MAP;
+}
