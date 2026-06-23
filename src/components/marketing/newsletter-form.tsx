@@ -37,6 +37,7 @@ export function NewsletterForm({ className, source = "site", dark = true }: News
       setMessage(data.message || "Bedankt voor je inschrijving!");
       trackEvent("newsletter_signup", { source });
       trackEvent("sign_up", { method: "newsletter" });
+      trackEvent("generate_lead", { method: "newsletter", source });
     } catch (err) {
       setStatus("error");
       setMessage(err instanceof Error ? err.message : "Er ging iets mis");

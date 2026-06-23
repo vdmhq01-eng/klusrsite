@@ -15,6 +15,7 @@ import {
   Mailbox,
   ChevronDown,
   Repeat,
+  Briefcase,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { isBrievenbusOrder } from "@/lib/brievenbus";
@@ -235,6 +236,12 @@ export function OrdersPanel() {
                           <Repeat className="h-3 w-3" /> Terugkerend · {orderCount[email]}× besteld
                         </span>
                       )}
+                      {(o.customer.company || o.customer.cocNumber) && (
+                        <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          <Briefcase className="h-3 w-3" /> ProfPas
+                          {o.customer.company ? ` · ${o.customer.company}` : ""}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 pr-3">
                       <span
@@ -397,6 +404,14 @@ export function OrdersPanel() {
                               <p>{(o.customer.country || "NL").toUpperCase()}</p>
                               <p className="mt-1 break-all">{o.customer.email}</p>
                               {o.customer.phone && <p>{o.customer.phone}</p>}
+                              {(o.customer.company || o.customer.cocNumber || o.customer.vatNumber) && (
+                                <div className="mt-2 border-t border-border pt-2">
+                                  <p className="font-semibold text-primary">Zakelijk · ProfPas</p>
+                                  {o.customer.company && <p>{o.customer.company}</p>}
+                                  {o.customer.cocNumber && <p>KvK: {o.customer.cocNumber}</p>}
+                                  {o.customer.vatNumber && <p>Btw: {o.customer.vatNumber}</p>}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

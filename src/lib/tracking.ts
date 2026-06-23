@@ -21,6 +21,7 @@ export type TrackEventName =
   | "purchase"
   | "search"
   | "sign_up"
+  | "generate_lead"
   | "newsletter_signup"
   | "klusadvies_started"
   | "klusadvies_completed"
