@@ -5,6 +5,10 @@ name: Translate UI (i18n)
 on:
   schedule:
     - cron: "0 2 * * *" # elke nacht 02:00 UTC
+  # Ook bij elke push naar main: nieuwe/gewijzigde UI-teksten worden dan meteen
+  # (incrementeel) vertaald. De eerste run vult ook de nog lege Pools-overlay.
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       locales:

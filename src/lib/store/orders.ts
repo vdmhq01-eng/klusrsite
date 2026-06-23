@@ -26,6 +26,7 @@ const KEY = {
   ref: (reference: string) => `orderref:${reference.toUpperCase()}`,
   mollie: (paymentId: string) => `ordermollie:${paymentId}`,
   mailLock: (id: string) => `ordermail:${id}`,
+  reviewLock: (id: string) => `orderreview:${id}`,
   email: (e: string) => `orders:email:${e.trim().toLowerCase()}`,
   index: "order:index",
 };
@@ -206,6 +207,39 @@ export async function releaseConfirmationEmail(orderId: string): Promise<void> {
   const order = orders.get(orderId) ?? (await loadById(orderId));
   if (order) {
     order.confirmationSentAt = undefined;
+    if (isKvEnabled()) await persist(order);
+  }
+}
+
+/**
+ * Claim het versturen van het reviewverzoek — exact één keer per order (zoals de
+ * bestelbevestiging). Voorkomt dat de dagelijkse cron dezelfde order meerdere
+ * keren mailt, ook over serverless-instances heen. Onbekende of al-aangeschreven
+ * orders leveren `false`.
+ */
+export async function claimReviewRequest(orderId: string): Promise<boolean> {
+  if (isKvEnabled()) {
+    const claimed = await kvSetNX(KEY.reviewLock(orderId), new Date().toISOString());
+    if (!claimed) return false;
+    const order = await loadById(orderId);
+    if (order) {
+      order.reviewRequestedAt = new Date().toISOString();
+      await persist(order);
+    }
+    return true;
+  }
+  const order = orders.get(orderId) ?? (await loadById(orderId));
+  if (!order || order.reviewRequestedAt) return false;
+  order.reviewRequestedAt = new Date().toISOString();
+  return true;
+}
+
+/** Geef de review-claim weer vrij (bv. na een mislukte verzending) voor een retry. */
+export async function releaseReviewRequest(orderId: string): Promise<void> {
+  if (isKvEnabled()) await kvDel(KEY.reviewLock(orderId));
+  const order = orders.get(orderId) ?? (await loadById(orderId));
+  if (order) {
+    order.reviewRequestedAt = undefined;
     if (isKvEnabled()) await persist(order);
   }
 }

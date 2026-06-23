@@ -95,8 +95,10 @@ function makeSchema(t: ReturnType<typeof useT>) {
 type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 // Wallet-/express-methoden: deze krijgen in de interne checkout een eigen,
-// prominente knop bovenaan; de overige methoden staan in de gewone keuzelijst.
-const walletIds = ["applepay", "googlepay", "paypal"];
+// prominente "Snelle checkout"-knop bovenaan; de overige methoden staan in de
+// gewone keuzelijst. PayPal hoort hier BEWUST niet bij — dat is een normale
+// betaalmethode in de keuzelijst, geen snelle-checkoutknop.
+const walletIds = ["applepay", "googlepay"];
 
 /** Minimale Apple Pay (JS) typing voor de native express-flow op de checkout. */
 interface ApplePaySessionConstructor {
@@ -488,7 +490,7 @@ export function CheckoutForm({
   );
 
   // Een express-knop: leg de gekozen wallet vast (state + ref) en verstuur meteen.
-  // Google Pay/PayPal express (Snelle checkout): direct order + Mollie-betaling
+  // Google Pay express (Snelle checkout): direct order + Mollie-betaling
   // aanmaken en doorsturen naar de wallet. Het bezorgadres komt via Mollie terug
   // en wordt door de webhook aangevuld — dus geen formulier nodig.
   async function onWalletExpress(method: string) {
@@ -773,8 +775,9 @@ export function CheckoutForm({
             inhoud de hele pagina op mobiel naar rechts duwen). */}
         <div className="min-w-0 space-y-6">
           {/* Snelle checkout — express-wallets bovenaan (Shopify-stijl). Apple Pay
-              is écht direct (native sheet levert het bezorgadres); Google Pay/PayPal
-              lopen via Mollie en de webhook vult het adres aan. */}
+              is écht direct (native sheet levert het bezorgadres); Google Pay
+              loopt via Mollie en de webhook vult het adres aan. PayPal staat
+              bewust niet hier maar als normale betaalmethode in de keuzelijst. */}
           {expressMode &&
             (applePayAvailable || expressMethods.some((m) => m.id !== "applepay")) && (
               <div className="space-y-3">

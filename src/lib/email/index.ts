@@ -3,6 +3,7 @@ import { sendEmail, isEmailConfigured, type SendEmailResult } from "./client";
 import {
   orderConfirmationEmail,
   shippingConfirmationEmail,
+  reviewRequestEmail,
   welcomeEmail,
   verificationEmail,
   magicLinkEmail,
@@ -69,6 +70,12 @@ export async function sendOrderConfirmation(order: Order): Promise<SendEmailResu
 /** Verstuur de "je bestelling is onderweg"-mail met track & trace. */
 export async function sendShippingConfirmation(order: Order): Promise<SendEmailResult> {
   const { subject, html, text } = shippingConfirmationEmail(order);
+  return sendEmail({ to: order.customer.email, subject, html, text });
+}
+
+/** Verstuur een reviewverzoek (enkele dagen na bezorging). */
+export async function sendReviewRequest(order: Order): Promise<SendEmailResult> {
+  const { subject, html, text } = reviewRequestEmail(order);
   return sendEmail({ to: order.customer.email, subject, html, text });
 }
 

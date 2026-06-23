@@ -117,14 +117,14 @@ function buildItems(): string {
       .join("");
 
     for (const v of p.variants) {
-      // De feed-prijs = de NORMALE prijs (wat iedereen zonder KLUSRPAS betaalt).
-      // De 5% KLUSRPAS-korting is een INGELOGD voordeel en hoort dus niet in de
-      // feed: Google moet de prijs zien die een niet-ingelogde bezoeker betaalt.
-      // Terugval op de KLUSRPAS-prijs alleen als de normale prijs ontbreekt. Dit
-      // is exact wat de productpagina in haar structured data zet, zodat Google
-      // geen "niet-overeenkomende productprijs" meldt. Géén adviesprijs als
-      // g:price: die staat niet op de pagina en veroorzaakt juist de mismatch.
-      const feedPrice = v.price > 0 ? v.price : v.kluspasPrice;
+      // De feed-prijs = de KLUSRPAS-prijs (de pasprijs). Bewuste keuze: hiermee
+      // adverteren we de scherpste prijs in Google Shopping, óók al betaalt een
+      // niet-ingelogde bezoeker op de site nog de normale prijs. Dit kan een
+      // "niet-overeenkomende productprijs"-afwijzing opleveren, omdat de landings-
+      // pagina (en haar structured data) voor een gast de normale prijs toont —
+      // dat risico is welbewust geaccepteerd. Terugval op de normale prijs alleen
+      // als er geen pasprijs is. Géén adviesprijs als g:price.
+      const feedPrice = v.kluspasPrice > 0 ? v.kluspasPrice : v.price;
       if (!(feedPrice > 0)) continue;
       const id = multi ? `${p.id}-${v.id}` : p.id;
       // Verrijkte titel: merk vooraan + glans/kleur/maat als die er nog niet in
