@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { QuantityStepper } from "./quantity-stepper";
 import { FreeShippingBar } from "./free-shipping-bar";
+import { ExpressCheckout } from "./express-checkout";
 import { ColorChip } from "./color-chip";
 import { ProductCarousel } from "@/components/shared/product-carousel";
 import { SectionHeading } from "@/components/shared/section-heading";
@@ -261,6 +262,9 @@ export function CartView() {
                 ? t("cart.vatIncluded")
                 : t("cart.vatIncludedBusiness")}
             </p>
+
+            {/* Snelle checkout (Apple Pay / Google Pay / PayPal) vanuit de winkelwagen. */}
+            <ExpressCheckout className="mt-4" />
 
             <Button
               asChild

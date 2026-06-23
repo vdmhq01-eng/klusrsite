@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { QuantityStepper } from "./quantity-stepper";
 import { FreeShippingBar } from "./free-shipping-bar";
+import { ExpressCheckout } from "./express-checkout";
 import { ColorChip } from "./color-chip";
 import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
 import {
@@ -226,6 +227,8 @@ export function CartDrawer() {
               </div>
               {/* Dynamische bezorgklok bij de totalen/CTA. */}
               <DeliveryCountdown compact className="mb-3 text-xs" />
+              {/* Snelle checkout (Apple Pay / Google Pay / PayPal) direct vanuit de drawer. */}
+              <ExpressCheckout className="mb-3" />
               <Button
                 asChild
                 size="lg"
