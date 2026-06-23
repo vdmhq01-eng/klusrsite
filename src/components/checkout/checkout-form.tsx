@@ -749,13 +749,13 @@ export function CheckoutForm({
                 <p className="text-center text-sm font-semibold text-muted-foreground">
                   Snelle checkout
                 </p>
-                <div className="grid gap-2">
+                <div className="flex flex-wrap gap-2">
                   {applePayAvailable && (
                     <button
                       type="button"
                       onClick={onApplePayExpress}
                       disabled={expressBusy}
-                      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                      className="flex h-11 min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`${MOLLIE_ICON}/applepay.svg`} alt="" className="h-[18px] w-auto" />
@@ -770,7 +770,7 @@ export function CheckoutForm({
                         type="button"
                         onClick={() => onWalletExpress(m.id)}
                         disabled={expressBusy}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                        className="flex h-11 min-w-[140px] flex-1 items-center justify-center gap-2 rounded-xl bg-klusr-black text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
                       >
                         {m.image && (
                           // eslint-disable-next-line @next/next/no-img-element
