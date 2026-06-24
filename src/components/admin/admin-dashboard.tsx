@@ -27,6 +27,7 @@ import {
   Mail,
   Globe,
   Calculator,
+  Truck,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
 import { SeoRankPanel } from "./seo-rank-panel";
 import { KassaPanel } from "./kassa-panel";
+import { InkoopPanel } from "./inkoop-panel";
 
 type SectionId =
   | "overzicht"
@@ -54,6 +56,7 @@ type SectionId =
   | "gesprekken"
   | "klanten"
   | "voorraad"
+  | "inkoop"
   | "rapportages"
   | "inzichten"
   | "seo"
@@ -70,6 +73,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "gesprekken", label: "Gesprekken", icon: MessagesSquare },
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "voorraad", label: "Voorraad", icon: Boxes },
+  { id: "inkoop", label: "Inkoop", icon: Truck },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "seo", label: "SEO-ranking", icon: TrendingUp },
   { id: "content", label: "AI-content", icon: Sparkles },
@@ -124,6 +128,7 @@ export function AdminDashboard() {
         {section === "gesprekken" && <ConversationsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {section === "voorraad" && <StockPanel />}
+        {section === "inkoop" && <InkoopPanel />}
         {(section === "rapportages" || section === "inzichten") && (
           <div className="space-y-8">
             <Insights />

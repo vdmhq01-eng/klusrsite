@@ -24,14 +24,19 @@ import {
  */
 
 const SOLD_KEY = "stock:sold"; // hash: variantId → cumulatief verkochte stuks
+const ADJUST_KEY = "stock:adjust"; // hash: variantId → netto handmatige correctie (±)
 const MOVES_KEY = "stock:moves"; // lijst met recente voorraadmutaties (gecapt)
 const claimKey = (orderId: string) => `stock:claimed:${orderId}`;
 const MAX_MOVES = 200;
 
 // In-memory fallback (demo / geen KV).
 const memSold = new Map<string, number>();
+const memAdjust = new Map<string, number>();
 const memMoves: StockMovement[] = [];
 const memClaimed = new Set<string>();
+
+/** Soort voorraadmutatie. */
+export type StockMoveKind = "sale" | "receive" | "adjust";
 
 export interface StockMovement {
   orderId: string;
@@ -39,8 +44,11 @@ export interface StockMovement {
   variantId: string;
   productId: string;
   title: string;
-  /** Aantal afgeboekte stuks (positief getal). */
+  /** Aantal afgeboekte/bijgeboekte stuks (magnitude, positief getal). */
   qty: number;
+  /** Getekende mutatie: negatief = eraf (verkoop), positief = erbij (ontvangst). */
+  delta: number;
+  kind: StockMoveKind;
   channel: "web" | "pos";
   ts: number;
 }
@@ -74,6 +82,8 @@ export async function recordOrderSale(order: Order): Promise<void> {
         productId: it.productId,
         title: it.title,
         qty,
+        delta: -qty,
+        kind: "sale",
         channel,
         ts: Date.now(),
       };
@@ -116,13 +126,79 @@ export async function getSold(variantId: string): Promise<number> {
   return map[variantId] ?? 0;
 }
 
+export interface AdjustInput {
+  variantId: string;
+  productId: string;
+  title: string;
+  /** Getekende mutatie: positief = ontvangst/correctie erbij, negatief = eraf. */
+  delta: number;
+  kind?: StockMoveKind;
+  /** Vrije omschrijving/herkomst, bv. "Inkooporder INK-1234" of "telling". */
+  reference?: string;
+}
+
+/**
+ * Boek een handmatige voorraadmutatie (ontvangst, correctie, telling). Past het
+ * netto-correctiesaldo aan en logt de mutatie. Best-effort: gooit nooit.
+ */
+export async function recordAdjustment(input: AdjustInput): Promise<void> {
+  try {
+    const delta = Math.round(input.delta);
+    if (!delta || !input.variantId) return;
+    const move: StockMovement = {
+      orderId: "",
+      reference: input.reference ?? "",
+      variantId: input.variantId,
+      productId: input.productId,
+      title: input.title,
+      qty: Math.abs(delta),
+      delta,
+      kind: input.kind ?? (delta > 0 ? "receive" : "adjust"),
+      channel: "pos",
+      ts: Date.now(),
+    };
+    if (isKvEnabled()) {
+      await kvHIncrBy(ADJUST_KEY, input.variantId, delta);
+      await kvLPush(MOVES_KEY, move);
+      await kvLTrim(MOVES_KEY, 0, MAX_MOVES - 1);
+    } else {
+      memAdjust.set(input.variantId, (memAdjust.get(input.variantId) ?? 0) + delta);
+      memMoves.unshift(move);
+      if (memMoves.length > MAX_MOVES) memMoves.length = MAX_MOVES;
+    }
+  } catch {
+    /* voorraad-grootboek mag nooit een flow breken */
+  }
+}
+
+/** Netto handmatige correcties per variant-id (kan negatief zijn). */
+export async function getAdjustMap(): Promise<Record<string, number>> {
+  try {
+    if (isKvEnabled()) {
+      const raw = await kvHGetAll(ADJUST_KEY);
+      const out: Record<string, number> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        const n = Number(v);
+        if (n) out[k] = n;
+      }
+      return out;
+    }
+    return Object.fromEntries([...memAdjust.entries()].filter(([, n]) => n !== 0));
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Live beschikbare voorraad voor een variant: de feed-voorraad minus wat sinds de
- * feed is verkocht (web + kassa), afgekapt op 0. Geef de feed-voorraad mee
- * (meestal de Nijverdal-voorraad) en, indien al opgehaald, de sold-map.
+ * feed is verkocht (web + kassa), plus de handmatige correcties (ontvangsten),
+ * afgekapt op 0.
  */
-export function liveStock(feedStock: number, sold: number): number {
-  return Math.max(0, Math.round(feedStock) - Math.max(0, Math.round(sold)));
+export function liveStock(feedStock: number, sold: number, adjust = 0): number {
+  return Math.max(
+    0,
+    Math.round(feedStock) - Math.max(0, Math.round(sold)) + Math.round(adjust),
+  );
 }
 
 /** Recente voorraadmutaties (nieuwste eerst) voor het admin-overzicht. */

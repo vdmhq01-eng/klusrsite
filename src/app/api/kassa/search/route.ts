@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/auth";
 import { searchCatalog } from "@/lib/pos-catalog";
-import { getSoldMap, liveStock } from "@/lib/store/stock-ledger";
+import { getSoldMap, getAdjustMap, liveStock } from "@/lib/store/stock-ledger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,12 +16,12 @@ export async function GET(req: Request) {
   }
   const q = new URL(req.url).searchParams.get("q") ?? "";
   const hits = searchCatalog(q, 25);
-  const sold = await getSoldMap();
+  const [sold, adjust] = await Promise.all([getSoldMap(), getAdjustMap()]);
   const results = hits.map((h) => ({
     ...h,
     variants: h.variants.map((v) => ({
       ...v,
-      live: liveStock(v.feedStock, sold[v.id] ?? 0),
+      live: liveStock(v.feedStock, sold[v.id] ?? 0, adjust[v.id] ?? 0),
     })),
   }));
   return NextResponse.json({ results });
