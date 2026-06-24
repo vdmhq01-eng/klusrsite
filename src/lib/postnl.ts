@@ -36,6 +36,15 @@ const PRODUCT_NL = process.env.POSTNL_PRODUCT_CODE_NL || "3085"; // Pakket binne
 const PRODUCT_NL_BRIEVENBUS = process.env.POSTNL_PRODUCT_CODE_BRIEVENBUS || "2928"; // Brievenbuspakje (NL)
 const PRODUCT_EU = process.env.POSTNL_PRODUCT_CODE_EU || "4945"; // Pakket EU (incl. België)
 
+// Barcodetype per bestemming. Binnenland/EU gebruiken "3S"; voor GlobalPack
+// (buiten de EU, of contracten die het buitenland als GlobalPack behandelen) een
+// S10-type zoals "CD" — overschrijfbaar via env. PostNL-fout 10701 ("not a valid
+// S10 barcode") duidt op een bestemming die een S10-barcode vereist. GlobalPack
+// gebruikt vaak een aparte klantcode als barcode-Range.
+const BARCODE_TYPE_NL = process.env.POSTNL_BARCODE_TYPE || "3S";
+const BARCODE_TYPE_INTL = process.env.POSTNL_BARCODE_TYPE_INTL || "3S";
+const GLOBALPACK_RANGE = process.env.POSTNL_GLOBALPACK_RANGE;
+
 export function isPostNLConfigured(): boolean {
   return Boolean(API_KEY && CUSTOMER_CODE && CUSTOMER_NUMBER);
 }
@@ -71,13 +80,13 @@ function nowStamp(): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-async function generateBarcode(): Promise<string | null> {
+async function generateBarcode(type: string, range: string): Promise<string | null> {
   try {
     const params = new URLSearchParams({
       CustomerCode: CUSTOMER_CODE!,
       CustomerNumber: CUSTOMER_NUMBER!,
-      Type: "3S",
-      Range: CUSTOMER_CODE!,
+      Type: type,
+      Range: range,
     });
     if (BARCODE_SERIE) params.set("Serie", BARCODE_SERIE);
     const res = await fetch(`${API_BASE}/shipment/v1_1/barcode?${params.toString()}`, {
@@ -112,16 +121,21 @@ export async function createLabel(
   }
 
   try {
-    const barcode = (await generateBarcode()) || `3S${CUSTOMER_CODE}${Date.now()}`;
     const { street, houseNr, houseNrExt } = splitStreet(c.street);
     const receiverCountry = (c.country || "NL").toUpperCase().slice(0, 2);
+    const isDomestic = receiverCountry === "NL";
     // Binnenland (NL) → pakket/brievenbus; buitenland (België e.d.) → EU-pakket.
-    const productCode =
-      receiverCountry === "NL"
-        ? opts?.brievenbus
-          ? PRODUCT_NL_BRIEVENBUS
-          : PRODUCT_NL
-        : PRODUCT_EU;
+    const productCode = isDomestic
+      ? opts?.brievenbus
+        ? PRODUCT_NL_BRIEVENBUS
+        : PRODUCT_NL
+      : PRODUCT_EU;
+    // Barcodetype/-range volgt de bestemming (zie env-uitleg bovenaan).
+    const barcodeType = isDomestic ? BARCODE_TYPE_NL : BARCODE_TYPE_INTL;
+    const barcodeRange = (isDomestic ? CUSTOMER_CODE : GLOBALPACK_RANGE || CUSTOMER_CODE)!;
+    const barcode =
+      (await generateBarcode(barcodeType, barcodeRange)) ||
+      `${barcodeType}${barcodeRange}${Date.now()}`;
 
     const body = {
       Customer: {
