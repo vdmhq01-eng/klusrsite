@@ -42,7 +42,10 @@ const PRODUCT_EU = process.env.POSTNL_PRODUCT_CODE_EU || "4945"; // Pakket EU (i
 // S10 barcode") duidt op een bestemming die een S10-barcode vereist. GlobalPack
 // gebruikt vaak een aparte klantcode als barcode-Range.
 const BARCODE_TYPE_NL = process.env.POSTNL_BARCODE_TYPE || "3S";
-const BARCODE_TYPE_INTL = process.env.POSTNL_BARCODE_TYPE_INTL || "3S";
+// Niet-EU/GlobalPack-barcodetype: gebruikt de bestaande POSTNL_BARCODE_NON_EU
+// (bv. "CD" → S10-barcode). Terugval op POSTNL_BARCODE_TYPE_INTL, dan "3S".
+const BARCODE_TYPE_INTL =
+  process.env.POSTNL_BARCODE_NON_EU || process.env.POSTNL_BARCODE_TYPE_INTL || "3S";
 const GLOBALPACK_RANGE = process.env.POSTNL_GLOBALPACK_RANGE;
 
 export function isPostNLConfigured(): boolean {
