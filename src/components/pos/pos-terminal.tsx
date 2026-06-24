@@ -1,0 +1,918 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Search,
+  ScanLine,
+  Plus,
+  Minus,
+  Trash2,
+  X,
+  ShoppingCart,
+  Banknote,
+  CreditCard,
+  Loader2,
+  Check,
+  ChevronLeft,
+  Printer,
+  Inbox,
+  PackageX,
+  Receipt,
+  AlertTriangle,
+} from "lucide-react";
+import { formatPrice, cn } from "@/lib/utils";
+import { posLinePrice, posTotals, changeFor, type PosCustomerMode } from "@/lib/pos";
+
+interface VariantHit {
+  id: string;
+  label: string;
+  price: number;
+  kluspasPrice: number;
+  feedStock: number;
+  live: number;
+}
+interface ProductHit {
+  productId: string;
+  title: string;
+  brand: string;
+  slug: string;
+  image?: string;
+  gtin?: string;
+  category: string;
+  variants: VariantHit[];
+}
+interface CartLine {
+  key: string;
+  productId: string;
+  variantId: string;
+  title: string;
+  brand: string;
+  variantLabel: string;
+  image?: string;
+  gtin?: string;
+  price: number; // normale catalogusprijs
+  kluspasPrice: number;
+  live: number;
+  quantity: number;
+  discountPct: number;
+}
+
+type PayMethod = "cash" | "terminal" | "manual";
+
+const MODES: { id: PosCustomerMode; label: string }[] = [
+  { id: "particulier", label: "Particulier" },
+  { id: "kluspas", label: "KLUSRPAS" },
+  { id: "zakelijk", label: "Zakelijk" },
+];
+
+export function PosTerminal({
+  storeId,
+  storeName,
+  cashier,
+  terminalConfigured,
+  printAgentUrl,
+}: {
+  storeId: string;
+  storeName: string;
+  cashier?: string;
+  terminalConfigured: boolean;
+  printAgentUrl: string;
+}) {
+  const [mode, setMode] = useState<PosCustomerMode>("particulier");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ProductHit[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [cart, setCart] = useState<CartLine[]>([]);
+
+  const [payOpen, setPayOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const scanRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    scanRef.current?.focus();
+  }, []);
+
+  // Zoeken (gedebounced). Een gescande EAN levert meestal direct één product.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/kassa/search?q=${encodeURIComponent(q)}`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+        setResults(data.results ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 200);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const addVariant = useCallback((p: ProductHit, v: VariantHit) => {
+    setCart((prev) => {
+      const idx = prev.findIndex((l) => l.variantId === v.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          key: v.id,
+          productId: p.productId,
+          variantId: v.id,
+          title: p.title,
+          brand: p.brand,
+          variantLabel: v.label,
+          image: p.image,
+          gtin: p.gtin,
+          price: v.price,
+          kluspasPrice: v.kluspasPrice,
+          live: v.live,
+          quantity: 1,
+          discountPct: 0,
+        },
+      ];
+    });
+    setNotice(`${p.brand} ${p.title} toegevoegd`);
+  }, []);
+
+  // Enter in het zoekveld: bij precies één product met één variant direct toevoegen.
+  function onScanEnter() {
+    if (results.length === 1 && results[0].variants.length === 1) {
+      addVariant(results[0], results[0].variants[0]);
+      setQuery("");
+      setResults([]);
+      setExpanded(null);
+      scanRef.current?.focus();
+    } else if (results.length === 1) {
+      setExpanded(results[0].productId);
+    }
+  }
+
+  const setQty = (key: string, qty: number) =>
+    setCart((prev) =>
+      prev.flatMap((l) =>
+        l.key === key ? (qty <= 0 ? [] : [{ ...l, quantity: qty }]) : [l],
+      ),
+    );
+  const setDiscount = (key: string, pct: number) =>
+    setCart((prev) =>
+      prev.map((l) => (l.key === key ? { ...l, discountPct: Math.min(100, Math.max(0, pct)) } : l)),
+    );
+  const removeLine = (key: string) => setCart((prev) => prev.filter((l) => l.key !== key));
+
+  const priced = useMemo(
+    () =>
+      cart.map((l) => {
+        const p = posLinePrice({ price: l.price, kluspasPrice: l.kluspasPrice }, mode, l.discountPct);
+        return { line: l, unit: p.unit, normalUnit: p.normalUnit, lineTotal: p.unit * l.quantity };
+      }),
+    [cart, mode],
+  );
+  const totals = useMemo(
+    () =>
+      posTotals(
+        priced.map((p) => ({ unit: p.unit, normalUnit: p.normalUnit, quantity: p.line.quantity })),
+      ),
+    [priced],
+  );
+  const itemCount = cart.reduce((s, l) => s + l.quantity, 0);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 1800);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  function reset() {
+    setCart([]);
+    setQuery("");
+    setResults([]);
+    setExpanded(null);
+    scanRef.current?.focus();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col bg-neutral-100 text-foreground">
+      {/* Bovenbalk */}
+      <header className="flex items-center justify-between gap-3 border-b border-border bg-white px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-klusr-black text-white">
+            <ShoppingCart className="h-5 w-5" />
+          </span>
+          <div className="leading-tight">
+            <div className="text-sm font-black tracking-tight">KLUSR Kassa</div>
+            <div className="text-xs text-muted-foreground">
+              {storeName}
+              {cashier ? ` · ${cashier}` : ""}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-lg bg-secondary p-1">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                mode === m.id ? "bg-klusr-black text-white" : "text-muted-foreground hover:bg-white",
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <a
+          href="/admin"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+        >
+          <X className="h-4 w-4" /> Sluiten
+        </a>
+      </header>
+
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_400px]">
+        {/* Links: zoeken + resultaten */}
+        <section className="flex min-h-0 flex-col border-r border-border">
+          <div className="border-b border-border bg-white p-3">
+            <div className="relative">
+              <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+              <input
+                ref={scanRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onScanEnter();
+                  }
+                }}
+                placeholder="Scan barcode of zoek op naam / merk…"
+                className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-4 text-base font-medium outline-none focus:border-primary focus:bg-white"
+                autoComplete="off"
+                inputMode="search"
+              />
+              {searching && (
+                <Loader2 className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-muted-foreground" />
+              )}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {query.trim().length < 2 ? (
+              <EmptyHint />
+            ) : results.length === 0 && !searching ? (
+              <div className="flex flex-col items-center gap-2 py-12 text-center text-sm text-muted-foreground">
+                <PackageX className="h-7 w-7 opacity-50" />
+                Geen producten gevonden voor “{query}”.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
+                {results.map((p) => (
+                  <ProductCard
+                    key={p.productId}
+                    product={p}
+                    expanded={expanded === p.productId}
+                    onToggle={() =>
+                      setExpanded((cur) => (cur === p.productId ? null : p.productId))
+                    }
+                    onAdd={(v) => addVariant(p, v)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Rechts: winkelwagen + totalen */}
+        <aside className="flex min-h-0 flex-col bg-white">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex items-center gap-2 text-sm font-bold">
+              <ShoppingCart className="h-4 w-4" /> Verkoop
+              {itemCount > 0 && (
+                <span className="rounded-full bg-klusr-black px-2 py-0.5 text-xs font-bold text-white">
+                  {itemCount}
+                </span>
+              )}
+            </div>
+            {cart.length > 0 && (
+              <button
+                onClick={reset}
+                className="text-xs font-semibold text-muted-foreground hover:text-primary"
+              >
+                Leegmaken
+              </button>
+            )}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            {cart.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-16 text-center text-sm text-muted-foreground">
+                <Inbox className="h-8 w-8 opacity-40" />
+                Nog geen artikelen.
+                <br />
+                Scan of zoek een product.
+              </div>
+            ) : (
+              <ul className="space-y-1.5">
+                {priced.map(({ line, unit, lineTotal }) => (
+                  <li key={line.key} className="rounded-lg border border-border p-2">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold">
+                          {line.brand} {line.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {line.variantLabel} · {formatPrice(unit)}
+                          {line.discountPct > 0 && ` · -${line.discountPct}%`}
+                        </div>
+                        {line.quantity > line.live && (
+                          <div className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-klusr-action">
+                            <AlertTriangle className="h-3 w-3" /> meer dan voorraad ({line.live})
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right text-sm font-bold tabular-nums">
+                        {formatPrice(lineTotal)}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1">
+                        <QtyButton onClick={() => setQty(line.key, line.quantity - 1)}>
+                          <Minus className="h-4 w-4" />
+                        </QtyButton>
+                        <span className="w-8 text-center text-sm font-bold tabular-nums">
+                          {line.quantity}
+                        </span>
+                        <QtyButton onClick={() => setQty(line.key, line.quantity + 1)}>
+                          <Plus className="h-4 w-4" />
+                        </QtyButton>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={line.discountPct || ""}
+                            onChange={(e) => setDiscount(line.key, Math.floor(Number(e.target.value)))}
+                            placeholder="0"
+                            className="h-7 w-12 rounded border border-border bg-secondary px-1.5 text-center text-xs outline-none focus:border-primary"
+                          />
+                          %
+                        </label>
+                        <button
+                          onClick={() => removeLine(line.key)}
+                          className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-secondary hover:text-primary"
+                          aria-label="Verwijderen"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Totalen + afrekenen */}
+          <div className="border-t border-border p-4">
+            {totals.savings > 0 && (
+              <div className="mb-1 flex justify-between text-sm text-klusr-stock">
+                <span>Voordeel</span>
+                <span className="font-semibold">−{formatPrice(totals.savings)}</span>
+              </div>
+            )}
+            <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+              <span>waarvan btw 21%</span>
+              <span>{formatPrice(totals.vat)}</span>
+            </div>
+            <div className="mb-3 flex items-end justify-between">
+              <span className="text-sm font-bold">Totaal</span>
+              <span className="text-3xl font-black tabular-nums">{formatPrice(totals.total)}</span>
+            </div>
+            <button
+              disabled={cart.length === 0}
+              onClick={() => setPayOpen(true)}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-lg font-black text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              Afrekenen · {formatPrice(totals.total)}
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      {notice && (
+        <div className="pointer-events-none fixed bottom-4 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-klusr-black px-4 py-2 text-sm font-semibold text-white shadow-lg">
+          {notice}
+        </div>
+      )}
+
+      {payOpen && (
+        <PaymentSheet
+          total={totals.total}
+          mode={mode}
+          storeId={storeId}
+          cashier={cashier}
+          terminalConfigured={terminalConfigured}
+          printAgentUrl={printAgentUrl}
+          lines={cart.map((l) => ({
+            productId: l.productId,
+            variantId: l.variantId,
+            quantity: l.quantity,
+            discountPct: l.discountPct || undefined,
+          }))}
+          onClose={() => setPayOpen(false)}
+          onDone={() => {
+            setPayOpen(false);
+            reset();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EmptyHint() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-16 text-center text-sm text-muted-foreground">
+      <ScanLine className="h-10 w-10 opacity-40" />
+      <div>
+        Scan een productbarcode of typ een naam/merk om te zoeken.
+        <br />
+        Het veld staat klaar voor de scanner.
+      </div>
+    </div>
+  );
+}
+
+function ProductCard({
+  product,
+  expanded,
+  onToggle,
+  onAdd,
+}: {
+  product: ProductHit;
+  expanded: boolean;
+  onToggle: () => void;
+  onAdd: (v: VariantHit) => void;
+}) {
+  const single = product.variants.length === 1;
+  const minPrice = Math.min(...product.variants.map((v) => v.price));
+  return (
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-white">
+      <button
+        onClick={() => (single ? onAdd(product.variants[0]) : onToggle())}
+        className="flex flex-1 flex-col text-left"
+      >
+        <div className="aspect-square w-full bg-secondary">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={product.image || "/icon.svg"}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-contain p-2"
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-0.5 p-2">
+          <div className="text-[11px] font-semibold uppercase text-muted-foreground">
+            {product.brand}
+          </div>
+          <div className="line-clamp-2 text-xs font-medium leading-snug">{product.title}</div>
+          <div className="mt-auto pt-1 text-sm font-black">
+            {single ? formatPrice(product.variants[0].price) : `vanaf ${formatPrice(minPrice)}`}
+          </div>
+        </div>
+      </button>
+      {!single && expanded && (
+        <div className="border-t border-border p-1.5">
+          {product.variants.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => onAdd(v)}
+              className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-secondary"
+            >
+              <span className="truncate font-medium">{v.label}</span>
+              <span className="flex items-center gap-1.5 tabular-nums">
+                {formatPrice(v.price)}
+                <Plus className="h-3.5 w-3.5 text-primary" />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {single && (
+        <div className="border-t border-border px-2 py-1 text-center text-[11px] font-semibold text-muted-foreground">
+          {product.variants[0].live > 0 ? `${product.variants[0].live} op voorraad` : "uitverkocht"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QtyButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-foreground hover:bg-secondary"
+    >
+      {children}
+    </button>
+  );
+}
+
+interface CheckoutLine {
+  productId: string;
+  variantId: string;
+  quantity: number;
+  discountPct?: number;
+}
+
+function PaymentSheet({
+  total,
+  mode,
+  storeId,
+  cashier,
+  terminalConfigured,
+  printAgentUrl,
+  lines,
+  onClose,
+  onDone,
+}: {
+  total: number;
+  mode: PosCustomerMode;
+  storeId: string;
+  cashier?: string;
+  terminalConfigured: boolean;
+  printAgentUrl: string;
+  lines: CheckoutLine[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [method, setMethod] = useState<PayMethod>(terminalConfigured ? "terminal" : "cash");
+  const [cashGiven, setCashGiven] = useState<string>("");
+  const [phase, setPhase] = useState<"choose" | "processing" | "pending" | "done" | "error">(
+    "choose",
+  );
+  const [result, setResult] = useState<{ orderId: string; reference: string; change?: number } | null>(
+    null,
+  );
+  const [errorMsg, setErrorMsg] = useState("");
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (pollRef.current) clearTimeout(pollRef.current); }, []);
+
+  const cashNum = Number(cashGiven.replace(",", ".")) || 0;
+  const change = method === "cash" ? changeFor(total, cashNum) : 0;
+  const cashShort = method === "cash" && cashNum > 0 && cashNum < total;
+
+  // Snelkeuze contant: gepast + eerstvolgende biljetten boven het totaal.
+  const denoms = [5, 10, 20, 50, 100, 200].filter((d) => d >= total).slice(0, 3);
+
+  async function sendToAgent(path: string) {
+    if (!printAgentUrl) return false;
+    try {
+      const res = await fetch(path, { cache: "no-store" });
+      const buf = await res.arrayBuffer();
+      await fetch(printAgentUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: buf,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function printReceipt(orderId: string, openDrawer: boolean) {
+    if (printAgentUrl) {
+      void sendToAgent(
+        `/api/kassa/receipt/${orderId}?format=escpos${openDrawer ? "&drawer=1" : ""}`,
+      );
+    } else {
+      window.open(`/kassa/bon/${orderId}?print=1`, "_blank", "noopener");
+    }
+  }
+
+  async function poll(orderId: string) {
+    try {
+      const res = await fetch(`/api/kassa/status?order=${orderId}`, { cache: "no-store" });
+      const data = await res.json();
+      if (data.paid) {
+        setResult({ orderId, reference: data.reference, change: data.change });
+        setPhase("done");
+        printReceipt(orderId, false);
+        return;
+      }
+      if (data.status === "failed" || data.status === "canceled" || data.status === "expired") {
+        setErrorMsg("Betaling op de terminal is niet gelukt.");
+        setPhase("error");
+        return;
+      }
+      pollRef.current = setTimeout(() => poll(orderId), 2000);
+    } catch {
+      pollRef.current = setTimeout(() => poll(orderId), 2500);
+    }
+  }
+
+  async function confirm() {
+    setPhase("processing");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/kassa/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lines,
+          mode,
+          method,
+          storeId,
+          cashier,
+          ...(method === "cash" ? { cashGiven: cashNum } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || "Afrekenen mislukt.");
+        setPhase("error");
+        return;
+      }
+      if (data.status === "pending") {
+        setResult({ orderId: data.orderId, reference: data.reference });
+        setPhase("pending");
+        poll(data.orderId);
+        return;
+      }
+      // Direct betaald (contant / handmatig / demo-terminal).
+      setResult({ orderId: data.orderId, reference: data.reference, change: data.change });
+      setPhase("done");
+      printReceipt(data.orderId, method === "cash");
+    } catch {
+      setErrorMsg("Netwerkfout bij afrekenen.");
+      setPhase("error");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center">
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl">
+        {/* Kop */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-bold">
+            {phase === "done" ? (
+              <Check className="h-5 w-5 text-klusr-stock" />
+            ) : (
+              <Receipt className="h-5 w-5" />
+            )}
+            {phase === "done" ? "Betaald" : "Afrekenen"}
+          </div>
+          {phase !== "processing" && phase !== "pending" && (
+            <button
+              onClick={onClose}
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {phase === "choose" && (
+            <>
+              <div className="mb-4 flex items-baseline justify-between">
+                <span className="text-sm text-muted-foreground">Te betalen</span>
+                <span className="text-3xl font-black tabular-nums">{formatPrice(total)}</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <MethodTile
+                  active={method === "cash"}
+                  onClick={() => setMethod("cash")}
+                  icon={<Banknote className="h-5 w-5" />}
+                  label="Contant"
+                />
+                <MethodTile
+                  active={method === "terminal"}
+                  onClick={() => setMethod("terminal")}
+                  icon={<CreditCard className="h-5 w-5" />}
+                  label={terminalConfigured ? "PIN-terminal" : "PIN (los)"}
+                />
+                <MethodTile
+                  active={method === "manual"}
+                  onClick={() => setMethod("manual")}
+                  icon={<Receipt className="h-5 w-5" />}
+                  label="Handmatig"
+                />
+              </div>
+
+              {method === "cash" && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setCashGiven(total.toFixed(2))}
+                      className="rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-secondary"
+                    >
+                      Gepast
+                    </button>
+                    {denoms.map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => setCashGiven(String(d))}
+                        className="rounded-lg border border-border px-3 py-2 text-sm font-semibold tabular-nums hover:bg-secondary"
+                      >
+                        € {d}
+                      </button>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                      Ontvangen bedrag
+                    </label>
+                    <input
+                      value={cashGiven}
+                      onChange={(e) => setCashGiven(e.target.value)}
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      className="h-12 w-full rounded-xl border border-border bg-secondary px-4 text-lg font-bold tabular-nums outline-none focus:border-primary focus:bg-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-secondary px-4 py-3">
+                    <span className="text-sm font-semibold">Wisselgeld</span>
+                    <span
+                      className={cn(
+                        "text-2xl font-black tabular-nums",
+                        cashShort ? "text-muted-foreground" : "text-klusr-stock",
+                      )}
+                    >
+                      {formatPrice(change)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {method === "terminal" && (
+                <p className="mt-4 rounded-xl bg-secondary px-4 py-3 text-sm text-muted-foreground">
+                  {terminalConfigured
+                    ? "Het bedrag wordt naar de pinautomaat gestuurd. De klant rondt de betaling daar af."
+                    : "Geen Mollie-terminal gekoppeld — bevestig de betaling op je losse pinapparaat en rond hier af."}
+                </p>
+              )}
+              {method === "manual" && (
+                <p className="mt-4 rounded-xl bg-secondary px-4 py-3 text-sm text-muted-foreground">
+                  Handmatig afronden (bijv. op rekening). De verkoop wordt als betaald geboekt.
+                </p>
+              )}
+            </>
+          )}
+
+          {phase === "processing" && (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Verwerken…</span>
+            </div>
+          )}
+
+          {phase === "pending" && (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <CreditCard className="h-10 w-10 text-primary" />
+              <div className="text-lg font-bold">Volg de betaling op de terminal</div>
+              <div className="text-sm text-muted-foreground">
+                Wachten op de pinautomaat… {result?.reference}
+              </div>
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {phase === "done" && result && (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="grid h-16 w-16 place-items-center rounded-full bg-klusr-stock/15 text-klusr-stock">
+                <Check className="h-9 w-9" />
+              </div>
+              <div className="text-xl font-black">Verkoop afgerond</div>
+              <div className="text-sm text-muted-foreground">Bon {result.reference}</div>
+              {result.change != null && result.change > 0 && (
+                <div className="mt-1 w-full rounded-xl bg-secondary px-4 py-3">
+                  <div className="text-xs font-semibold uppercase text-muted-foreground">
+                    Wisselgeld
+                  </div>
+                  <div className="text-3xl font-black tabular-nums text-klusr-stock">
+                    {formatPrice(result.change)}
+                  </div>
+                </div>
+              )}
+              <div className="mt-2 grid w-full grid-cols-2 gap-2">
+                <button
+                  onClick={() => printReceipt(result.orderId, false)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-sm font-semibold hover:bg-secondary"
+                >
+                  <Printer className="h-4 w-4" /> Print bon
+                </button>
+                <button
+                  onClick={() => void sendToAgent("/api/kassa/drawer")}
+                  disabled={!printAgentUrl}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-sm font-semibold hover:bg-secondary disabled:opacity-40"
+                >
+                  <Banknote className="h-4 w-4" /> Open lade
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === "error" && (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
+                <AlertTriangle className="h-7 w-7" />
+              </div>
+              <div className="text-base font-bold">Niet gelukt</div>
+              <div className="text-sm text-muted-foreground">{errorMsg}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Voet */}
+        <div className="border-t border-border p-4">
+          {phase === "choose" && (
+            <button
+              onClick={confirm}
+              disabled={method === "cash" && cashShort}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-lg font-black text-white hover:opacity-90 disabled:opacity-40"
+            >
+              {method === "cash"
+                ? "Contant ontvangen"
+                : method === "terminal"
+                  ? terminalConfigured
+                    ? "Naar terminal"
+                    : "Bevestig PIN"
+                  : "Afronden"}
+            </button>
+          )}
+          {phase === "pending" && (
+            <button
+              onClick={onClose}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold hover:bg-secondary"
+            >
+              <ChevronLeft className="h-4 w-4" /> Stoppen met wachten
+            </button>
+          )}
+          {phase === "done" && (
+            <button
+              onClick={onDone}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-klusr-black text-lg font-black text-white hover:opacity-90"
+            >
+              <Plus className="h-5 w-5" /> Nieuwe verkoop
+            </button>
+          )}
+          {phase === "error" && (
+            <button
+              onClick={() => setPhase("choose")}
+              className="flex h-12 w-full items-center justify-center rounded-xl border border-border text-sm font-semibold hover:bg-secondary"
+            >
+              Opnieuw proberen
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MethodTile({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 text-xs font-semibold transition-colors",
+        active
+          ? "border-primary bg-primary/5 text-primary"
+          : "border-border text-muted-foreground hover:bg-secondary",
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}

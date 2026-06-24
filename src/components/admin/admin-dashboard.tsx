@@ -26,6 +26,7 @@ import {
   MapPin,
   Mail,
   Globe,
+  Calculator,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -42,9 +43,11 @@ import { HeroImages } from "./hero-images";
 import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
 import { SeoRankPanel } from "./seo-rank-panel";
+import { KassaPanel } from "./kassa-panel";
 
 type SectionId =
   | "overzicht"
+  | "kassa"
   | "orders"
   | "afgebroken"
   | "tickets"
@@ -60,6 +63,7 @@ type SectionId =
 
 const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
+  { id: "kassa", label: "Kassa", icon: Calculator },
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "afgebroken", label: "Afgebroken", icon: XCircle },
   { id: "tickets", label: "Tickets", icon: MessageCircle },
@@ -113,6 +117,7 @@ export function AdminDashboard() {
       {/* Inhoud */}
       <div className="min-w-0">
         {section === "overzicht" && <Overview orders={orders} onGo={setSection} />}
+        {section === "kassa" && <KassaPanel orders={orders} />}
         {section === "orders" && <OrdersPanel />}
         {section === "afgebroken" && <AbandonedPanel />}
         {section === "tickets" && <TicketsPanel />}
