@@ -42,10 +42,11 @@ const PRODUCT_EU = process.env.POSTNL_PRODUCT_CODE_EU || "4945"; // Pakket EU (i
 // S10 barcode") duidt op een bestemming die een S10-barcode vereist. GlobalPack
 // gebruikt vaak een aparte klantcode als barcode-Range.
 const BARCODE_TYPE_NL = process.env.POSTNL_BARCODE_TYPE || "3S";
-// Niet-EU/GlobalPack-barcodetype: gebruikt de bestaande POSTNL_BARCODE_NON_EU
-// (bv. "CD" → S10-barcode). Terugval op POSTNL_BARCODE_TYPE_INTL, dan "3S".
-const BARCODE_TYPE_INTL =
-  process.env.POSTNL_BARCODE_NON_EU || process.env.POSTNL_BARCODE_TYPE_INTL || "3S";
+// Buitenland/GlobalPack: S10-barcodetype ("CD"), overschrijfbaar via env.
+const BARCODE_TYPE_INTL = process.env.POSTNL_BARCODE_TYPE_INTL || "CD";
+// Serie (barcode-bereik) per type. POSTNL_BARCODE_NON_EU (bv. "0000-9999") is de
+// GlobalPack-serie; binnenland gebruikt POSTNL_BARCODE_SERIE.
+const BARCODE_SERIE_INTL = process.env.POSTNL_BARCODE_NON_EU || BARCODE_SERIE;
 const GLOBALPACK_RANGE = process.env.POSTNL_GLOBALPACK_RANGE;
 
 export function isPostNLConfigured(): boolean {
@@ -83,7 +84,7 @@ function nowStamp(): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-async function generateBarcode(type: string, range: string): Promise<string | null> {
+async function generateBarcode(type: string, range: string, serie?: string): Promise<string | null> {
   try {
     const params = new URLSearchParams({
       CustomerCode: CUSTOMER_CODE!,
@@ -91,7 +92,7 @@ async function generateBarcode(type: string, range: string): Promise<string | nu
       Type: type,
       Range: range,
     });
-    if (BARCODE_SERIE) params.set("Serie", BARCODE_SERIE);
+    if (serie) params.set("Serie", serie);
     const res = await fetch(`${API_BASE}/shipment/v1_1/barcode?${params.toString()}`, {
       headers: { apikey: API_KEY!, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
@@ -135,9 +136,10 @@ export async function createLabel(
       : PRODUCT_EU;
     // Barcodetype/-range volgt de bestemming (zie env-uitleg bovenaan).
     const barcodeType = isDomestic ? BARCODE_TYPE_NL : BARCODE_TYPE_INTL;
+    const barcodeSerie = isDomestic ? BARCODE_SERIE : BARCODE_SERIE_INTL;
     const barcodeRange = (isDomestic ? CUSTOMER_CODE : GLOBALPACK_RANGE || CUSTOMER_CODE)!;
     const barcode =
-      (await generateBarcode(barcodeType, barcodeRange)) ||
+      (await generateBarcode(barcodeType, barcodeRange, barcodeSerie)) ||
       `${barcodeType}${barcodeRange}${Date.now()}`;
 
     const body = {
