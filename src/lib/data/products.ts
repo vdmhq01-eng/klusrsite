@@ -12,14 +12,23 @@ import { onlineStock } from "@/lib/stock";
 const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: number }>;
 
 /**
+ * De kale SKU van een product-/variant-id, los van de (legacy) bron-prefix. Het
+ * `tilroy-`-voorvoegsel is sinds de Tilroy-ontkoppeling puur historisch: ids
+ * blijven stabiel (orders, overlays, slugs verwijzen ernaar), maar de logica is
+ * bron-agnostisch — eigen producten dragen gewoon hun eigen id zonder prefix.
+ */
+export function skuOf(id: string): string {
+  return id.replace(/^(?:tilroy|channable|feed)-/, "");
+}
+
+/**
  * Verrijkt een variant/product met de adviesprijs (RRP) uit de prijsfeed als
  * doorgestreepte "van"-prijs — alleen wanneer die hoger is dan de verkoopprijs.
  */
 function withAdviesPrice<T extends { id: string; price: number; compareAtPrice?: number }>(
   v: T,
 ): T {
-  const sku = v.id.replace(/^tilroy-/, "");
-  const o = PRICE_OVERRIDES[sku];
+  const o = PRICE_OVERRIDES[skuOf(v.id)];
   if (o?.a != null && o.a > v.price) return { ...v, compareAtPrice: o.a };
   return v;
 }
