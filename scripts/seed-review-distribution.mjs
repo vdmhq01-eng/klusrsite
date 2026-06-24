@@ -38,15 +38,27 @@ const SYNTH_POS = [
   { author: "Joost B.", body: "Prima product, doet wat het moet doen.", rating: 4 },
   { author: "Petra D.", body: "Tevreden! Goede prijs-kwaliteitverhouding.", rating: 4 },
   { author: "Henk J.", body: "Doet z'n werk en netjes afgewerkt. Zou ik weer kopen.", rating: 4 },
+  { author: "Eline R.", body: "Snelle levering en keurig verpakt. Helemaal blij mee.", rating: 5 },
+  { author: "Tom H.", body: "Makkelijk in gebruik en een mooi resultaat. Aanrader.", rating: 5 },
+  { author: "Karin V.", body: "Goede dekking, precies zoals beschreven. Top.", rating: 5 },
+  { author: "Bas M.", body: "Stevig en degelijk. Prima voor het werk dat ik deed.", rating: 4 },
+  { author: "Linda P.", body: "Fijn product, de uitleg op de site hielp bij mijn keuze.", rating: 5 },
+  { author: "Erik S.", body: "Net zo goed als verwacht. Niets op aan te merken.", rating: 4 },
+  { author: "Nadia E.", body: "Goede kwaliteit voor een eerlijke prijs. Tevreden klant.", rating: 5 },
 ];
 const SYNTH_MID = [
   { author: "Wendy K.", body: "Prima voor de prijs, maar niet bijzonder. Verpakking was wat gedeukt.", rating: 3 },
   { author: "Rob M.", body: "Op zich oké, alleen de afwerking kon beter.", rating: 3 },
   { author: "Bianca S.", body: "Doet het, maar ik had iets steviger verwacht voor dit geld.", rating: 3 },
+  { author: "Patrick W.", body: "Voldoet, maar de levering duurde wat langer dan gehoopt.", rating: 3 },
+  { author: "Ingrid T.", body: "Gemiddeld product. Doet wat het moet, meer ook niet.", rating: 3 },
+  { author: "Ahmed K.", body: "Redelijk, al sluit het niet helemaal aan bij de omschrijving.", rating: 3 },
 ];
 const SYNTH_NEG = [
   { author: "Dennis B.", body: "Viel tegen — kwaliteit was minder dan ik hoopte.", rating: 2 },
   { author: "Karin L.", body: "Niet helemaal wat ik ervan verwachtte, let goed op de specs.", rating: 2 },
+  { author: "Marco D.", body: "Tegenvaller. Voor dit geld had ik meer verwacht.", rating: 2 },
+  { author: "Yvonne G.", body: "Werkte niet zo goed voor mijn toepassing. Jammer.", rating: 2 },
 ];
 
 function synthReviews(seed, count, avg) {
@@ -95,7 +107,7 @@ const isKnownBrand = (brand) => KNOWN_BRANDS.has((brand || "").toLowerCase().tri
 /**
  * Organisch rating/reviewCount-profiel, deterministisch geseed op product-id +
  * merk. Aantallen blijven laag (meeste 2-3, max 40).
- *   ~60% van álle producten          → 0 reviews (nieuw/niche).
+ *   ~10% van álle producten          → 0 reviews (nieuw/niche).
  *   Bekende merken (mét reviews)      → 4.0–4.9, minimaal 3 reviews.
  *   Niet-bekende merken (mét reviews):
  *     ~12% → 3-sterren (2.8–3.6) met 1-3 reviews  (de eerlijke uitschieters)
@@ -106,8 +118,9 @@ export function ratingProfile(id, brand) {
   const tier = seeded(`${id}-tier`);
   const a = seeded(`${id}-ra`);
   const b = seeded(`${id}-rb`);
-  // ~60% van de producten heeft (nog) GEEN reviews; de overige ~40% wél.
-  if (tier < 0.6) return { rating: 0, reviewCount: 0 };
+  // ~10% van de producten heeft (nog) GEEN reviews; de overige ~90% wél
+  // (placeholder nep-reviews — later te vervangen door echte reviews).
+  if (tier < 0.1) return { rating: 0, reviewCount: 0 };
   // Normaal aantal: meeste 2-3, sterk aflopend, max 40 (b^3-skew).
   const baseCount = Math.min(40, 2 + Math.floor(b * b * b * 39));
 
