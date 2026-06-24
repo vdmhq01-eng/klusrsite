@@ -19,11 +19,15 @@ De gecommitte snapshot `src/lib/data/feed-products.generated.json` is nu de
   (orders/overlays/slugs verwijzen ernaar) maar zijn puur historisch.
 
 **Resteert in deze stap (afronding):**
+- [x] **Productmaster-editor** in `/admin` — titel, merk, categorie, subcategorie,
+      EAN, afbeeldingen, USP's en omschrijving van álle (ook geïmporteerde)
+      producten zijn nu bewerkbaar via de overlay (potlood in de catalogus-lijst),
+      met "herstel naar bron". De `tilroy-…`-ids blijven de stabiele sleutel.
+- [ ] Zichtbaarheid (uit de schappen halen / weer tonen) in dezelfde editor —
+      vereist een admin-lijst die ook verborgen producten toont (nu filtert de
+      overlay verborgen producten eruit).
 - [ ] Eenmalige **fysieke telling** per vestiging als nieuwe openingsbalans
       seeden in het grootboek (i.p.v. de uit de feed gesynthetiseerde stand).
-- [ ] Productmaster-editor in `/admin` uitbreiden van *override + eigen product*
-      naar *volledig bewerkbaar* (titel, EAN, merk, categorie, foto's) — nu komen
-      de basisvelden nog uit de geïmporteerde snapshot.
 - [ ] **Foto-hosting** verzelfstandigen: beelden staan nu op
       `channableusercontent`/S3 (Tilroy-keten) → naar eigen CDN/opslag.
 

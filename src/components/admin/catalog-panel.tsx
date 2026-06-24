@@ -14,6 +14,8 @@ import {
   Truck,
   Check,
   AlertTriangle,
+  Pencil,
+  X,
 } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -197,6 +199,7 @@ function PrijzenTab({
   const [saving, setSaving] = useState(false);
   const [bulkMode, setBulkMode] = useState<"pct" | "amount" | "round95" | "kluspasPct">("pct");
   const [bulkVal, setBulkVal] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
 
   function search() {
     const p = new URLSearchParams();
@@ -271,6 +274,7 @@ function PrijzenTab({
   const dirty = Object.keys(edits).length;
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -335,8 +339,10 @@ function PrijzenTab({
       </CardHeader>
       <CardContent>
         <p className="mb-3 text-xs text-muted-foreground">
-          Prijzen per variant (incl. btw). Pas een percentage toe op alle resultaten of bewerk los.
-          Wijzigingen overschrijven de Tilroy-feedprijs.
+          Prijzen per variant (incl. btw) — in bulk of los. Met het{" "}
+          <Pencil className="inline h-3 w-3" />-potlood bewerk je de productgegevens (titel, merk,
+          categorie, beeld, EAN, omschrijving). Wijzigingen overschrijven de bron en gaan live bij
+          publiceren.
         </p>
         <div className="space-y-2">
           {rows.map((p) => (
@@ -354,6 +360,13 @@ function PrijzenTab({
                   </div>
                   <div className="text-xs text-muted-foreground">{p.category}</div>
                 </div>
+                <button
+                  onClick={() => setEditId(p.productId)}
+                  title="Productgegevens bewerken"
+                  className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
               </div>
               <div className="space-y-1">
                 {p.variants.map((v) => {
@@ -400,6 +413,19 @@ function PrijzenTab({
         </div>
       </CardContent>
     </Card>
+    {editId && (
+      <ProductEditModal
+        productId={editId}
+        categories={data?.categories ?? []}
+        onClose={() => setEditId(null)}
+        onSaved={(m) => {
+          onNotice(m);
+          setEditId(null);
+          search();
+        }}
+      />
+    )}
+    </>
   );
 }
 
@@ -692,6 +718,246 @@ function ImportTab({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/* ---------------------------------------------------- Productgegevens (master) */
+
+interface Detail {
+  productId: string;
+  title: string;
+  brand: string;
+  category: string;
+  subCategory: string;
+  gtin: string;
+  images: string[];
+  highlights: string[];
+  description: string;
+  override: Record<string, unknown> | null;
+}
+
+type EditForm = {
+  title: string;
+  brand: string;
+  category: string;
+  subCategory: string;
+  gtin: string;
+  images: string;
+  highlights: string;
+  description: string;
+};
+
+function ProductEditModal({
+  productId,
+  categories,
+  onClose,
+  onSaved,
+}: {
+  productId: string;
+  categories: { slug: string; title: string }[];
+  onClose: () => void;
+  onSaved: (m: string) => void;
+}) {
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [form, setForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/admin/catalog?productId=${encodeURIComponent(productId)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive || !d.detail) return;
+        const dt = d.detail as Detail;
+        setDetail(dt);
+        setForm({
+          title: dt.title ?? "",
+          brand: dt.brand ?? "",
+          category: dt.category ?? "",
+          subCategory: dt.subCategory ?? "",
+          gtin: dt.gtin ?? "",
+          images: (dt.images ?? []).join("\n"),
+          highlights: (dt.highlights ?? []).join("\n"),
+          description: dt.description ?? "",
+        });
+      })
+      .catch(() => alive && setErr("Laden mislukt."));
+    return () => {
+      alive = false;
+    };
+  }, [productId]);
+
+  const set = (k: keyof EditForm, v: string) => setForm((f) => (f ? { ...f, [k]: v } : f));
+  const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+
+  async function save() {
+    if (!form || !detail) return;
+    // Alleen gewijzigde velden meesturen, zodat de override minimaal blijft.
+    const patch: Record<string, unknown> = {};
+    if (form.title.trim() && form.title.trim() !== detail.title) patch.title = form.title.trim();
+    if (form.brand.trim() !== detail.brand) patch.brand = form.brand.trim();
+    if (form.category && form.category !== detail.category) patch.category = form.category;
+    if (form.subCategory.trim() !== detail.subCategory) patch.subCategory = form.subCategory.trim();
+    if (form.gtin.trim() !== detail.gtin) patch.gtin = form.gtin.trim();
+    if (form.description !== detail.description) patch.description = form.description.trim();
+    const imgs = lines(form.images);
+    if (imgs.join("\n") !== (detail.images ?? []).join("\n")) patch.images = imgs;
+    const hl = lines(form.highlights);
+    if (hl.join("\n") !== (detail.highlights ?? []).join("\n")) patch.highlights = hl;
+
+    if (!Object.keys(patch).length) {
+      onClose();
+      return;
+    }
+    setSaving(true);
+    setErr("");
+    try {
+      const r = await fetch("/api/admin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "override", products: { [productId]: patch } }),
+      });
+      if (!r.ok) {
+        setErr("Opslaan mislukt.");
+        return;
+      }
+      onSaved("Productgegevens opgeslagen. Publiceer om live te zetten.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function reset() {
+    setSaving(true);
+    try {
+      await fetch("/api/admin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clearOverride", kind: "product", id: productId }),
+      });
+      onSaved("Teruggezet naar de bron. Publiceer om live te zetten.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const hasMasterOverride = Boolean(
+    detail?.override &&
+      Object.keys(detail.override).some(
+        (k) => !["price", "kluspasPrice", "compareAtPrice"].includes(k),
+      ),
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-black">Productgegevens bewerken</h3>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded text-muted-foreground hover:bg-secondary"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {!form ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {err || "Laden…"}
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <Field label="Titel" value={form.title} onChange={(v) => set("title", v)} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Merk" value={form.brand} onChange={(v) => set("brand", v)} />
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Categorie
+                </span>
+                <select
+                  value={form.category}
+                  onChange={(e) => set("category", e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-secondary px-3 text-sm"
+                >
+                  {categories.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Field label="Subcategorie" value={form.subCategory} onChange={(v) => set("subCategory", v)} />
+              <Field label="EAN / barcode" value={form.gtin} onChange={(v) => set("gtin", v)} />
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Afbeeldingen (één URL per regel)
+              </span>
+              <textarea
+                value={form.images}
+                onChange={(e) => set("images", e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-border bg-secondary p-2 font-mono text-xs outline-none focus:border-primary focus:bg-white"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                USP&apos;s / kenmerken (één per regel)
+              </span>
+              <textarea
+                value={form.highlights}
+                onChange={(e) => set("highlights", e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-border bg-secondary p-2 text-sm outline-none focus:border-primary focus:bg-white"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Omschrijving
+              </span>
+              <textarea
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
+                rows={4}
+                placeholder="Leeg laten = automatisch gegenereerde omschrijving."
+                className="w-full rounded-lg border border-border bg-secondary p-2 text-sm outline-none focus:border-primary focus:bg-white"
+              />
+            </label>
+            {err && <p className="text-sm font-medium text-primary">{err}</p>}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {hasMasterOverride ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={reset}
+                  disabled={saving}
+                  className="text-muted-foreground"
+                >
+                  <RefreshCw className="h-4 w-4" /> Herstel naar bron
+                </Button>
+              ) : (
+                <span />
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>
+                  Annuleren
+                </Button>
+                <Button size="sm" onClick={save} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Opslaan
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

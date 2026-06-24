@@ -22,6 +22,31 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const url = new URL(req.url);
+
+  // Detail: volledige bewerkbare master-velden van één product (voor de editor).
+  const detailId = url.searchParams.get("productId");
+  if (detailId) {
+    const p = products.find((x) => x.id === detailId);
+    if (!p) return NextResponse.json({ error: "not found" }, { status: 404 });
+    const ov = (await getOverrides()).products?.[detailId] ?? null;
+    return NextResponse.json({
+      detail: {
+        productId: p.id,
+        title: p.title,
+        brand: p.brand,
+        category: p.category,
+        subCategory: p.subCategory ?? "",
+        gtin: p.gtin ?? "",
+        images: p.images ?? [],
+        highlights: p.highlights ?? [],
+        // Omschrijving: toon enkel de eigen override (de effectieve tekst is
+        // auto-verrijkt). Leeg = auto-gegenereerde omschrijving behouden.
+        description: ov?.description ?? "",
+        override: ov,
+      },
+    });
+  }
+
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   const brand = (url.searchParams.get("brand") ?? "").trim().toLowerCase();
   const category = (url.searchParams.get("category") ?? "").trim();
@@ -82,11 +107,23 @@ export async function GET(req: Request) {
 
 /* ---------------------------------------------------------------- POST */
 
-const overridePatch = z.object({
+const pricePatch = z.object({
   price: z.number().nonnegative().optional(),
   kluspasPrice: z.number().nonnegative().optional(),
   compareAtPrice: z.number().nonnegative().optional(),
   active: z.boolean().optional(),
+});
+
+// Productniveau: prijzen + bewerkbare master-velden (eigenaarschap los van de feed).
+const masterPatch = pricePatch.extend({
+  title: z.string().max(200).optional(),
+  brand: z.string().max(120).optional(),
+  description: z.string().max(4000).optional(),
+  category: z.string().max(80).optional(),
+  subCategory: z.string().max(80).optional(),
+  gtin: z.string().max(40).optional(),
+  images: z.array(z.string().max(600)).max(8).optional(),
+  highlights: z.array(z.string().max(200)).max(12).optional(),
 });
 
 const customInput = z.object({
@@ -108,8 +145,8 @@ const customInput = z.object({
 const bodySchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("override"),
-    products: z.record(z.string(), overridePatch).optional(),
-    variants: z.record(z.string(), overridePatch).optional(),
+    products: z.record(z.string(), masterPatch).optional(),
+    variants: z.record(z.string(), pricePatch).optional(),
   }),
   z.object({ action: z.literal("clearOverride"), kind: z.enum(["product", "variant"]), id: z.string() }),
   z.object({ action: z.literal("custom"), product: customInput }),
@@ -128,7 +165,13 @@ export async function POST(req: Request) {
   const data = parsed.data;
 
   if (data.action === "override") {
-    await mergeOverrides({ products: data.products ?? {}, variants: data.variants ?? {} });
+    const prods = data.products ?? {};
+    // Onbekende categorie-slug negeren (zou het product uit de navigatie halen).
+    const catSlugs = new Set(categories.map((c) => c.slug));
+    for (const o of Object.values(prods)) {
+      if (o.category && !catSlugs.has(o.category)) delete o.category;
+    }
+    await mergeOverrides({ products: prods, variants: data.variants ?? {} });
     return NextResponse.json({ ok: true });
   }
 

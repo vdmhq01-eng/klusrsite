@@ -16,6 +16,15 @@ export interface ProductOverride {
   compareAtPrice?: number;
   /** false = verbergen in de webshop. */
   active?: boolean;
+  // ---- master-velden (alleen productniveau) — eigenaarschap los van de feed ----
+  title?: string;
+  brand?: string;
+  description?: string;
+  category?: string;
+  subCategory?: string;
+  gtin?: string;
+  images?: string[];
+  highlights?: string[];
 }
 
 export interface CatalogOverrides {
@@ -25,6 +34,40 @@ export interface CatalogOverrides {
 
 const num = (v: unknown): number | undefined =>
   typeof v === "number" && isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : undefined;
+
+const text = (v: unknown): string | undefined =>
+  typeof v === "string" && v.trim() ? v.trim() : undefined;
+
+const list = (v: unknown): string[] | undefined => {
+  if (!Array.isArray(v)) return undefined;
+  const out = v.map((s) => (typeof s === "string" ? s.trim() : "")).filter(Boolean);
+  return out.length ? out : undefined;
+};
+
+/**
+ * Pas de bewerkbare master-velden toe (titel, merk, categorie, beeld, …). Leeg/
+ * ongeldig = ongemoeid laten (terugval op de bron). `subCategory` mag bewust
+ * gewist worden (lege string → geen subcategorie meer).
+ */
+function applyMaster(p: Product, o: ProductOverride): Product {
+  const next: Product = { ...p };
+  const title = text(o.title);
+  if (title) next.title = title;
+  const brand = text(o.brand);
+  if (brand) next.brand = brand;
+  const description = text(o.description);
+  if (description) next.description = description;
+  const category = text(o.category);
+  if (category) next.category = category;
+  if (o.subCategory !== undefined) next.subCategory = text(o.subCategory);
+  const gtin = text(o.gtin);
+  if (gtin) next.gtin = gtin;
+  const images = list(o.images);
+  if (images) next.images = images;
+  const highlights = list(o.highlights);
+  if (highlights) next.highlights = highlights;
+  return next;
+}
 
 function applyOverride<T extends { price: number; kluspasPrice: number; compareAtPrice?: number }>(
   item: T,
@@ -66,7 +109,8 @@ export function applyCatalogOverlay(
       next = { ...next, variants: next.variants.map((v) => applyOverride(v, vov[v.id])) };
     }
     if (po) {
-      next = applyOverride(next, po);
+      next = applyOverride(next, po); // prijzen
+      next = applyMaster(next, po); // titel/merk/categorie/beeld/…
     }
     merged.push(next);
   }
