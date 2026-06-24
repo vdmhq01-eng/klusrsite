@@ -3,6 +3,9 @@ import { stores } from "./stores";
 import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
 import priceOverrides from "./price-overrides.generated.json";
+import catalogOverridesData from "./catalog-overrides.generated.json";
+import customProductsData from "./custom-products.generated.json";
+import { applyCatalogOverlay, type CatalogOverrides } from "./catalog-overlay";
 import { onlineStock } from "@/lib/stock";
 
 /** Adviesprijs/normale prijs per sku uit de prijsfeed (scripts/build-price-feed.mjs). */
@@ -1090,9 +1093,11 @@ function enforceKluspasDiscount(p: Product): Product {
  * curated fallback set. Helpers below operate on this combined source. De
  * KLUSRPAS-prijs wordt centraal op een vaste 5% korting gezet.
  */
-export const products: Product[] = (
-  feedProducts.length ? feedProducts : curatedProducts
-).map(enforceKluspasDiscount);
+export const products: Product[] = applyCatalogOverlay(
+  (feedProducts.length ? feedProducts : curatedProducts).map(enforceKluspasDiscount),
+  catalogOverridesData as CatalogOverrides,
+  customProductsData as unknown as Product[],
+);
 
 /* ------------------------------------------------------------------ lookups */
 

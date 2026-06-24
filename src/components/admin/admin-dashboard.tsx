@@ -28,6 +28,7 @@ import {
   Globe,
   Calculator,
   Truck,
+  Tags,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ import { MollieTest } from "./mollie-test";
 import { SeoRankPanel } from "./seo-rank-panel";
 import { KassaPanel } from "./kassa-panel";
 import { InkoopPanel } from "./inkoop-panel";
+import { CatalogPanel } from "./catalog-panel";
 
 type SectionId =
   | "overzicht"
@@ -57,6 +59,7 @@ type SectionId =
   | "klanten"
   | "voorraad"
   | "inkoop"
+  | "catalogus"
   | "rapportages"
   | "inzichten"
   | "seo"
@@ -74,6 +77,7 @@ const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "voorraad", label: "Voorraad", icon: Boxes },
   { id: "inkoop", label: "Inkoop", icon: Truck },
+  { id: "catalogus", label: "Catalogus", icon: Tags },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "seo", label: "SEO-ranking", icon: TrendingUp },
   { id: "content", label: "AI-content", icon: Sparkles },
@@ -129,6 +133,7 @@ export function AdminDashboard() {
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {section === "voorraad" && <StockPanel />}
         {section === "inkoop" && <InkoopPanel />}
+        {section === "catalogus" && <CatalogPanel />}
         {(section === "rapportages" || section === "inzichten") && (
           <div className="space-y-8">
             <Insights />
