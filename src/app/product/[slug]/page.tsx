@@ -13,6 +13,8 @@ import { ArticleCard } from "@/components/content/article-card";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductBuybox } from "@/components/product/product-buybox";
+import { onlineStock } from "@/lib/stock";
+import { getSafetyStock } from "@/lib/store/settings";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
 import { AiProductAdvice } from "@/components/product/ai-product-advice";
@@ -88,7 +90,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
     { label: product.title },
   ];
 
-  const totalStock = product.stockByStore.reduce((s, x) => s + x.quantity, 0);
+  const safetyStock = await getSafetyStock();
+  const totalStock = onlineStock(product.stockByStore, safetyStock);
 
   // Prijsrange over alle maten: de Merchant-feed stuurt per maat de NORMALE prijs
   // (de 5% KLUSRPAS-korting is een ingelogd voordeel en hoort niet in de feed),
@@ -201,7 +204,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       {/* Main: gallery + buybox */}
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
         <ProductGallery images={product.images} title={product.title} badges={product.badges} />
-        <ProductBuybox product={product} glansVariants={glansVariants} />
+        <ProductBuybox product={product} glansVariants={glansVariants} safetyStock={safetyStock} />
       </div>
 
       {/* Tabs */}

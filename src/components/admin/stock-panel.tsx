@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Boxes, RefreshCw, AlertTriangle, PackageX, Search } from "lucide-react";
+import { Boxes, RefreshCw, AlertTriangle, PackageX, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -143,7 +143,9 @@ export function StockPanel() {
   };
 
   return (
-    <Card>
+    <div className="space-y-6">
+      <SafetyStockSetting />
+      <Card>
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -333,6 +335,109 @@ export function StockPanel() {
             </span>
           </div>
         )}
+      </CardContent>
+    </Card>
+    </div>
+  );
+}
+
+/**
+ * Instelbare veiligheidsvoorraad: onder dit aantal (voorraad hoofdvestiging
+ * Nijverdal) verkopen we een product niet meer online. Leest/schrijft via
+ * /api/admin/stock-settings.
+ */
+function SafetyStockSetting() {
+  const [value, setValue] = useState("");
+  const [saved, setSaved] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/stock-settings", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active && d && typeof d.safetyStock === "number") {
+          setSaved(d.safetyStock);
+          setValue(String(d.safetyStock));
+        }
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function save() {
+    const n = Math.max(0, Math.floor(Number(value) || 0));
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/stock-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ safetyStock: n }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d && typeof d.safetyStock === "number") {
+        setSaved(d.safetyStock);
+        setValue(String(d.safetyStock));
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ShieldCheck className="h-4 w-4 text-primary" /> Veiligheidsvoorraad
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Onder dit aantal (voorraad hoofdvestiging Nijverdal) verkopen we een product niet meer
+          online — het wordt dan als uitverkocht getoond.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save();
+          }}
+          className="flex flex-wrap items-end gap-3"
+        >
+          <div>
+            <label
+              htmlFor="safety-stock"
+              className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            >
+              Drempel (stuks)
+            </label>
+            <Input
+              id="safety-stock"
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className="w-28"
+              disabled={loading}
+            />
+          </div>
+          <Button type="submit" disabled={busy || loading}>
+            {busy ? "Opslaan…" : "Opslaan"}
+          </Button>
+          {saved !== null && !busy && (
+            <span className="text-sm text-muted-foreground">
+              Actief: <strong className="text-foreground">{saved}</strong> stuks
+            </span>
+          )}
+        </form>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Geldt direct op de productpagina&apos;s. De Google-feed gebruikt de waarde bij de
+          eerstvolgende build (env <code>SAFETY_STOCK</code>).
+        </p>
       </CardContent>
     </Card>
   );

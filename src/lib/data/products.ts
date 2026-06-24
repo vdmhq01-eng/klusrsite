@@ -3,6 +3,7 @@ import { stores } from "./stores";
 import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
 import priceOverrides from "./price-overrides.generated.json";
+import { onlineStock } from "@/lib/stock";
 
 /** Adviesprijs/normale prijs per sku uit de prijsfeed (scripts/build-price-feed.mjs). */
 const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: number }>;
@@ -1248,7 +1249,7 @@ export function getRelatedProducts(product: Product, limit = 4): Product[] {
 }
 
 function totalStock(p: Product): number {
-  return p.stockByStore.reduce((sum, s) => sum + s.quantity, 0);
+  return onlineStock(p.stockByStore);
 }
 
 const ACCESSORY_CATEGORIES = ["gereedschap", "afbouw-fijnbouw"];

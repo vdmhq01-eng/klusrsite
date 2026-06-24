@@ -371,7 +371,7 @@ export function OrdersPanel() {
                                         : ""}
                                     </p>
                                     <p className="text-muted-foreground">
-                                      EAN: {it.gtin || it.variantId || "—"}
+                                      Barcode: {it.gtin || it.variantId || "—"}
                                     </p>
                                   </div>
                                   <div className="shrink-0 text-right text-xs">

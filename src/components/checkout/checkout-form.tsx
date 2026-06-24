@@ -34,7 +34,7 @@ import {
   shippingFor,
   kluspasSavings,
 } from "@/lib/store/cart";
-import { usePricingMode } from "@/lib/store/pricing-mode";
+import { usePricingMode, type PricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
 import {
   SHIPPING_COUNTRIES,
@@ -49,10 +49,22 @@ import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
+/**
+ * Geldig btw-nummer? Strikt voor NL (NL123456789B01), soepeler voor overige
+ * EU-landen (2 letters + 8–12 alfanumeriek). Input is al genormaliseerd
+ * (uppercase, spaties/punten verwijderd).
+ */
+function isValidVat(v: string): boolean {
+  // NL strikt (NL123456789B01); overige EU-landen soepeler (2 letters + 8–12 alfanum.).
+  if (v.startsWith("NL")) return /^NL\d{9}B\d{2}$/.test(v);
+  return /^[A-Z]{2}[0-9A-Z]{8,12}$/.test(v);
+}
+
 // Het schema is een FACTORY zodat de validatieteksten vertaalbaar zijn: de
-// component bouwt het binnen een useMemo op met de actieve `t`. De vorm blijft
-// identiek aan voorheen, alleen de meldingen komen nu uit de berichtencatalogus.
-function makeSchema(t: ReturnType<typeof useT>) {
+// component bouwt het binnen een useMemo op met de actieve `t`. In zakelijke
+// modus zijn bedrijfsnaam, KVK- en btw-nummer VERPLICHT (met formaatcontrole);
+// particulier blijven die velden ongebruikt.
+function makeSchema(t: ReturnType<typeof useT>, mode: PricingMode) {
   return z
     .object({
       email: z.string().email(t("checkout.validation.email")),
@@ -65,7 +77,8 @@ function makeSchema(t: ReturnType<typeof useT>) {
       city: z.string().min(1, t("checkout.validation.required")),
       country: z.string().min(2).default("NL"),
       phone: z.string().optional(),
-      // Zakelijk (optioneel; alleen getoond/relevant in zakelijke modus).
+      // Zakelijk: in het schema basaal optioneel; in zakelijke modus dwingt de
+      // superRefine hieronder ze af als verplicht (+ formaatcontrole).
       companyName: z.string().optional(),
       cocNumber: z.string().optional(),
       vatNumber: z.string().optional(),
@@ -88,6 +101,45 @@ function makeSchema(t: ReturnType<typeof useT>) {
           code: z.ZodIssueCode.custom,
           message: t("checkout.validation.postalCodeNl"),
         });
+      }
+
+      // Zakelijk: bedrijfsnaam, KVK-nummer (8 cijfers) en btw-nummer verplicht.
+      if (mode === "zakelijk") {
+        if (!val.companyName || val.companyName.trim().length < 2) {
+          ctx.addIssue({
+            path: ["companyName"],
+            code: z.ZodIssueCode.custom,
+            message: t("checkout.validation.required"),
+          });
+        }
+        const coc = (val.cocNumber ?? "").replace(/\s/g, "");
+        if (!coc) {
+          ctx.addIssue({
+            path: ["cocNumber"],
+            code: z.ZodIssueCode.custom,
+            message: t("checkout.validation.required"),
+          });
+        } else if (!/^\d{8}$/.test(coc)) {
+          ctx.addIssue({
+            path: ["cocNumber"],
+            code: z.ZodIssueCode.custom,
+            message: t("checkout.validation.coc"),
+          });
+        }
+        const vat = (val.vatNumber ?? "").replace(/[\s.]/g, "").toUpperCase();
+        if (!vat) {
+          ctx.addIssue({
+            path: ["vatNumber"],
+            code: z.ZodIssueCode.custom,
+            message: t("checkout.validation.required"),
+          });
+        } else if (!isValidVat(vat)) {
+          ctx.addIssue({
+            path: ["vatNumber"],
+            code: z.ZodIssueCode.custom,
+            message: t("checkout.validation.vat"),
+          });
+        }
       }
     });
 }
@@ -255,7 +307,7 @@ export function CheckoutForm({
   }, [expressMode]);
 
   // Validatieschema met vertaalde meldingen — herbouwd zodra de taal wijzigt.
-  const schema = useMemo(() => makeSchema(t), [t]);
+  const schema = useMemo(() => makeSchema(t, mode), [t, mode]);
 
   const {
     register,
@@ -960,10 +1012,10 @@ export function CheckoutForm({
                   <Input placeholder={t("checkout.field.companyPlaceholder")} {...register("companyName")} />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label={t("checkout.field.coc")}>
+                  <Field label={t("checkout.field.coc")} error={errors.cocNumber?.message}>
                     <Input placeholder="12345678" {...register("cocNumber")} />
                   </Field>
-                  <Field label={t("checkout.field.vat")}>
+                  <Field label={t("checkout.field.vat")} error={errors.vatNumber?.message}>
                     <Input placeholder="NL000000000B00" {...register("vatNumber")} />
                   </Field>
                 </div>
