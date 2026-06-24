@@ -84,10 +84,15 @@ function nowStamp(): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-async function generateBarcode(type: string, range: string, serie?: string): Promise<string | null> {
+async function generateBarcode(
+  type: string,
+  range: string,
+  serie?: string,
+  customerCode: string = CUSTOMER_CODE!,
+): Promise<string | null> {
   try {
     const params = new URLSearchParams({
-      CustomerCode: CUSTOMER_CODE!,
+      CustomerCode: customerCode,
       CustomerNumber: CUSTOMER_NUMBER!,
       Type: type,
       Range: range,
@@ -137,10 +142,11 @@ export async function createLabel(
     // Barcodetype/-range volgt de bestemming (zie env-uitleg bovenaan).
     const barcodeType = isDomestic ? BARCODE_TYPE_NL : BARCODE_TYPE_INTL;
     const barcodeSerie = isDomestic ? BARCODE_SERIE : BARCODE_SERIE_INTL;
-    const barcodeRange = (isDomestic ? CUSTOMER_CODE : GLOBALPACK_RANGE || CUSTOMER_CODE)!;
+    // GlobalPack gebruikt vaak een aparte klantcode (als Range én CustomerCode).
+    const barcodeCustomer = (isDomestic ? CUSTOMER_CODE : GLOBALPACK_RANGE || CUSTOMER_CODE)!;
     const barcode =
-      (await generateBarcode(barcodeType, barcodeRange, barcodeSerie)) ||
-      `${barcodeType}${barcodeRange}${Date.now()}`;
+      (await generateBarcode(barcodeType, barcodeCustomer, barcodeSerie, barcodeCustomer)) ||
+      `${barcodeType}${barcodeCustomer}${Date.now()}`;
 
     const body = {
       Customer: {
