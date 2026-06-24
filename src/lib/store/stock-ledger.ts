@@ -36,7 +36,7 @@ const memMoves: StockMovement[] = [];
 const memClaimed = new Set<string>();
 
 /** Soort voorraadmutatie. */
-export type StockMoveKind = "sale" | "receive" | "adjust";
+export type StockMoveKind = "sale" | "receive" | "adjust" | "count";
 
 export interface StockMovement {
   orderId: string;

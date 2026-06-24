@@ -23,11 +23,17 @@ De gecommitte snapshot `src/lib/data/feed-products.generated.json` is nu de
       EAN, afbeeldingen, USP's en omschrijving van álle (ook geïmporteerde)
       producten zijn nu bewerkbaar via de overlay (potlood in de catalogus-lijst),
       met "herstel naar bron". De `tilroy-…`-ids blijven de stabiele sleutel.
-- [ ] Zichtbaarheid (uit de schappen halen / weer tonen) in dezelfde editor —
-      vereist een admin-lijst die ook verborgen producten toont (nu filtert de
-      overlay verborgen producten eruit).
-- [ ] Eenmalige **fysieke telling** per vestiging als nieuwe openingsbalans
-      seeden in het grootboek (i.p.v. de uit de feed gesynthetiseerde stand).
+- [x] **Telling (stocktake)** in `/admin` → Voorraad: tel de fysieke voorraad per
+      variant, het verschil met het grootboek wordt vastgelegd (kind "count"). De
+      getelde stand is daarmee de waarheid i.p.v. de uit de feed gesynthetiseerde
+      stand; web- en kassaverkopen tellen er overheen. De admin-voorraadlijst toont
+      nu de live grootboekstand (met de feed-stand als referentie).
+- [ ] **Per-vestiging** tellen/voorraad — vergt een per-winkel grootboek (nu is de
+      stand één gedeelde pool per variant; de telling zet de totale live-stand).
+- [ ] **Storefront-availability** op het grootboek i.p.v. de feed-stand: de
+      webshop is statisch/ISR en leest nu de feed-basis; live-stand erin wringen
+      vergt een client-side live-stockfetch of een stock-overlay bij publiceren.
+- [ ] Zichtbaarheid (uit de schappen halen / weer tonen) in de productmaster-editor.
 - [ ] **Foto-hosting** verzelfstandigen: beelden staan nu op
       `channableusercontent`/S3 (Tilroy-keten) → naar eigen CDN/opslag.
 
