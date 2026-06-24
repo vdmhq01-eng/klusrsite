@@ -195,7 +195,8 @@ function PrijzenTab({
   const [category, setCategory] = useState("");
   const [edits, setEdits] = useState<Edits>({});
   const [saving, setSaving] = useState(false);
-  const [pct, setPct] = useState("");
+  const [bulkMode, setBulkMode] = useState<"pct" | "amount" | "round95" | "kluspasPct">("pct");
+  const [bulkVal, setBulkVal] = useState("");
 
   function search() {
     const p = new URLSearchParams();
@@ -210,21 +211,34 @@ function PrijzenTab({
   const setEdit = (vid: string, field: "price" | "kluspasPrice", value: string) =>
     setEdits((e) => ({ ...e, [vid]: { ...e[vid], [field]: value } }));
 
-  function applyPct() {
-    const f = Number(pct.replace(",", "."));
-    if (!f) return;
-    const factor = 1 + f / 100;
+  function applyBulk() {
+    const v = Number(bulkVal.replace(",", "."));
+    if (bulkMode !== "round95" && !v) return;
+    const round95 = (n: number) => Math.max(0.95, Math.floor(n) + 0.95);
     const next: Edits = { ...edits };
     for (const p of rows) {
-      for (const v of p.variants) {
-        next[v.id] = {
-          price: String(r2(v.price * factor)),
-          kluspasPrice: String(r2(v.kluspasPrice * factor)),
-        };
+      for (const vr of p.variants) {
+        const cur = next[vr.id];
+        const basePrice = cur?.price != null && cur.price !== "" ? Number(cur.price) : vr.price;
+        const baseKp = cur?.kluspasPrice != null && cur.kluspasPrice !== "" ? Number(cur.kluspasPrice) : vr.kluspasPrice;
+        if (bulkMode === "pct") {
+          const f = 1 + v / 100;
+          next[vr.id] = { price: String(r2(basePrice * f)), kluspasPrice: String(r2(baseKp * f)) };
+        } else if (bulkMode === "amount") {
+          next[vr.id] = {
+            price: String(r2(Math.max(0, basePrice + v))),
+            kluspasPrice: String(r2(Math.max(0, baseKp + v))),
+          };
+        } else if (bulkMode === "round95") {
+          next[vr.id] = { price: String(round95(basePrice)), kluspasPrice: String(round95(baseKp)) };
+        } else {
+          // KLUSRPAS-korting: pasprijs = prijs − v% (prijs blijft).
+          next[vr.id] = { ...cur, kluspasPrice: String(r2(basePrice * (1 - v / 100))) };
+        }
       }
     }
     setEdits(next);
-    onNotice(`${f > 0 ? "+" : ""}${f}% toegepast op ${rows.length} producten — controleer en sla op.`);
+    onNotice(`Bulk toegepast op ${rows.length} producten — controleer en sla op.`);
   }
 
   async function save() {
@@ -287,16 +301,28 @@ function PrijzenTab({
               <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /> Zoek
             </Button>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             <div className="flex items-center gap-1">
-              <Input
-                value={pct}
-                onChange={(e) => setPct(e.target.value)}
-                placeholder="±%"
-                className="w-20 text-center"
-                inputMode="decimal"
-              />
-              <Button variant="outline" size="sm" onClick={applyPct}>
+              <select
+                value={bulkMode}
+                onChange={(e) => setBulkMode(e.target.value as typeof bulkMode)}
+                className="h-9 rounded-lg border border-border bg-secondary px-2 text-sm"
+              >
+                <option value="pct">± %</option>
+                <option value="amount">± € bedrag</option>
+                <option value="round95">Afronden op ,95</option>
+                <option value="kluspasPct">KLUSRPAS-korting %</option>
+              </select>
+              {bulkMode !== "round95" && (
+                <Input
+                  value={bulkVal}
+                  onChange={(e) => setBulkVal(e.target.value)}
+                  placeholder={bulkMode === "amount" ? "±€" : "%"}
+                  className="w-20 text-center"
+                  inputMode="decimal"
+                />
+              )}
+              <Button variant="outline" size="sm" onClick={applyBulk}>
                 Toepassen
               </Button>
             </div>
