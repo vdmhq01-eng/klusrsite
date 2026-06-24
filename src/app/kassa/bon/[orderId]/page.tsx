@@ -65,6 +65,7 @@ export default async function BonPage({
           <span>{r.dateTime}</span>
         </div>
         {r.cashier && <div>Kassa: {r.cashier}</div>}
+        {r.customerLine && <div>{r.customerLine}</div>}
 
         <div className="my-2 border-t border-dashed border-black/40" />
 

@@ -19,9 +19,37 @@ import {
   PackageX,
   Receipt,
   AlertTriangle,
+  User,
+  UserPlus,
+  Building2,
+  Star,
 } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
 import { posLinePrice, posTotals, changeFor, type PosCustomerMode } from "@/lib/pos";
+
+interface PosCustomer {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  company?: string;
+  cocNumber?: string;
+  vatNumber?: string;
+  account: boolean;
+  business: boolean;
+  orderCount: number;
+  lastOrderAt?: string;
+}
+
+/** Prijsmodus die bij het lidmaatschap van een klant past. */
+function membershipMode(c: { account?: boolean; business?: boolean }): PosCustomerMode {
+  if (c.business) return "zakelijk";
+  if (c.account) return "kluspas";
+  return "particulier";
+}
+
+const fullName = (c: { firstName: string; lastName: string; email: string }) =>
+  [c.firstName, c.lastName].filter(Boolean).join(" ").trim() || c.email;
 
 interface VariantHit {
   id: string;
@@ -87,8 +115,20 @@ export function PosTerminal({
 
   const [payOpen, setPayOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [customer, setCustomer] = useState<PosCustomer | null>(null);
+  const [custOpen, setCustOpen] = useState(false);
 
   const scanRef = useRef<HTMLInputElement>(null);
+
+  // Klant koppelen → prijsmodus volgt automatisch het lidmaatschap (overschrijfbaar).
+  function selectCustomer(c: PosCustomer | null) {
+    setCustomer(c);
+    if (c) {
+      setMode(membershipMode(c));
+      setNotice(`Klant: ${fullName(c)}`);
+    }
+    setCustOpen(false);
+  }
 
   useEffect(() => {
     scanRef.current?.focus();
@@ -202,6 +242,8 @@ export function PosTerminal({
     setQuery("");
     setResults([]);
     setExpanded(null);
+    setCustomer(null);
+    setMode("particulier");
     scanRef.current?.focus();
   }
 
@@ -221,26 +263,50 @@ export function PosTerminal({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 rounded-lg bg-secondary p-1">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                mode === m.id ? "bg-klusr-black text-white" : "text-muted-foreground hover:bg-white",
-              )}
-            >
-              {m.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCustOpen(true)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+              customer
+                ? "border-primary bg-primary/5 text-primary"
+                : "border-border text-muted-foreground hover:bg-secondary",
+            )}
+          >
+            {customer ? <User className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+            <span className="max-w-[150px] truncate">
+              {customer ? fullName(customer) : "Klant"}
+            </span>
+            {customer?.business ? (
+              <Building2 className="h-3.5 w-3.5" />
+            ) : customer?.account ? (
+              <Star className="h-3.5 w-3.5" />
+            ) : null}
+          </button>
+
+          <div className="hidden items-center gap-1.5 rounded-lg bg-secondary p-1 sm:flex">
+            {MODES.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setMode(m.id)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                  mode === m.id
+                    ? "bg-klusr-black text-white"
+                    : "text-muted-foreground hover:bg-white",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <a
+            href="/admin"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+          >
+            <X className="h-4 w-4" /> Sluiten
+          </a>
         </div>
-        <a
-          href="/admin"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary"
-        >
-          <X className="h-4 w-4" /> Sluiten
-        </a>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_400px]">
@@ -427,6 +493,7 @@ export function PosTerminal({
           mode={mode}
           storeId={storeId}
           cashier={cashier}
+          customer={customer}
           terminalConfigured={terminalConfigured}
           printAgentUrl={printAgentUrl}
           lines={cart.map((l) => ({
@@ -440,6 +507,15 @@ export function PosTerminal({
             setPayOpen(false);
             reset();
           }}
+        />
+      )}
+
+      {custOpen && (
+        <CustomerSheet
+          current={customer}
+          onClose={() => setCustOpen(false)}
+          onSelect={selectCustomer}
+          onClear={() => selectCustomer(null)}
         />
       )}
     </div>
@@ -546,6 +622,7 @@ function PaymentSheet({
   mode,
   storeId,
   cashier,
+  customer,
   terminalConfigured,
   printAgentUrl,
   lines,
@@ -556,6 +633,7 @@ function PaymentSheet({
   mode: PosCustomerMode;
   storeId: string;
   cashier?: string;
+  customer: PosCustomer | null;
   terminalConfigured: boolean;
   printAgentUrl: string;
   lines: CheckoutLine[];
@@ -643,6 +721,19 @@ function PaymentSheet({
           storeId,
           cashier,
           ...(method === "cash" ? { cashGiven: cashNum } : {}),
+          ...(customer
+            ? {
+                customer: {
+                  email: customer.email,
+                  firstName: customer.firstName,
+                  lastName: customer.lastName,
+                  phone: customer.phone,
+                  company: customer.company,
+                  cocNumber: customer.cocNumber,
+                  vatNumber: customer.vatNumber,
+                },
+              }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -914,5 +1005,318 @@ function MethodTile({
       {icon}
       {label}
     </button>
+  );
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function CustomerSheet({
+  current,
+  onClose,
+  onSelect,
+  onClear,
+}: {
+  current: PosCustomer | null;
+  onClose: () => void;
+  onSelect: (c: PosCustomer) => void;
+  onClear: () => void;
+}) {
+  const [tab, setTab] = useState<"zoek" | "nieuw">("zoek");
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<PosCustomer[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    company: "",
+    cocNumber: "",
+    vatNumber: "",
+  });
+  const [business, setBusiness] = useState(false);
+  const [createAccount, setCreateAccount] = useState(true);
+  const [sendInvite, setSendInvite] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const s = q.trim();
+    if (s.length < 2) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/kassa/customer?q=${encodeURIComponent(s)}`, {
+          cache: "no-store",
+        });
+        const d = await r.json();
+        setResults(d.customers ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function saveNew() {
+    setError("");
+    if (!EMAIL_RE.test(form.email.trim())) {
+      setError("Vul een geldig e-mailadres in.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/kassa/customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email.trim(),
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          phone: form.phone.trim() || undefined,
+          company: business ? form.company.trim() || undefined : undefined,
+          cocNumber: business ? form.cocNumber.trim() || undefined : undefined,
+          vatNumber: business ? form.vatNumber.trim() || undefined : undefined,
+          createAccount,
+          sendInvite,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setError(d.error || "Opslaan mislukt.");
+        return;
+      }
+      onSelect(d.customer as PosCustomer);
+    } catch {
+      setError("Netwerkfout.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 sm:items-center">
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <User className="h-5 w-5" /> Klant koppelen
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {current && (
+          <div className="flex items-center justify-between gap-2 border-b border-border bg-secondary/50 px-4 py-2.5">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold">{fullName(current)}</span>
+              <MembershipBadge c={current} />
+            </div>
+            <button
+              onClick={onClear}
+              className="text-xs font-semibold text-muted-foreground hover:text-primary"
+            >
+              Loskoppelen
+            </button>
+          </div>
+        )}
+
+        <div className="flex gap-1 border-b border-border px-4 pt-3">
+          {(["zoek", "nieuw"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-t-lg px-3 py-2 text-sm font-semibold",
+                tab === t ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/60",
+              )}
+            >
+              {t === "zoek" ? "Zoeken" : "Nieuwe klant"}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {tab === "zoek" ? (
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Zoek op naam, e-mail of telefoon…"
+                  className="h-11 w-full rounded-xl border border-border bg-secondary pl-10 pr-4 text-sm outline-none focus:border-primary focus:bg-white"
+                />
+                {loading && (
+                  <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              {q.trim().length < 2 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Typ minimaal 2 tekens om te zoeken.
+                </p>
+              ) : results.length === 0 && !loading ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Geen klant gevonden. Maak een nieuwe klant aan.
+                </p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {results.map((c) => (
+                    <li key={c.email}>
+                      <button
+                        onClick={() => onSelect(c)}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border border-border p-2.5 text-left hover:border-primary hover:bg-primary/5"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 truncate text-sm font-semibold">
+                            {fullName(c)} <MembershipBadge c={c} />
+                          </div>
+                          <div className="truncate text-xs text-muted-foreground">{c.email}</div>
+                        </div>
+                        {c.orderCount > 0 && (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {c.orderCount}×
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Voornaam" value={form.firstName} onChange={(v) => set("firstName", v)} />
+                <Field label="Achternaam" value={form.lastName} onChange={(v) => set("lastName", v)} />
+              </div>
+              <Field
+                label="E-mailadres"
+                value={form.email}
+                onChange={(v) => set("email", v)}
+                type="email"
+                placeholder="klant@voorbeeld.nl"
+              />
+              <Field label="Telefoon" value={form.phone} onChange={(v) => set("phone", v)} />
+
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={business}
+                  onChange={(e) => setBusiness(e.target.checked)}
+                  className="h-4 w-4 accent-klusr-black"
+                />
+                <Building2 className="h-4 w-4" /> Zakelijk (ProfPas)
+              </label>
+              {business && (
+                <div className="space-y-2 rounded-lg border border-border p-2.5">
+                  <Field label="Bedrijfsnaam" value={form.company} onChange={(v) => set("company", v)} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="KVK" value={form.cocNumber} onChange={(v) => set("cocNumber", v)} />
+                    <Field label="BTW-nummer" value={form.vatNumber} onChange={(v) => set("vatNumber", v)} />
+                  </div>
+                </div>
+              )}
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={createAccount}
+                  onChange={(e) => setCreateAccount(e.target.checked)}
+                  className="h-4 w-4 accent-klusr-black"
+                />
+                <Star className="h-4 w-4" /> KLUSRPAS-account aanmaken
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={sendInvite}
+                  onChange={(e) => setSendInvite(e.target.checked)}
+                  className="h-4 w-4 accent-klusr-black"
+                />
+                Inlog-link e-mailen
+              </label>
+
+              {error && <p className="text-sm font-medium text-primary">{error}</p>}
+            </div>
+          )}
+        </div>
+
+        {tab === "nieuw" && (
+          <div className="border-t border-border p-4">
+            <button
+              onClick={saveNew}
+              disabled={saving}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-black text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  <UserPlus className="h-5 w-5" /> Klant opslaan &amp; koppelen
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MembershipBadge({ c }: { c: { account?: boolean; business?: boolean } }) {
+  if (c.business)
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-klusr-black px-1.5 py-0.5 text-[10px] font-bold text-white">
+        <Building2 className="h-2.5 w-2.5" /> ProfPas
+      </span>
+    );
+  if (c.account)
+    return (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+        <Star className="h-2.5 w-2.5" /> KLUSRPAS
+      </span>
+    );
+  return null;
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-full rounded-lg border border-border bg-secondary px-3 text-sm outline-none focus:border-primary focus:bg-white"
+      />
+    </label>
   );
 }

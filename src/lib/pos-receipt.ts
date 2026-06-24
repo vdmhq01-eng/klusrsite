@@ -59,12 +59,24 @@ export function receiptDataForOrder(order: Order): ReceiptData {
   const method = order.pos?.method ?? "manual";
   const savings = order.kluspasSavings > 0 ? order.kluspasSavings : 0;
 
+  // Klantregel + lidmaatschap (alleen bij een echte, gekoppelde klant — niet bij
+  // de anonieme toonbankverkoop).
+  const c = order.customer;
+  const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ").trim();
+  const isAnon = !c.email && (c.firstName === "Toonbank" || !fullName);
+  const membership = c.company || c.vatNumber ? "ProfPas" : c.email ? "KLUSRPAS" : "";
+  const customerLine =
+    !isAnon && fullName
+      ? `Klant: ${fullName}${membership ? ` · ${membership}` : ""}`
+      : undefined;
+
   return {
     storeName: order.pos?.storeId ? getStoreName(order.pos.storeId) || "KLUSR" : "KLUSR",
     addressLines: storeAddressLines(),
     reference: order.reference,
     dateTime,
     cashier: order.pos?.cashier,
+    customerLine,
     lines,
     subtotal: formatPrice(totals.total),
     vat: formatPrice(totals.vat),

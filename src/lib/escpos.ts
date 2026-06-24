@@ -74,6 +74,8 @@ export interface ReceiptData {
   reference: string;
   dateTime: string;
   cashier?: string;
+  /** Klant + lidmaatschap, bv. "Klant: Jan Bakker · KLUSRPAS". */
+  customerLine?: string;
   lines: ReceiptLine[];
   subtotal: string;
   vat: string;
@@ -130,6 +132,10 @@ export function buildReceiptEscPos(
   nl();
   if (data.cashier) {
     text(`Kassa: ${data.cashier}`);
+    nl();
+  }
+  if (data.customerLine) {
+    text(data.customerLine.slice(0, width));
     nl();
   }
   rule();

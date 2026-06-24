@@ -8,6 +8,7 @@ import { createOrder, setMolliePaymentId, updateOrderStatus } from "@/lib/store/
 import { createTerminalPayment } from "@/lib/payments";
 import { recordOrderSale } from "@/lib/store/stock-ledger";
 import { receiptDataForOrder } from "@/lib/pos-receipt";
+import { persistOrderCustomer } from "@/lib/pos-customer";
 import { PRIMARY_STORE_ID } from "@/lib/stock";
 
 export const runtime = "nodejs";
@@ -35,6 +36,11 @@ const bodySchema = z.object({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       phone: z.string().optional(),
+      company: z.string().optional(),
+      cocNumber: z.string().optional(),
+      vatNumber: z.string().optional(),
+      /** Maak/koppel een KLUSRPAS-account aan deze klant. */
+      createAccount: z.boolean().optional(),
     })
     .optional(),
 });
@@ -91,16 +97,21 @@ export async function POST(req: Request) {
   const isCash = data.method === "cash";
   const change = isCash ? changeFor(totals.total, data.cashGiven ?? 0) : undefined;
 
-  // 2. Klant (optioneel) — anders een nette toonbank-pseudoklant.
+  // 2. Klant (optioneel) — anders een nette toonbank-pseudoklant. Zakelijke
+  //    velden (bedrijf/KVK/btw) worden meegenomen → ProfPas + klanthistorie.
+  const cust = data.customer;
   const customer: OrderCustomer = {
-    email: (data.customer?.email ?? "").trim(),
-    firstName: data.customer?.firstName?.trim() || "Toonbank",
-    lastName: data.customer?.lastName?.trim() || "verkoop",
+    email: (cust?.email ?? "").trim(),
+    firstName: cust?.firstName?.trim() || "Toonbank",
+    lastName: cust?.lastName?.trim() || "verkoop",
     street: "",
     postalCode: "",
     city: "",
     country: "NL",
-    ...(data.customer?.phone?.trim() ? { phone: data.customer.phone.trim() } : {}),
+    ...(cust?.phone?.trim() ? { phone: cust.phone.trim() } : {}),
+    ...(cust?.company?.trim() ? { company: cust.company.trim() } : {}),
+    ...(cust?.cocNumber?.trim() ? { cocNumber: cust.cocNumber.trim() } : {}),
+    ...(cust?.vatNumber?.trim() ? { vatNumber: cust.vatNumber.trim() } : {}),
   };
 
   const storeId = data.storeId?.trim() || PRIMARY_STORE_ID;
@@ -122,6 +133,12 @@ export async function POST(req: Request) {
       ...(isCash ? { cashGiven: data.cashGiven ?? 0, change: change ?? 0 } : {}),
     },
   });
+
+  // Klant vastleggen (profiel + evt. KLUSRPAS-account) zodat de winkelaankoop in
+  // dezelfde klanthistorie/het account belandt als de webshop. Best-effort.
+  if (customer.email) {
+    void persistOrderCustomer(customer, cust?.createAccount).catch(() => {});
+  }
 
   // 4. Betaling afhandelen.
   if (data.method === "terminal") {
