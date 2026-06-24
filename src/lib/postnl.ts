@@ -29,6 +29,13 @@ const SENDER_CITY = process.env.POSTNL_SENDER_CITY || "";
 const SENDER_COUNTRY = process.env.POSTNL_SENDER_COUNTRY || "NL";
 const API_BASE = (process.env.POSTNL_API_BASE || "https://api.postnl.nl").replace(/\/$/, "");
 
+// Productcodes verschillen per PostNL-contract → overschrijfbaar via env. Een
+// binnenlandse code naar het buitenland geeft PostNL-fout 1900501 ("Countries in
+// receiver and sender address not allowed together for this product").
+const PRODUCT_NL = process.env.POSTNL_PRODUCT_CODE_NL || "3085"; // Pakket binnenland
+const PRODUCT_NL_BRIEVENBUS = process.env.POSTNL_PRODUCT_CODE_BRIEVENBUS || "2928"; // Brievenbuspakje (NL)
+const PRODUCT_EU = process.env.POSTNL_PRODUCT_CODE_EU || "4945"; // Pakket EU (incl. België)
+
 export function isPostNLConfigured(): boolean {
   return Boolean(API_KEY && CUSTOMER_CODE && CUSTOMER_NUMBER);
 }
@@ -52,9 +59,10 @@ function splitStreet(street = ""): { street: string; houseNr: string; houseNrExt
   return { street: m[1].trim(), houseNr: m[2], houseNrExt: m[3]?.trim() || undefined };
 }
 
-function trackTraceUrl(barcode: string, postalCode: string): string {
+function trackTraceUrl(barcode: string, postalCode: string, country = "NL"): string {
   const zip = postalCode.replace(/\s/g, "").toUpperCase();
-  return `https://postnl.nl/tracktrace/?B=${encodeURIComponent(barcode)}&P=${encodeURIComponent(zip)}&D=NL&T=C`;
+  const dest = (country || "NL").toUpperCase().slice(0, 2);
+  return `https://postnl.nl/tracktrace/?B=${encodeURIComponent(barcode)}&P=${encodeURIComponent(zip)}&D=${encodeURIComponent(dest)}&T=C`;
 }
 
 function nowStamp(): string {
@@ -98,7 +106,7 @@ export async function createLabel(
       demo: true,
       status: 0,
       barcode: demoBarcode,
-      trackTrace: trackTraceUrl(demoBarcode, c.postalCode),
+      trackTrace: trackTraceUrl(demoBarcode, c.postalCode, c.country),
       message: "PostNL niet geconfigureerd — demo-label aangemaakt (geen echte verzending).",
     };
   }
@@ -106,6 +114,14 @@ export async function createLabel(
   try {
     const barcode = (await generateBarcode()) || `3S${CUSTOMER_CODE}${Date.now()}`;
     const { street, houseNr, houseNrExt } = splitStreet(c.street);
+    const receiverCountry = (c.country || "NL").toUpperCase().slice(0, 2);
+    // Binnenland (NL) → pakket/brievenbus; buitenland (België e.d.) → EU-pakket.
+    const productCode =
+      receiverCountry === "NL"
+        ? opts?.brievenbus
+          ? PRODUCT_NL_BRIEVENBUS
+          : PRODUCT_NL
+        : PRODUCT_EU;
 
     const body = {
       Customer: {
@@ -132,7 +148,7 @@ export async function createLabel(
               ...(houseNrExt ? { HouseNrExt: houseNrExt } : {}),
               Zipcode: c.postalCode.replace(/\s/g, "").toUpperCase(),
               City: c.city,
-              Countrycode: (c.country || "NL").toUpperCase().slice(0, 2),
+              Countrycode: receiverCountry,
             },
             {
               AddressType: "02",
@@ -148,7 +164,7 @@ export async function createLabel(
           ],
           Barcode: barcode,
           Dimension: { Weight: "2000" },
-          ProductCodeDelivery: opts?.brievenbus ? "2928" : "3085",
+          ProductCodeDelivery: productCode,
           Reference: order.reference,
         },
       ],
@@ -181,7 +197,7 @@ export async function createLabel(
       configured: true,
       status: res.status,
       barcode: finalBarcode,
-      trackTrace: trackTraceUrl(finalBarcode, c.postalCode),
+      trackTrace: trackTraceUrl(finalBarcode, c.postalCode, receiverCountry),
       labelBase64: shp?.Labels?.[0]?.Content,
       message: `Verzendlabel aangemaakt (barcode ${finalBarcode}).`,
     };
