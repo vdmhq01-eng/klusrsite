@@ -117,6 +117,9 @@ export function PosTerminal({
   const [notice, setNotice] = useState<string | null>(null);
   const [customer, setCustomer] = useState<PosCustomer | null>(null);
   const [custOpen, setCustOpen] = useState(false);
+  // Klant-koppelen wordt vóór afrekenen gevraagd (custGate): "Afrekenen" opent
+  // eerst het klantpaneel, met een expliciete "verder zonder klant"-uitweg.
+  const [custGate, setCustGate] = useState(false);
 
   const scanRef = useRef<HTMLInputElement>(null);
 
@@ -128,6 +131,23 @@ export function PosTerminal({
       setNotice(`Klant: ${fullName(c)}`);
     }
     setCustOpen(false);
+    // Kwam dit uit de afreken-gate? Dan direct door naar betalen.
+    if (c && custGate) {
+      setCustGate(false);
+      setPayOpen(true);
+    }
+  }
+
+  // Afrekenen: vraag eerst om een klant (tenzij er al één hangt). De medewerker
+  // kan in dat paneel een klant koppelen/aanmaken óf bewust zonder verder.
+  function startCheckout() {
+    if (cart.length === 0) return;
+    if (customer) {
+      setPayOpen(true);
+      return;
+    }
+    setCustGate(true);
+    setCustOpen(true);
   }
 
   useEffect(() => {
@@ -472,7 +492,7 @@ export function PosTerminal({
             </div>
             <button
               disabled={cart.length === 0}
-              onClick={() => setPayOpen(true)}
+              onClick={startCheckout}
               className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-lg font-black text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               Afrekenen · {formatPrice(totals.total)}
@@ -513,9 +533,18 @@ export function PosTerminal({
       {custOpen && (
         <CustomerSheet
           current={customer}
-          onClose={() => setCustOpen(false)}
+          gateMode={custGate}
+          onClose={() => {
+            setCustOpen(false);
+            setCustGate(false);
+          }}
           onSelect={selectCustomer}
           onClear={() => selectCustomer(null)}
+          onSkip={() => {
+            setCustOpen(false);
+            setCustGate(false);
+            setPayOpen(true);
+          }}
         />
       )}
     </div>
@@ -1012,14 +1041,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function CustomerSheet({
   current,
+  gateMode,
   onClose,
   onSelect,
   onClear,
+  onSkip,
 }: {
   current: PosCustomer | null;
+  gateMode?: boolean;
   onClose: () => void;
   onSelect: (c: PosCustomer) => void;
   onClear: () => void;
+  onSkip?: () => void;
 }) {
   const [tab, setTab] = useState<"zoek" | "nieuw">("zoek");
   const [q, setQ] = useState("");
@@ -1107,7 +1140,7 @@ function CustomerSheet({
       <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-bold">
-            <User className="h-5 w-5" /> Klant koppelen
+            <User className="h-5 w-5" /> {gateMode ? "Klant koppelen vóór afrekenen" : "Klant koppelen"}
           </div>
           <button
             onClick={onClose}
@@ -1116,6 +1149,20 @@ function CustomerSheet({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {gateMode && (
+          <div className="flex items-center justify-between gap-2 border-b border-border bg-klusr-action/10 px-4 py-2.5 text-sm">
+            <span className="font-medium">Koppel een klant of ga verder zonder.</span>
+            {onSkip && (
+              <button
+                onClick={onSkip}
+                className="shrink-0 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
+              >
+                Verder zonder klant →
+              </button>
+            )}
+          </div>
+        )}
 
         {current && (
           <div className="flex items-center justify-between gap-2 border-b border-border bg-secondary/50 px-4 py-2.5">
