@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/store/orders";
 import { flagshipStore } from "@/lib/data/stores";
 import { InvoicePrintButton } from "@/components/checkout/invoice-print-button";
+import { Barcode } from "@/components/shared/barcode";
 
 export const metadata: Metadata = {
   title: "Pakbon | KLUSR",
@@ -150,8 +151,19 @@ export default async function PakbonPage({ params }: { params: { orderId: string
                     </span>
                   ) : null}
                 </td>
-                <td className="py-2.5 text-right font-mono text-xs text-black">
-                  {it.gtin?.trim() || String(it.productId).replace(/^tilroy-/, "")}
+                <td className="py-2.5 text-right">
+                  {(() => {
+                    const code =
+                      it.gtin?.trim() || String(it.productId).replace(/^tilroy-/, "");
+                    return (
+                      <span className="inline-flex flex-col items-end">
+                        <Barcode value={code} />
+                        <span className="mt-0.5 font-mono text-[10px] tracking-wider text-black">
+                          {code}
+                        </span>
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="py-2.5 text-center text-base font-black">{it.quantity}</td>
               </tr>
