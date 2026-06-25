@@ -67,9 +67,20 @@ export interface LabelResult {
 }
 
 function splitStreet(street = ""): { street: string; houseNr: string; houseNrExt?: string } {
-  const m = street.trim().match(/^(.*?)\s+(\d+)\s*([a-zA-Z][\w-]*)?$/);
-  if (!m) return { street: street.trim(), houseNr: "" };
-  return { street: m[1].trim(), houseNr: m[2], houseNrExt: m[3]?.trim() || undefined };
+  const s = (street || "").trim();
+  // Voorkeur: "Straatnaam 12" of "Straatnaam 12a" / "Straatnaam 12 bis".
+  let m = s.match(/^(.*?)\s+(\d+)\s*([a-zA-Z][\w-]*)?$/);
+  if (m) return { street: m[1].trim(), houseNr: m[2], houseNrExt: m[3]?.trim() || undefined };
+  // Terugval: pak het laatste getal in de string (bv. "Dwarsweg9", "Straat12-3").
+  m = s.match(/^(.*?)(\d+)\s*([a-zA-Z][\w-]*)?\s*$/);
+  if (m && m[2]) {
+    return {
+      street: (m[1] || "").replace(/[\s,.-]+$/, "").trim(),
+      houseNr: m[2],
+      houseNrExt: m[3]?.trim() || undefined,
+    };
+  }
+  return { street: s, houseNr: "" };
 }
 
 function trackTraceUrl(barcode: string, postalCode: string, country = "NL"): string {
@@ -131,6 +142,14 @@ export async function createLabel(
 
   try {
     const { street, houseNr, houseNrExt } = splitStreet(c.street);
+    if (!houseNr) {
+      return {
+        ok: false,
+        configured: true,
+        status: 422,
+        message: `Adres mist een herkenbaar huisnummer ("${c.street || "—"}"). Controleer het bezorgadres en maak het label opnieuw aan.`,
+      };
+    }
     const receiverCountry = (c.country || "NL").toUpperCase().slice(0, 2);
     const isDomestic = receiverCountry === "NL";
     // Binnenland (NL) → pakket/brievenbus; buitenland (België e.d.) → EU-pakket.
