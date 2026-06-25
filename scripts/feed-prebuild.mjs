@@ -43,6 +43,21 @@ if (SOURCE === "" || SOURCE === "owned" || SOURCE === "frozen") {
   process.exit(0);
 }
 
+// Speciale modus: alleen productbarcodes (EAN) bijvullen uit Channable —
+// NON-DESTRUCTIEF (vult enkel ontbrekende product.gtin). Gebruikt dezelfde
+// CHANNABLE_*-keys als de rest (incl. CHANNABLE_API_TOKEN). Handig om vanuit
+// Vercel de barcodes binnen te halen zonder de hele catalogus te herimporteren.
+if (SOURCE === "barcodes") {
+  console.log("→ Catalogus: productbarcodes bijvullen uit Channable (non-destructief)…");
+  const r = spawnSync(process.execPath, [join(__dirname, "backfill-barcodes.mjs")], {
+    stdio: "inherit",
+  });
+  if (r.status !== 0) {
+    console.warn("⚠ Barcode-backfill mislukt — build gaat verder met de bestaande snapshot.");
+  }
+  process.exit(0);
+}
+
 const script = IMPORTERS[SOURCE];
 if (!script) {
   console.warn(
