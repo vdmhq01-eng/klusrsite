@@ -71,6 +71,8 @@ interface ProductHit {
 }
 interface CartLine {
   key: string;
+  /** "catalog" = gewoon product; "adhoc" = losse regel via snelknop (toeslag/korting). */
+  kind: "catalog" | "adhoc";
   productId: string;
   variantId: string;
   title: string;
@@ -83,7 +85,30 @@ interface CartLine {
   live: number;
   quantity: number;
   discountPct: number;
+  /** adhoc: bron-snelknop + getekend stuksbedrag (negatief = korting). */
+  quickKeyId?: string;
+  amount?: number;
 }
+
+/** Opgeloste snelknop zoals de kassa hem van de server krijgt. */
+type QuickKey =
+  | {
+      id: string;
+      kind: "catalog";
+      label: string;
+      color?: string;
+      productId: string;
+      variantId: string;
+      title: string;
+      brand: string;
+      variantLabel: string;
+      image?: string;
+      gtin?: string;
+      price: number;
+      kluspasPrice: number;
+      live: number;
+    }
+  | { id: string; kind: "surcharge" | "discount"; label: string; color?: string; amount: number };
 
 type PayMethod = "cash" | "terminal" | "manual";
 
@@ -121,6 +146,8 @@ export function PosTerminal({
   // eerst het klantpaneel, met een expliciete "verder zonder klant"-uitweg.
   const [custGate, setCustGate] = useState(false);
 
+  const [quickKeys, setQuickKeys] = useState<QuickKey[]>([]);
+
   const scanRef = useRef<HTMLInputElement>(null);
 
   // Klant koppelen → prijsmodus volgt automatisch het lidmaatschap (overschrijfbaar).
@@ -152,6 +179,10 @@ export function PosTerminal({
 
   useEffect(() => {
     scanRef.current?.focus();
+    fetch("/api/kassa/quickkeys", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setQuickKeys(d.quickKeys ?? []))
+      .catch(() => {});
   }, []);
 
   // Zoeken (gedebounced). Een gescande EAN levert meestal direct één product.
@@ -191,6 +222,7 @@ export function PosTerminal({
         ...prev,
         {
           key: v.id,
+          kind: "catalog",
           productId: p.productId,
           variantId: v.id,
           title: p.title,
@@ -208,6 +240,62 @@ export function PosTerminal({
     });
     setNotice(`${p.brand} ${p.title} toegevoegd`);
   }, []);
+
+  // Snelknop toevoegen: catalogusknop → als product; toeslag/korting → losse regel.
+  const addQuickKey = useCallback((k: QuickKey) => {
+    if (k.kind === "catalog") {
+      addVariant(
+        {
+          productId: k.productId,
+          title: k.title,
+          brand: k.brand,
+          slug: "",
+          image: k.image,
+          gtin: k.gtin,
+          category: "",
+          variants: [],
+        },
+        {
+          id: k.variantId,
+          label: k.variantLabel,
+          price: k.price,
+          kluspasPrice: k.kluspasPrice,
+          feedStock: 0,
+          live: k.live,
+        },
+      );
+      return;
+    }
+    const unit = k.kind === "discount" ? -Math.abs(k.amount) : Math.abs(k.amount);
+    setCart((prev) => {
+      const idx = prev.findIndex((l) => l.kind === "adhoc" && l.quickKeyId === k.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          key: `adhoc-${k.id}`,
+          kind: "adhoc",
+          productId: "",
+          variantId: "",
+          title: k.label,
+          brand: "",
+          variantLabel: "",
+          price: unit,
+          kluspasPrice: unit,
+          live: Infinity,
+          quantity: 1,
+          discountPct: 0,
+          quickKeyId: k.id,
+          amount: unit,
+        },
+      ];
+    });
+    setNotice(`${k.label} toegevoegd`);
+  }, [addVariant]);
 
   // Enter in het zoekveld: bij precies één product met één variant direct toevoegen.
   function onScanEnter() {
@@ -237,6 +325,10 @@ export function PosTerminal({
   const priced = useMemo(
     () =>
       cart.map((l) => {
+        if (l.kind === "adhoc") {
+          const unit = l.amount ?? 0;
+          return { line: l, unit, normalUnit: unit, lineTotal: unit * l.quantity };
+        }
         const p = posLinePrice({ price: l.price, kluspasPrice: l.kluspasPrice }, mode, l.discountPct);
         return { line: l, unit: p.unit, normalUnit: p.normalUnit, lineTotal: p.unit * l.quantity };
       }),
@@ -356,6 +448,30 @@ export function PosTerminal({
             </div>
           </div>
 
+          {quickKeys.length > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto border-b border-border bg-white px-3 pb-2.5">
+              {quickKeys.map((k) => (
+                <button
+                  key={k.id}
+                  onClick={() => addQuickKey(k)}
+                  style={k.color ? { borderColor: k.color } : undefined}
+                  className="flex shrink-0 flex-col items-start gap-0.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-left hover:bg-white"
+                >
+                  <span className="max-w-[130px] truncate text-xs font-bold leading-tight">
+                    {k.label}
+                  </span>
+                  <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
+                    {k.kind === "catalog"
+                      ? formatPrice(k.price)
+                      : k.kind === "discount"
+                        ? `−${formatPrice(k.amount)}`
+                        : `+${formatPrice(k.amount)}`}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {query.trim().length < 2 ? (
               <EmptyHint />
@@ -421,10 +537,17 @@ export function PosTerminal({
                           {line.brand} {line.title}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {line.variantLabel} · {formatPrice(unit)}
-                          {line.discountPct > 0 && ` · -${line.discountPct}%`}
+                          {line.kind === "adhoc"
+                            ? (line.amount ?? 0) < 0
+                              ? "Korting"
+                              : "Toeslag"
+                            : line.variantLabel}{" "}
+                          · {formatPrice(unit)}
+                          {line.kind === "catalog" &&
+                            line.discountPct > 0 &&
+                            ` · -${line.discountPct}%`}
                         </div>
-                        {line.quantity > line.live && (
+                        {line.kind === "catalog" && line.quantity > line.live && (
                           <div className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-klusr-action">
                             <AlertTriangle className="h-3 w-3" /> meer dan voorraad ({line.live})
                           </div>
@@ -447,18 +570,20 @@ export function PosTerminal({
                         </QtyButton>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={line.discountPct || ""}
-                            onChange={(e) => setDiscount(line.key, Math.floor(Number(e.target.value)))}
-                            placeholder="0"
-                            className="h-7 w-12 rounded border border-border bg-secondary px-1.5 text-center text-xs outline-none focus:border-primary"
-                          />
-                          %
-                        </label>
+                        {line.kind === "catalog" && (
+                          <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={line.discountPct || ""}
+                              onChange={(e) => setDiscount(line.key, Math.floor(Number(e.target.value)))}
+                              placeholder="0"
+                              className="h-7 w-12 rounded border border-border bg-secondary px-1.5 text-center text-xs outline-none focus:border-primary"
+                            />
+                            %
+                          </label>
+                        )}
                         <button
                           onClick={() => removeLine(line.key)}
                           className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-secondary hover:text-primary"
@@ -516,12 +641,17 @@ export function PosTerminal({
           customer={customer}
           terminalConfigured={terminalConfigured}
           printAgentUrl={printAgentUrl}
-          lines={cart.map((l) => ({
-            productId: l.productId,
-            variantId: l.variantId,
-            quantity: l.quantity,
-            discountPct: l.discountPct || undefined,
-          }))}
+          lines={cart
+            .filter((l) => l.kind === "catalog")
+            .map((l) => ({
+              productId: l.productId,
+              variantId: l.variantId,
+              quantity: l.quantity,
+              discountPct: l.discountPct || undefined,
+            }))}
+          adhocLines={cart
+            .filter((l) => l.kind === "adhoc" && l.quickKeyId)
+            .map((l) => ({ quickKeyId: l.quickKeyId as string, quantity: l.quantity }))}
           onClose={() => setPayOpen(false)}
           onDone={() => {
             setPayOpen(false);
@@ -646,6 +776,11 @@ interface CheckoutLine {
   discountPct?: number;
 }
 
+interface AdhocLine {
+  quickKeyId: string;
+  quantity: number;
+}
+
 function PaymentSheet({
   total,
   mode,
@@ -655,6 +790,7 @@ function PaymentSheet({
   terminalConfigured,
   printAgentUrl,
   lines,
+  adhocLines,
   onClose,
   onDone,
 }: {
@@ -666,6 +802,7 @@ function PaymentSheet({
   terminalConfigured: boolean;
   printAgentUrl: string;
   lines: CheckoutLine[];
+  adhocLines: AdhocLine[];
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -745,6 +882,7 @@ function PaymentSheet({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lines,
+          adhocLines,
           mode,
           method,
           storeId,

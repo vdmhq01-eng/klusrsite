@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/auth";
 import type { CartItem, OrderCustomer } from "@/types";
 import { resolveLine } from "@/lib/pos-catalog";
+import { getQuickKeys } from "@/lib/store/pos-quickkeys";
 import { posLinePrice, posTotals, changeFor, type PosTotalsLine } from "@/lib/pos";
 import { createOrder, setMolliePaymentId, updateOrderStatus } from "@/lib/store/orders";
 import { createTerminalPayment } from "@/lib/payments";
@@ -24,7 +25,17 @@ const bodySchema = z.object({
         discountPct: z.number().min(0).max(100).optional(),
       }),
     )
-    .min(1),
+    .optional(),
+  // Losse regels via een snelknop (toeslag/korting). Bedrag + soort worden
+  // server-zijdig uit de opgeslagen snelknop afgeleid — nooit van de client.
+  adhocLines: z
+    .array(
+      z.object({
+        quickKeyId: z.string().min(1),
+        quantity: z.number().int().positive().max(999),
+      }),
+    )
+    .optional(),
   mode: z.enum(["particulier", "kluspas", "zakelijk"]),
   method: z.enum(["cash", "terminal", "pin", "manual"]),
   cashGiven: z.number().nonnegative().optional(),
@@ -60,8 +71,9 @@ export async function POST(req: Request) {
   //    de client vertrouwen).
   const items: CartItem[] = [];
   const totalLines: PosTotalsLine[] = [];
-  for (let i = 0; i < data.lines.length; i++) {
-    const line = data.lines[i];
+  const catalogLines = data.lines ?? [];
+  for (let i = 0; i < catalogLines.length; i++) {
+    const line = catalogLines[i];
     const found = resolveLine(line.productId, line.variantId);
     if (!found) {
       return NextResponse.json(
@@ -91,6 +103,38 @@ export async function POST(req: Request) {
       kluspasPrice: pricing.unit,
     });
     totalLines.push({ unit: pricing.unit, normalUnit: pricing.normalUnit, quantity: line.quantity });
+  }
+
+  // 1b. Losse regels (toeslag/korting) — bedrag + label uit de opgeslagen snelknop.
+  if (data.adhocLines?.length) {
+    const keys = await getQuickKeys();
+    for (let j = 0; j < data.adhocLines.length; j++) {
+      const al = data.adhocLines[j];
+      const key = keys.find((k) => k.id === al.quickKeyId);
+      if (!key || (key.kind !== "surcharge" && key.kind !== "discount")) {
+        return NextResponse.json({ error: "Onbekende snelknop." }, { status: 400 });
+      }
+      const amt = Math.round((key.amount ?? 0) * 100) / 100;
+      const unit = key.kind === "discount" ? -amt : amt;
+      items.push({
+        key: `adhoc-${key.id}-${j}`,
+        productId: "pos-adhoc",
+        variantId: "", // geen voorraad-afboeking (grootboek slaat lege variantId over)
+        title: key.label,
+        brand: "",
+        image: "",
+        variantLabel: "",
+        slug: "",
+        quantity: al.quantity,
+        price: unit,
+        kluspasPrice: unit,
+      });
+      totalLines.push({ unit, normalUnit: unit, quantity: al.quantity });
+    }
+  }
+
+  if (!items.length) {
+    return NextResponse.json({ error: "Geen verkoopregels." }, { status: 400 });
   }
 
   const totals = posTotals(totalLines);

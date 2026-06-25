@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ShoppingCart,
   CreditCard,
@@ -11,10 +11,20 @@ import {
   CheckCircle2,
   AlertCircle,
   History,
+  Grid3x3,
+  Plus,
+  Trash2,
+  Search,
+  Loader2,
+  Tag,
+  Banknote,
+  Percent,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const PAID: OrderStatus[] = ["paid", "authorized", "shipped", "delivered"];
 const isPaid = (o: Order) => PAID.includes(o.paymentStatus);
@@ -31,8 +41,19 @@ interface StockMovement {
   ts: number;
 }
 
+interface QuickKeyRec {
+  id: string;
+  label: string;
+  kind: "catalog" | "surcharge" | "discount";
+  color?: string;
+  productId?: string;
+  variantId?: string;
+  amount?: number;
+}
+
 interface KassaConfig {
   movements: StockMovement[];
+  quickKeys: QuickKeyRec[];
   terminalConfigured: boolean;
   printAgentConfigured: boolean;
 }
@@ -49,12 +70,16 @@ function sameDay(iso: string, ref: Date): boolean {
 export function KassaPanel({ orders }: { orders: Order[] }) {
   const [cfg, setCfg] = useState<KassaConfig | null>(null);
 
-  useEffect(() => {
-    fetch("/api/admin/kassa", { cache: "no-store" })
+  const loadCfg = useCallback(() => {
+    return fetch("/api/admin/kassa", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => d && setCfg(d))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    void loadCfg();
+  }, [loadCfg]);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -149,6 +174,9 @@ export function KassaPanel({ orders }: { orders: Order[] }) {
         </CardContent>
       </Card>
 
+      {/* Snelknoppen */}
+      <SnelknoppenCard keys={cfg?.quickKeys ?? []} onChange={loadCfg} />
+
       {/* Recente voorraadmutaties */}
       <Card>
         <CardHeader>
@@ -195,6 +223,275 @@ export function KassaPanel({ orders }: { orders: Order[] }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+interface SearchVariant {
+  id: string;
+  label: string;
+  price: number;
+}
+interface SearchProduct {
+  productId: string;
+  title: string;
+  brand: string;
+  image?: string;
+  variants: SearchVariant[];
+}
+
+const KIND_META = {
+  catalog: { label: "Product", icon: Tag },
+  surcharge: { label: "Toeslag (+€)", icon: Banknote },
+  discount: { label: "Korting (−€)", icon: Percent },
+} as const;
+
+/**
+ * Beheer van de kassa-snelknoppen: maak knoppen voor een product zónder barcode
+ * (uit de catalogus) of een actie/toeslag (los bedrag). Ze verschijnen direct in
+ * de kassa.
+ */
+function SnelknoppenCard({ keys, onChange }: { keys: QuickKeyRec[]; onChange: () => void }) {
+  const [kind, setKind] = useState<"catalog" | "surcharge" | "discount">("surcharge");
+  const [label, setLabel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<SearchProduct[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [picked, setPicked] = useState<{ productId: string; variantId: string; label: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (kind !== "catalog") return;
+    const s = q.trim();
+    if (s.length < 2) {
+      setHits([]);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/kassa/search?q=${encodeURIComponent(s)}`, { cache: "no-store" });
+        const d = await r.json();
+        setHits(d.results ?? []);
+      } catch {
+        setHits([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q, kind]);
+
+  function resetForm() {
+    setLabel("");
+    setAmount("");
+    setQ("");
+    setHits([]);
+    setPicked(null);
+    setError("");
+  }
+
+  async function save() {
+    setError("");
+    const body: Record<string, unknown> = { action: "saveKey", kind };
+    if (kind === "catalog") {
+      if (!picked) {
+        setError("Kies een product + variant.");
+        return;
+      }
+      body.productId = picked.productId;
+      body.variantId = picked.variantId;
+      if (label.trim()) body.label = label.trim();
+    } else {
+      const amt = Number(amount.replace(",", "."));
+      if (!label.trim()) {
+        setError("Vul een label in.");
+        return;
+      }
+      if (!(amt > 0)) {
+        setError("Vul een bedrag (> 0) in.");
+        return;
+      }
+      body.label = label.trim();
+      body.amount = amt;
+    }
+    setSaving(true);
+    try {
+      const r = await fetch("/api/admin/kassa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        setError(d.error || "Opslaan mislukt.");
+        return;
+      }
+      resetForm();
+      onChange();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(id: string) {
+    await fetch("/api/admin/kassa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "deleteKey", id }),
+    });
+    onChange();
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Grid3x3 className="h-4 w-4 text-primary" /> Snelknoppen
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Maak knoppen voor de kassa: een product zónder barcode, of een actie/toeslag als losse
+          regel. Ze verschijnen meteen in de kassa.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {keys.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {keys.map((k) => (
+              <span
+                key={k.id}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-2.5 py-1.5 text-sm"
+              >
+                <span className="font-semibold">{k.label}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {k.kind === "catalog"
+                    ? "product"
+                    : k.kind === "discount"
+                      ? `−${formatPrice(k.amount ?? 0)}`
+                      : `+${formatPrice(k.amount ?? 0)}`}
+                </span>
+                <button
+                  onClick={() => remove(k.id)}
+                  className="text-muted-foreground hover:text-primary"
+                  aria-label="Verwijderen"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-3 rounded-lg border border-border p-3">
+          <div className="flex flex-wrap gap-1.5">
+            {(["catalog", "surcharge", "discount"] as const).map((kk) => {
+              const M = KIND_META[kk];
+              const Icon = M.icon;
+              return (
+                <button
+                  key={kk}
+                  onClick={() => {
+                    setKind(kk);
+                    setError("");
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold",
+                    kind === kk
+                      ? "border-klusr-black bg-klusr-black text-white"
+                      : "border-border text-muted-foreground hover:bg-secondary",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" /> {M.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {kind === "catalog" ? (
+            <div className="space-y-2">
+              {picked ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm">
+                  <span className="truncate font-medium">{picked.label}</span>
+                  <button
+                    onClick={() => setPicked(null)}
+                    className="shrink-0 text-xs font-semibold text-muted-foreground hover:text-primary"
+                  >
+                    Wijzig
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Zoek product (naam, merk, EAN)…"
+                    className="pl-9"
+                  />
+                  {searching && (
+                    <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                  )}
+                  {hits.length > 0 && (
+                    <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-border bg-white shadow-lg">
+                      {hits.map((p) =>
+                        p.variants.map((v) => (
+                          <button
+                            key={v.id}
+                            onClick={() => {
+                              setPicked({
+                                productId: p.productId,
+                                variantId: v.id,
+                                label: `${p.brand} ${p.title} · ${v.label}`,
+                              });
+                              setHits([]);
+                              setQ("");
+                            }}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-secondary"
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {p.brand} {p.title}{" "}
+                              <span className="text-muted-foreground">· {v.label}</span>
+                            </span>
+                            <span className="shrink-0 tabular-nums">{formatPrice(v.price)}</span>
+                          </button>
+                        )),
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Knoplabel (optioneel — anders de productnaam)"
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={kind === "discount" ? "bv. Kortingsactie" : "bv. Verpakkingstoeslag"}
+              />
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="€ bedrag"
+                inputMode="decimal"
+                className="text-right tabular-nums"
+              />
+            </div>
+          )}
+
+          {error && <p className="text-sm font-medium text-primary">{error}</p>}
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Knop toevoegen
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
