@@ -34,11 +34,12 @@ jobs:
       - name: Barcodes uit Channable mergen
         env:
           CHANNABLE_TOKEN: ${{ secrets.CHANNABLE_TOKEN }}
+          CHANNABLE_API_TOKEN: ${{ secrets.CHANNABLE_API_TOKEN }}
           CHANNABLE_COMPANY_ID: ${{ secrets.CHANNABLE_COMPANY_ID }}
           CHANNABLE_PROJECT_ID: ${{ secrets.CHANNABLE_PROJECT_ID }}
         run: |
-          if [ -z "$CHANNABLE_TOKEN" ] || [ -z "$CHANNABLE_COMPANY_ID" ] || [ -z "$CHANNABLE_PROJECT_ID" ]; then
-            echo "::error::CHANNABLE_*-secrets ontbreken. Voeg ze toe via Settings → Secrets and variables → Actions."
+          if [ -z "$CHANNABLE_TOKEN$CHANNABLE_API_TOKEN" ] || [ -z "$CHANNABLE_COMPANY_ID" ] || [ -z "$CHANNABLE_PROJECT_ID" ]; then
+            echo "::error::Channable-secrets ontbreken in GITHUB (niet Vercel). Voeg toe via Settings → Secrets and variables → Actions: CHANNABLE_API_TOKEN (of CHANNABLE_TOKEN), CHANNABLE_COMPANY_ID, CHANNABLE_PROJECT_ID."
             exit 1
           fi
           node scripts/backfill-barcodes.mjs
