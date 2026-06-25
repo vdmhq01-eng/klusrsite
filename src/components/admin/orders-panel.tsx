@@ -56,19 +56,13 @@ const needsLabel = (o: Order) =>
   !isPos(o) && (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment;
 
 /**
- * "Openstaand" = nog te behandelen: niet al verzonden/geleverd en niet
- * geannuleerd/mislukt/verlopen/terugbetaald. Zo verdwijnt de ruis uit het
- * pick-overzicht.
+ * "Openstaand" = betaald (of geautoriseerd) én nog niet verwerkt (geen label).
+ * Onbetaalde orders (open/pending — vaak afgebroken checkouts) en afgeronde of
+ * geannuleerde orders vallen weg. Zodra er een label is, verdwijnt de order uit
+ * deze pick-/verzendqueue.
  */
-const CLOSED_STATUS = new Set<OrderStatus>([
-  "shipped",
-  "delivered",
-  "canceled",
-  "failed",
-  "expired",
-  "refunded",
-]);
-const isOpenOrder = (o: Order) => !CLOSED_STATUS.has(o.paymentStatus) && !o.shipment;
+const isOpenOrder = (o: Order) =>
+  (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment;
 
 // Net geplaatste orders 15 min vasthouden (nabestelvenster) — nog niet picken/labelen.
 const ORDER_HOLD_MS = 15 * 60 * 1000;
